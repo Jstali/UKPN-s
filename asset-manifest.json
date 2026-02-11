@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/UKPN-s/static/css/main.584e4765.css",
+    "main.js": "/UKPN-s/static/js/main.80f2af88.js",
+    "index.html": "/UKPN-s/index.html",
+    "main.584e4765.css.map": "/UKPN-s/static/css/main.584e4765.css.map",
+    "main.80f2af88.js.map": "/UKPN-s/static/js/main.80f2af88.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.584e4765.css",
+    "static/js/main.80f2af88.js"
+  ]
+}
