@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 const DataTable = ({ data, columns }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,16 +43,21 @@ const DataTable = ({ data, columns }) => {
   return (
     <div className="table-container">
       <div className="table-controls">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="search-box"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
+        <div className="ukpn-search-container">
+          <input
+            type="text"
+            className="ukpn-search-input"
+            placeholder="Search"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+          <button className="ukpn-search-button">
+            <Search size={20} />
+          </button>
+        </div>
         <select
           className="page-size-selector"
           value={pageSize}

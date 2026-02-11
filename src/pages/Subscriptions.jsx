@@ -1,9 +1,212 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, X, Eye } from 'lucide-react';
+import { Plus, Trash2, X, Eye, Download, ArrowLeft } from 'lucide-react';
 
 const Subscriptions = () => {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
+  
+  const existingSubscriptions = [
+    {
+      application: 'Electralink',
+      filterId: 'ELECTRALINK_v1',
+      headerString1: 'ZHV|D0123004|P|EELC|%|%|TR01',
+      destination1: '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/ELECTRALINK_1',
+      headerString2: 'ZHV|D0123004|%|%|E|ABCD|TR01',
+      destination2: '//UKPNNA-11',
+      id: 'ELECTRALINK',
+      DTC_SUB_DEV: 'replace_with_new_partition_key_value',
+      _rid: 'nPkHAOvA5tABAAAAAAAAAA==',
+      _self: 'dbs/nPkHAA==/colls/nPkHAOvA5tA=/docs/nPkHAOvA5tABAAAAAAAAAA==/',
+      _etag: '"81008615-0000-1100-0000-68cd77990000"',
+      _attachments: 'attachments/',
+      _ts: 1758295961
+    },
+    {
+      application: 'MPRS',
+      filterId: 'MPRS_v1',
+      headerString1: 'ZHV|D035001|Z|EELC|P|DCCO|TR01',
+      destination1: '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/D0350_DCCO_1',
+      headerString2: 'ZHV|D035001|%|EELC|%|DCCO|TR01',
+      destination2: '//UKPNNA-11',
+      id: 'MPRS',
+      DTC_SUB_DEV: 'replace_with_new_partition_key_value',
+      _rid: 'nPkHAOvA5tABAAAAAAAAAA==',
+      _self: 'dbs/nPkHAA==/colls/nPkHAOvA5tA=/docs/nPkHAOvA5tABAAAAAAAAAA==/',
+      _etag: '"81008615-0000-1100-0000-68cd77990000"',
+      _attachments: 'attachments/',
+      _ts: 1758295961
+    }
+  ];
+
+  const downloadExcel = () => {
+    alert('Excel download functionality would be implemented here');
+  };
+
+  if (showForm) {
+    return <SubscriptionForm onBack={() => setShowForm(false)} />;
+  }
+
+  if (selectedApp) {
+    return <ApplicationDetails app={selectedApp} onBack={() => setSelectedApp(null)} />;
+  }
+
+  return (
+    <motion.div
+      className="page-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="breadcrumb">
+        <Link to="/">Home</Link> → Subscriptions
+      </div>
+      <h1 className="page-title">All Applications Data</h1>
+
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="button button-primary" onClick={() => setShowForm(true)}>
+          <Plus size={16} /> Add New Subscription
+        </button>
+      </div>
+
+      <div className="table-container">
+        <div style={{ overflowX: 'auto' }}>
+          <table className="data-table" style={{ minWidth: '1800px' }}>
+            <thead>
+              <tr>
+                <th style={{ minWidth: '120px' }}>Application</th>
+                <th style={{ minWidth: '150px' }}>filterId</th>
+                <th style={{ minWidth: '350px' }}>Header_String_1</th>
+                <th style={{ minWidth: '500px' }}>destination_1</th>
+                <th style={{ minWidth: '350px' }}>Header_String_2</th>
+                <th style={{ minWidth: '300px' }}>destination_2</th>
+              </tr>
+            </thead>
+            <tbody>
+              {existingSubscriptions.map((sub, index) => (
+                <tr key={index} onClick={() => setSelectedApp(sub)} style={{ cursor: 'pointer' }}>
+                  <td><strong>{sub.application}</strong></td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{sub.filterId}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{sub.headerString1}</td>
+                  <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{sub.destination1}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{sub.headerString2}</td>
+                  <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{sub.destination2}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
+          <button className="button button-success" onClick={downloadExcel}>
+            <Download size={16} /> Download Excel
+          </button>
+          <Link to="/">
+            <button className="button button-secondary">
+              <ArrowLeft size={16} /> Back to Applications
+            </button>
+          </Link>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const ApplicationDetails = ({ app, onBack }) => {
+  const downloadTxt = () => {
+    const jsonData = {
+      filterId: app.filterId,
+      rules: [
+        {
+          Header_String: app.headerString1,
+          destination: app.destination1
+        },
+        {
+          Header_String: app.headerString2,
+          destination: app.destination2
+        }
+      ],
+      Application: app.application,
+      id: app.id,
+      DTC_SUB_DEV: app.DTC_SUB_DEV,
+      _rid: app._rid,
+      _self: app._self,
+      _etag: app._etag,
+      _attachments: app._attachments,
+      _ts: app._ts
+    };
+
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${app.application}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const jsonData = {
+    filterId: app.filterId,
+    rules: [
+      {
+        Header_String: app.headerString1,
+        destination: app.destination1
+      },
+      {
+        Header_String: app.headerString2,
+        destination: app.destination2
+      }
+    ],
+    Application: app.application,
+    id: app.id,
+    DTC_SUB_DEV: app.DTC_SUB_DEV,
+    _rid: app._rid,
+    _self: app._self,
+    _etag: app._etag,
+    _attachments: app._attachments,
+    _ts: app._ts
+  };
+
+  return (
+    <motion.div
+      className="page-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="breadcrumb">
+        <Link to="/">Home</Link> → <span onClick={onBack} style={{ cursor: 'pointer', color: 'var(--ukpn-secondary)' }}>Subscriptions</span> → {app.application}
+      </div>
+      <h1 className="page-title">{app.application}</h1>
+
+      <div className="table-container">
+        <pre style={{ 
+          background: '#1e1e1e', 
+          color: '#d4d4d4', 
+          padding: '1.5rem', 
+          borderRadius: '8px', 
+          overflow: 'auto',
+          fontSize: '0.9rem',
+          lineHeight: '1.6'
+        }}>
+          {JSON.stringify(jsonData, null, 2)}
+        </pre>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
+          <button className="button button-success" onClick={downloadTxt}>
+            <Download size={16} /> Download
+          </button>
+          <button className="button button-secondary" onClick={onBack}>
+            <ArrowLeft size={16} /> Back to Applications
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const SubscriptionForm = ({ onBack }) => {
   const [formData, setFormData] = useState({
     filterId: '',
     application: '',
@@ -94,12 +297,14 @@ const Subscriptions = () => {
       transition={{ duration: 0.5 }}
     >
       <div className="breadcrumb">
-        <Link to="/">Home</Link> → Subscriptions
+        <Link to="/">Home</Link> → <span onClick={onBack} style={{ cursor: 'pointer', color: 'var(--ukpn-secondary)' }}>Subscriptions</span> → New
       </div>
-      <h1 className="page-title">Subscriptions</h1>
-      <p style={{ color: '#64748b', marginBottom: '2rem' }}>
-        Manually create and manage subscription rules
-      </p>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <h1 className="page-title">Create New Subscription</h1>
+        <p style={{ color: '#64748b', marginBottom: '2rem' }}>
+          Manually create and manage subscription rules
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-section">
@@ -232,6 +437,9 @@ const Subscriptions = () => {
         <div className="form-actions">
           <button type="submit" className="button button-success">
             Submit
+          </button>
+          <button type="button" className="button button-secondary" onClick={onBack}>
+            <ArrowLeft size={16} /> Back
           </button>
           <button type="button" className="button button-secondary" onClick={handleReset}>
             Reset

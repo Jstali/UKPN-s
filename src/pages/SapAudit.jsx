@@ -40,7 +40,7 @@ const SapAudit = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="summary-icon" style={{ background: '#dbeafe', color: '#3b82f6' }}>
+          <div className="summary-icon">
             <FileText />
           </div>
           <div className="summary-content">
@@ -55,7 +55,7 @@ const SapAudit = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="summary-icon" style={{ background: '#dcfce7', color: '#10b981' }}>
+          <div className="summary-icon">
             <GitBranch />
           </div>
           <div className="summary-content">
