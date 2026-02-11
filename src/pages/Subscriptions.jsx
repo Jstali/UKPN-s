@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, X, Eye, Download, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, X, Eye, Download, ArrowLeft, ChevronDown } from 'lucide-react';
 
 const Subscriptions = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [showDestinationModal, setShowDestinationModal] = useState(null);
   
   const existingSubscriptions = [
     {
       application: 'Electralink',
       filterId: 'ELECTRALINK_v1',
-      headerString1: 'ZHV|D0123004|P|EELC|%|%|TR01',
-      destination1: '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/ELECTRALINK_1',
-      headerString2: 'ZHV|D0123004|%|%|E|ABCD|TR01',
-      destination2: '//UKPNNA-11',
+      headerStrings: ['ZHV|D0123004|P|EELC|%|%|TR01', 'ZHV|D0123004|%|%|E|ABCD|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/ELECTRALINK_1', '//UKPNNA-11'],
       id: 'ELECTRALINK',
       DTC_SUB_DEV: 'replace_with_new_partition_key_value',
       _rid: 'nPkHAOvA5tABAAAAAAAAAA==',
@@ -26,10 +26,8 @@ const Subscriptions = () => {
     {
       application: 'MPRS',
       filterId: 'MPRS_v1',
-      headerString1: 'ZHV|D035001|Z|EELC|P|DCCO|TR01',
-      destination1: '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/D0350_DCCO_1',
-      headerString2: 'ZHV|D035001|%|EELC|%|DCCO|TR01',
-      destination2: '//UKPNNA-11',
+      headerStrings: ['ZHV|D035001|Z|EELC|P|DCCO|TR01', 'ZHV|D035001|%|EELC|%|DCCO|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/D0350_DCCO_1', '//UKPNNA-11'],
       id: 'MPRS',
       DTC_SUB_DEV: 'replace_with_new_partition_key_value',
       _rid: 'nPkHAOvA5tABAAAAAAAAAA==',
@@ -37,6 +35,30 @@ const Subscriptions = () => {
       _etag: '"81008615-0000-1100-0000-68cd77990000"',
       _attachments: 'attachments/',
       _ts: 1758295961
+    },
+    {
+      application: 'MSBI_DEV_V1',
+      filterId: 'MSBI_DEV_V1',
+      headerStrings: [
+        'ZHV|D0139002|R|EELC|M|EXT|%|TR01',
+        'ZHV|D0139002|R|LOND|M|EXT|%|TR01',
+        'ZHV|D0139002|R|SEEB|M|EXT|%|TR01',
+        'ZHV|D0139002|R|EELC|X|EXT|%|TR01',
+        'ZHV|D0139002|R|LOND|X|EXT|%|TR01',
+        'ZHV|D0139002|R|SEEB|X|EXT|%|TR01'
+      ],
+      destinations: [
+        '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/COSMOS_COP/DTC_DEV/MSBI_OUT/Incoming',
+        '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/COSMOS_COP/DTC_DEV/MSBI_OUT/Incoming_D0132',
+        '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/COSMOS_COP/DTC_DEV/MSBI_OUT/Incoming_D0134'
+      ],
+      id: 'MSBI_DEV_V1',
+      status: 'active',
+      _rid: 'nPkHALmcN2sQAAAAAAAAAA==',
+      _self: 'dbs/nPkHAA==/colls/nPkHALmcN2s=/docs/nPkHALmcN2sQAAAAAAAAAA==/',
+      _etag: '"1a00e07b-0000-1100-0000-6902392c0000"',
+      _attachments: 'attachments/',
+      _ts: 1761753388
     }
   ];
 
@@ -71,36 +93,80 @@ const Subscriptions = () => {
       </div>
 
       <div className="table-container">
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table" style={{ minWidth: '1800px' }}>
-            <thead>
-              <tr>
-                <th style={{ minWidth: '120px' }}>Application</th>
-                <th style={{ minWidth: '150px' }}>filterId</th>
-                <th style={{ minWidth: '350px' }}>Header_String_1</th>
-                <th style={{ minWidth: '500px' }}>destination_1</th>
-                <th style={{ minWidth: '350px' }}>Header_String_2</th>
-                <th style={{ minWidth: '300px' }}>destination_2</th>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Application</th>
+              <th>Filter ID</th>
+              <th>Header String</th>
+              <th>Destination</th>
+            </tr>
+          </thead>
+          <tbody>
+            {existingSubscriptions.map((sub, index) => (
+              <tr key={index}>
+                <td onClick={() => setSelectedApp(sub)} style={{ cursor: 'pointer' }}>
+                  <strong>{sub.application}</strong>
+                </td>
+                <td onClick={() => setSelectedApp(sub)} style={{ cursor: 'pointer' }}>
+                  {sub.filterId}
+                </td>
+                <td>
+                  <div className="header-string-cell">
+                    <span 
+                      className="header-string-main" 
+                      onMouseEnter={() => {
+                        if (sub.headerStrings.length > 1) {
+                          setOpenDropdown(index);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setOpenDropdown(null);
+                      }}
+                    >
+                      {sub.headerStrings[0]}
+                    </span>
+                    {sub.headerStrings.length > 1 && (
+                      <div className="header-string-dropdown">
+                        <button 
+                          className={`dropdown-btn ${sub.headerStrings.length > 2 ? 'blink' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenDropdown(openDropdown === index ? null : index);
+                          }}
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                        {openDropdown === index && (
+                          <div className="dropdown-content show">
+                            {sub.headerStrings.slice(1).map((str, i) => (
+                              <div key={i} className="dropdown-item">{str}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td>
+                  <div 
+                    className="destination-truncate"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDestinationModal(sub.destinations);
+                    }}
+                  >
+                    {sub.destinations[0]}
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {existingSubscriptions.map((sub, index) => (
-                <tr key={index} onClick={() => setSelectedApp(sub)} style={{ cursor: 'pointer' }}>
-                  <td><strong>{sub.application}</strong></td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{sub.filterId}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{sub.headerString1}</td>
-                  <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{sub.destination1}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{sub.headerString2}</td>
-                  <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{sub.destination2}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
           <button className="button button-success" onClick={downloadExcel}>
-            <Download size={16} /> Download Excel
+            <Download size={16} /> Download
           </button>
           <Link to="/">
             <button className="button button-secondary">
@@ -109,27 +175,59 @@ const Subscriptions = () => {
           </Link>
         </div>
       </div>
+
+      {showDestinationModal && (
+        <div className="modal-overlay" onClick={() => setShowDestinationModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Destination Paths</h3>
+              <button className="modal-close" onClick={() => setShowDestinationModal(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              {showDestinationModal.map((dest, i) => (
+                <div key={i} className="destination-item">
+                  <div className="destination-text">{dest}</div>
+                  <button 
+                    className="copy-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText(dest);
+                      alert('Copied to clipboard!');
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
 
 const ApplicationDetails = ({ app, onBack }) => {
   const downloadTxt = () => {
+    const rules = [];
+    const maxLength = Math.max(app.headerStrings.length, app.destinations.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+      if (app.headerStrings[i] || app.destinations[i]) {
+        rules.push({
+          Header_String: app.headerStrings[i] || '',
+          destination: app.destinations[i] || ''
+        });
+      }
+    }
+
     const jsonData = {
       filterId: app.filterId,
-      rules: [
-        {
-          Header_String: app.headerString1,
-          destination: app.destination1
-        },
-        {
-          Header_String: app.headerString2,
-          destination: app.destination2
-        }
-      ],
+      rules: rules,
       Application: app.application,
       id: app.id,
-      DTC_SUB_DEV: app.DTC_SUB_DEV,
+      status: app.status,
       _rid: app._rid,
       _self: app._self,
       _etag: app._etag,
@@ -146,21 +244,24 @@ const ApplicationDetails = ({ app, onBack }) => {
     URL.revokeObjectURL(url);
   };
 
+  const rules = [];
+  const maxLength = Math.max(app.headerStrings.length, app.destinations.length);
+  
+  for (let i = 0; i < maxLength; i++) {
+    if (app.headerStrings[i] || app.destinations[i]) {
+      rules.push({
+        Header_String: app.headerStrings[i] || '',
+        destination: app.destinations[i] || ''
+      });
+    }
+  }
+
   const jsonData = {
     filterId: app.filterId,
-    rules: [
-      {
-        Header_String: app.headerString1,
-        destination: app.destination1
-      },
-      {
-        Header_String: app.headerString2,
-        destination: app.destination2
-      }
-    ],
+    rules: rules,
     Application: app.application,
     id: app.id,
-    DTC_SUB_DEV: app.DTC_SUB_DEV,
+    status: app.status,
     _rid: app._rid,
     _self: app._self,
     _etag: app._etag,
@@ -215,7 +316,7 @@ const SubscriptionForm = ({ onBack }) => {
       {
         headerStrings: [''],
         fileName: '',
-        destination: ''
+        destinations: ['']
       }
     ]
   });
@@ -225,7 +326,7 @@ const SubscriptionForm = ({ onBack }) => {
   const addRule = () => {
     setFormData({
       ...formData,
-      rules: [...formData.rules, { headerStrings: [''], fileName: '', destination: '' }]
+      rules: [...formData.rules, { headerStrings: [''], fileName: '', destinations: [''] }]
     });
   };
 
@@ -258,6 +359,24 @@ const SubscriptionForm = ({ onBack }) => {
     setFormData({ ...formData, rules: newRules });
   };
 
+  const addDestination = (ruleIndex) => {
+    const newRules = [...formData.rules];
+    newRules[ruleIndex].destinations.push('');
+    setFormData({ ...formData, rules: newRules });
+  };
+
+  const removeDestination = (ruleIndex, destIndex) => {
+    const newRules = [...formData.rules];
+    newRules[ruleIndex].destinations = newRules[ruleIndex].destinations.filter((_, i) => i !== destIndex);
+    setFormData({ ...formData, rules: newRules });
+  };
+
+  const updateDestination = (ruleIndex, destIndex, value) => {
+    const newRules = [...formData.rules];
+    newRules[ruleIndex].destinations[destIndex] = value;
+    setFormData({ ...formData, rules: newRules });
+  };
+
   const generateJSON = () => {
     return {
       filterId: formData.filterId,
@@ -266,7 +385,7 @@ const SubscriptionForm = ({ onBack }) => {
           value: rule.headerStrings.filter(s => s.trim() !== ''),
           fileName: rule.fileName || '{uuid}'
         },
-        destination: rule.destination
+        destinations: rule.destinations.filter(d => d.trim() !== '')
       })),
       Application: formData.application,
       id: formData.id
@@ -419,15 +538,36 @@ const SubscriptionForm = ({ onBack }) => {
                 </div>
 
                 <div className="form-group">
-                  <label>Destination Path</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={rule.destination}
-                    onChange={(e) => updateRule(ruleIndex, 'destination', e.target.value)}
-                    placeholder="//UKPNFORvFS01/WorkHub/Disconnections/D0132Flows"
-                    required
-                  />
+                  <label>Destination Paths</label>
+                  {rule.destinations.map((dest, destIndex) => (
+                    <div key={destIndex} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={dest}
+                        onChange={(e) => updateDestination(ruleIndex, destIndex, e.target.value)}
+                        placeholder="//UKPNFORvFS01/WorkHub/Disconnections/D0132Flows"
+                        required
+                      />
+                      {rule.destinations.length > 1 && (
+                        <button
+                          type="button"
+                          className="button button-danger"
+                          onClick={() => removeDestination(ruleIndex, destIndex)}
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => addDestination(ruleIndex)}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    <Plus size={16} /> Add Destination
+                  </button>
                 </div>
               </motion.div>
             ))}
