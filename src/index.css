@@ -73,6 +73,66 @@ code {
   height: 50px;
 }
 
+.profile-container {
+  position: relative;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: #d44009;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.user-profile:hover {
+  background: #b33507;
+}
+
+.user-profile span {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  border: none;
+  background: white;
+  color: var(--ukpn-text);
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: #F3F4F6;
+}
+
+.dropdown-item:not(:last-child) {
+  border-bottom: 1px solid #E5E7EB;
+}
+
 .user-icon {
   width: 40px;
   height: 40px;
