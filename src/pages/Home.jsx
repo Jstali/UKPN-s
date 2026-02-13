@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Database, Bell } from 'lucide-react';
+import { FileText, Database, Bell, Activity } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -24,6 +24,12 @@ const Home = () => {
       description: 'Create and manage subscription rules',
       icon: <Bell size={40} />,
       path: '/subscriptions'
+    },
+    {
+      title: 'DTC Activity',
+      description: 'Search and view DTC activity logs',
+      icon: <Activity size={40} />,
+      path: '/dtc-activity'
     }
   ];
 
@@ -54,7 +60,14 @@ const Home = () => {
           </div>
         </div>
         <div className="home-image">
-          <img src="/100_website_hero-graphic-2025_artwork.avif" alt="UKPN Network" />
+          <img 
+            src={`${process.env.PUBLIC_URL}/100_website_hero-graphic-2025_artwork.avif`}
+            alt="UKPN Network"
+            onError={(e) => {
+              console.error('Image failed to load:', e.target.src);
+              e.target.style.display = 'none';
+            }}
+          />
         </div>
       </div>
     </div>

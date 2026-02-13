@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, X, Eye, Download, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, X, Eye, Download, ArrowLeft, ChevronDown, FileJson } from 'lucide-react';
+import SpotlightCard from '../components/SpotlightCard';
 
 const Subscriptions = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [showDestinationModal, setShowDestinationModal] = useState(null);
+  const [showJson, setShowJson] = useState(false);
   
   const existingSubscriptions = [
     {
@@ -59,19 +59,128 @@ const Subscriptions = () => {
       _etag: '"1a00e07b-0000-1100-0000-6902392c0000"',
       _attachments: 'attachments/',
       _ts: 1761753388
+    },
+    {
+      application: 'Grey_it',
+      filterId: 'GREY_IT_v1',
+      headerStrings: ['ZHV|D0140001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Grey_it'],
+      id: 'GREY_IT'
+    },
+    {
+      application: 'Formfill',
+      filterId: 'FORMFILL_v1',
+      headerStrings: ['ZHV|D0146001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Formfill'],
+      id: 'FORMFILL'
+    },
+    {
+      application: 'DFlows',
+      filterId: 'DFLOWS_v1',
+      headerStrings: ['ZHV|D0141001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/DFlows'],
+      id: 'DFLOWS'
+    },
+    {
+      application: 'Durable',
+      filterId: 'DURABLE_v1',
+      headerStrings: ['ZHV|D0142001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Durable'],
+      id: 'DURABLE'
+    },
+    {
+      application: 'Mavis',
+      filterId: 'MAVIS_v1',
+      headerStrings: ['ZHV|D0143001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Mavis'],
+      id: 'MAVIS'
+    },
+    {
+      application: 'ADMS',
+      filterId: 'ADMS_v1',
+      headerStrings: ['ZHV|D0144001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/ADMS'],
+      id: 'ADMS'
+    },
+    {
+      application: 'ADQM',
+      filterId: 'ADQM_v1',
+      headerStrings: ['ZHV|D0145001|P|EELC|%|%|TR01'],
+      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/ADQM'],
+      id: 'ADQM'
     }
   ];
-
-  const downloadExcel = () => {
-    alert('Excel download functionality would be implemented here');
-  };
 
   if (showForm) {
     return <SubscriptionForm onBack={() => setShowForm(false)} />;
   }
 
   if (selectedApp) {
-    return <ApplicationDetails app={selectedApp} onBack={() => setSelectedApp(null)} />;
+    return (
+      <motion.div
+        className="page-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <div className="breadcrumb">
+          <Link to="/">Home</Link> → <Link to="/subscriptions">Subscriptions</Link> → {selectedApp.application}
+        </div>
+        <h1 className="page-title">{selectedApp.application}</h1>
+
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+          <button className="button button-secondary" onClick={() => setSelectedApp(null)}>
+            <ArrowLeft size={16} /> Back
+          </button>
+          <button className="button button-primary" onClick={() => setShowJson(!showJson)}>
+            <FileJson size={16} /> {showJson ? 'Hide JSON' : 'View JSON'}
+          </button>
+          <button 
+            className="button button-success" 
+            onClick={() => {
+              const text = `Application: ${selectedApp.application}\nFilter ID: ${selectedApp.filterId}\n\nHeader Strings:\n${selectedApp.headerStrings.join('\n')}\n\nDestinations:\n${selectedApp.destinations.join('\n')}\n\nID: ${selectedApp.id}`;
+              const blob = new Blob([text], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${selectedApp.application}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download size={16} /> Download
+          </button>
+        </div>
+
+        {showJson ? (
+          <div style={{ background: '#1e1e1e', color: '#d4d4d4', padding: '1.5rem', borderRadius: '8px', overflow: 'auto' }}>
+            <pre>{JSON.stringify(selectedApp, null, 2)}</pre>
+          </div>
+        ) : (
+          <div className="details-container">
+            <div className="detail-section">
+              <h3>Filter ID</h3>
+              <p>{selectedApp.filterId}</p>
+            </div>
+            <div className="detail-section">
+              <h3>Header Strings</h3>
+              {selectedApp.headerStrings.map((str, idx) => (
+                <p key={idx} style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>{str}</p>
+              ))}
+            </div>
+            <div className="detail-section">
+              <h3>Destinations</h3>
+              {selectedApp.destinations.map((dest, idx) => (
+                <p key={idx} style={{ fontSize: '0.85rem', marginBottom: '0.5rem', wordBreak: 'break-all' }}>{dest}</p>
+              ))}
+            </div>
+            <div className="detail-section">
+              <h3>ID</h3>
+              <p>{selectedApp.id}</p>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
   }
 
   return (
@@ -84,7 +193,7 @@ const Subscriptions = () => {
       <div className="breadcrumb">
         <Link to="/">Home</Link> → Subscriptions
       </div>
-      <h1 className="page-title">All Applications Data</h1>
+      <h1 className="page-title">All Applications</h1>
 
       <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
         <button className="button button-primary" onClick={() => setShowForm(true)}>
@@ -92,221 +201,23 @@ const Subscriptions = () => {
         </button>
       </div>
 
-      <div className="table-container">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Application</th>
-              <th>Filter ID</th>
-              <th>Header String</th>
-              <th>Destination</th>
-            </tr>
-          </thead>
-          <tbody>
-            {existingSubscriptions.map((sub, index) => (
-              <tr key={index}>
-                <td onClick={() => setSelectedApp(sub)} style={{ cursor: 'pointer' }}>
-                  <strong>{sub.application}</strong>
-                </td>
-                <td onClick={() => setSelectedApp(sub)} style={{ cursor: 'pointer' }}>
-                  {sub.filterId}
-                </td>
-                <td>
-                  <div className="header-string-cell">
-                    <span 
-                      className="header-string-main" 
-                      onMouseEnter={() => {
-                        if (sub.headerStrings.length > 1) {
-                          setOpenDropdown(index);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setOpenDropdown(null);
-                      }}
-                    >
-                      {sub.headerStrings[0]}
-                    </span>
-                    {sub.headerStrings.length > 1 && (
-                      <div className="header-string-dropdown">
-                        <button 
-                          className={`dropdown-btn ${sub.headerStrings.length > 2 ? 'blink' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenDropdown(openDropdown === index ? null : index);
-                          }}
-                        >
-                          <ChevronDown size={16} />
-                        </button>
-                        {openDropdown === index && (
-                          <div className="dropdown-content show">
-                            {sub.headerStrings.slice(1).map((str, i) => (
-                              <div key={i} className="dropdown-item">{str}</div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td>
-                  <div 
-                    className="destination-truncate"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDestinationModal(sub.destinations);
-                    }}
-                  >
-                    {sub.destinations[0]}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-          <button className="button button-success" onClick={downloadExcel}>
-            <Download size={16} /> Download
-          </button>
-          <Link to="/">
-            <button className="button button-secondary">
-              <ArrowLeft size={16} /> Back to Applications
-            </button>
-          </Link>
-        </div>
-      </div>
-
-      {showDestinationModal && (
-        <div className="modal-overlay" onClick={() => setShowDestinationModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Destination Paths</h3>
-              <button className="modal-close" onClick={() => setShowDestinationModal(null)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {showDestinationModal.map((dest, i) => (
-                <div key={i} className="destination-item">
-                  <div className="destination-text">{dest}</div>
-                  <button 
-                    className="copy-btn"
-                    onClick={() => {
-                      navigator.clipboard.writeText(dest);
-                      alert('Copied to clipboard!');
-                    }}
-                  >
-                    Copy
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </motion.div>
-  );
-};
-
-const ApplicationDetails = ({ app, onBack }) => {
-  const downloadTxt = () => {
-    const rules = [];
-    const maxLength = Math.max(app.headerStrings.length, app.destinations.length);
-    
-    for (let i = 0; i < maxLength; i++) {
-      if (app.headerStrings[i] || app.destinations[i]) {
-        rules.push({
-          Header_String: app.headerStrings[i] || '',
-          destination: app.destinations[i] || ''
-        });
-      }
-    }
-
-    const jsonData = {
-      filterId: app.filterId,
-      rules: rules,
-      Application: app.application,
-      id: app.id,
-      status: app.status,
-      _rid: app._rid,
-      _self: app._self,
-      _etag: app._etag,
-      _attachments: app._attachments,
-      _ts: app._ts
-    };
-
-    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${app.application}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const rules = [];
-  const maxLength = Math.max(app.headerStrings.length, app.destinations.length);
-  
-  for (let i = 0; i < maxLength; i++) {
-    if (app.headerStrings[i] || app.destinations[i]) {
-      rules.push({
-        Header_String: app.headerStrings[i] || '',
-        destination: app.destinations[i] || ''
-      });
-    }
-  }
-
-  const jsonData = {
-    filterId: app.filterId,
-    rules: rules,
-    Application: app.application,
-    id: app.id,
-    status: app.status,
-    _rid: app._rid,
-    _self: app._self,
-    _etag: app._etag,
-    _attachments: app._attachments,
-    _ts: app._ts
-  };
-
-  return (
-    <motion.div
-      className="page-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="breadcrumb">
-        <Link to="/">Home</Link> → <span onClick={onBack} style={{ cursor: 'pointer', color: 'var(--ukpn-secondary)' }}>Subscriptions</span> → {app.application}
-      </div>
-      <h1 className="page-title">{app.application}</h1>
-
-      <div className="table-container">
-        <pre style={{ 
-          background: '#1e1e1e', 
-          color: '#d4d4d4', 
-          padding: '1.5rem', 
-          borderRadius: '8px', 
-          overflow: 'auto',
-          fontSize: '0.9rem',
-          lineHeight: '1.6'
-        }}>
-          {JSON.stringify(jsonData, null, 2)}
-        </pre>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem' }}>
-          <button className="button button-success" onClick={downloadTxt}>
-            <Download size={16} /> Download
-          </button>
-          <button className="button button-secondary" onClick={onBack}>
-            <ArrowLeft size={16} /> Back to Applications
-          </button>
-        </div>
+      <div className="app-grid">
+        {existingSubscriptions.map((app) => (
+          <SpotlightCard key={app.id}>
+            <motion.div
+              className="app-card"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedApp(app)}
+            >
+              <h3>{app.application}</h3>
+            </motion.div>
+          </SpotlightCard>
+        ))}
       </div>
     </motion.div>
   );
 };
-
 const SubscriptionForm = ({ onBack }) => {
   const [formData, setFormData] = useState({
     filterId: '',
@@ -420,7 +331,7 @@ const SubscriptionForm = ({ onBack }) => {
       </div>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h1 className="page-title">Create New Subscription</h1>
-        <p style={{ color: '#64748b', marginBottom: '2rem' }}>
+        <p style={{ color: '#9D1320', marginBottom: '2rem' }}>
           Manually create and manage subscription rules
         </p>
       </div>

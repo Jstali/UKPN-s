@@ -55,7 +55,7 @@ const DataTable = ({ data, columns }) => {
             }}
           />
           <button className="ukpn-search-button">
-            <Search size={20} />
+            <Search size={12} />
           </button>
         </div>
         <select
