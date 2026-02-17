@@ -210,13 +210,14 @@ code {
   transition: all 0.3s ease;
   text-align: center;
   border: 1px solid #E5E7EB;
-  border-left: 4px solid var(--ukpn-primary);
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(246, 146, 30, 0.15);
-  border-left-width: 6px;
 }
 
 .card-icon {
@@ -243,6 +244,19 @@ code {
 .card-description {
   color: var(--ukpn-muted);
   font-size: 0.95rem;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.card-footer {
+  margin-top: auto;
+  text-align: right;
+}
+
+.last-updated {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  font-style: italic;
 }
 
 .summary-cards {
@@ -1288,4 +1302,59 @@ pre {
   color: var(--ukpn-text-secondary);
   line-height: 1.6;
   font-family: inherit;
+}
+
+
+/* Shine Border Animation */
+@keyframes shine {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+.shine-border-wrapper {
+  position: relative;
+}
+
+/* Download Button */
+.download-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--ukpn-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.download-button:hover {
+  background: var(--ukpn-primary-dark);
+}
+
+.table-download-btn {
+  background: var(--ukpn-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.375rem 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.table-download-btn:hover {
+  background: var(--ukpn-primary-dark);
 }

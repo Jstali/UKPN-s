@@ -7,6 +7,7 @@ import DtcAudit from './pages/DtcAudit';
 import SapAudit from './pages/SapAudit';
 import Subscriptions from './pages/Subscriptions';
 import DtcActivity from './pages/DtcActivity';
+import FileView from './pages/FileView';
 import './index.css';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route path="/sap-audit" element={<SapAudit />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/dtc-activity" element={<DtcActivity />} />
+          <Route path="/file-view/:fileId" element={<FileView />} />
         </Routes>
         <Footer />
       </div>

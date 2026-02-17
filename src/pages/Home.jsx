@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Database, Bell, Activity } from 'lucide-react';
+import { ShineBorder } from '../components/ui/shine-border';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -11,25 +12,29 @@ const Home = () => {
       title: 'DTC Audit',
       description: 'View and manage DTC audit records',
       icon: <FileText size={40} />,
-      path: '/dtc-audit'
+      path: '/dtc-audit',
+      lastUpdated: '2026-02-16 14:30:00'
     },
     {
       title: 'SAP Audit',
       description: 'View and manage SAP audit records',
       icon: <Database size={40} />,
-      path: '/sap-audit'
+      path: '/sap-audit',
+      lastUpdated: '2026-02-16 14:25:00'
     },
     {
       title: 'Subscriptions',
       description: 'Create and manage subscription rules',
       icon: <Bell size={40} />,
-      path: '/subscriptions'
+      path: '/subscriptions',
+      lastUpdated: '2026-02-16 14:20:00'
     },
     {
       title: 'DTC Activity',
       description: 'Search and view DTC activity logs',
       icon: <Activity size={40} />,
-      path: '/dtc-activity'
+      path: '/dtc-activity',
+      lastUpdated: '2026-02-16 14:15:00'
     }
   ];
 
@@ -40,22 +45,29 @@ const Home = () => {
           <h1 className="page-title">Welcome to UKPN Portal</h1>
           <div className="cards-grid">
             {cards.map((card, index) => (
-              <motion.div
+              <ShineBorder
                 key={card.title}
                 className="card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
+                color={["#4c4ebd", "#B16207", "#F8AF59"]}
+                borderRadius={12}
+                borderWidth={2}
+                duration={10}
                 onClick={() => navigate(card.path)}
               >
-                <div className="card-icon">
-                  {card.icon}
-                </div>
-                <h2 className="card-title">{card.title}</h2>
-                <p className="card-description">{card.description}</p>
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="card-icon">
+                    {card.icon}
+                  </div>
+                  <h2 className="card-title">{card.title}</h2>
+                  <p className="card-description">{card.description}</p>
+                </motion.div>
+              </ShineBorder>
             ))}
           </div>
         </div>

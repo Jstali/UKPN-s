@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FileText, GitBranch } from 'lucide-react';
+import { FileText, GitBranch, Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { sapAuditData } from '../data/mockData';
+import { exportToCSV } from '../utils/exportUtils';
 
 const SapAudit = () => {
   const uniqueFlows = [...new Set(sapAuditData.map(item => item.flow))].length;
@@ -70,7 +71,11 @@ const SapAudit = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <DataTable data={sapAuditData} columns={columns} />
+        <DataTable 
+          data={sapAuditData} 
+          columns={columns}
+          onDownload={(row) => exportToCSV([row], columns, `sap_audit_${row.uniqueId}`)}
+        />
       </motion.div>
     </motion.div>
   );

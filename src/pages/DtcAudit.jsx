@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FileText, GitBranch } from 'lucide-react';
+import { FileText, GitBranch, Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { dtcAuditData } from '../data/mockData';
+import { exportToCSV } from '../utils/exportUtils';
 
 const DtcAudit = () => {
   const uniqueFlows = [...new Set(dtcAuditData.map(item => item.flow))].length;
@@ -40,7 +41,7 @@ const DtcAudit = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="summary-icon">
+          <div className="summary-icon" style={{ background: '#dbeafe', color: '#3b82f6' }}>
             <FileText />
           </div>
           <div className="summary-content">
@@ -55,7 +56,7 @@ const DtcAudit = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="summary-icon">
+          <div className="summary-icon" style={{ background: '#dcfce7', color: '#10b981' }}>
             <GitBranch />
           </div>
           <div className="summary-content">
@@ -70,7 +71,11 @@ const DtcAudit = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <DataTable data={dtcAuditData} columns={columns} />
+        <DataTable 
+          data={dtcAuditData} 
+          columns={columns}
+          onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.uniqueId}`)}
+        />
       </motion.div>
     </motion.div>
   );

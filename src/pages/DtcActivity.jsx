@@ -1,28 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, RotateCcw, Download } from 'lucide-react';
 
 const DtcActivity = () => {
-  const [filters, setFilters] = useState({
-    application: 'All',
-    eventType: 'All',
-    flow: 'All',
-    version: 'All',
-    fromRole: 'All',
-    fromMPID: 'All',
-    toRole: 'All',
-    toMPID: 'All',
-    receivingApp: 'All',
-    eventTimestampFrom: '',
-    eventTimestampTo: '',
-    fileCreationDate: '',
-    fileId: '',
-    msgId: '',
-    searchFileContents: ''
+  const [filters, setFilters] = useState(() => {
+    const saved = sessionStorage.getItem('dtcFilters');
+    return saved ? JSON.parse(saved) : {
+      application: 'All',
+      eventType: 'All',
+      flow: 'All',
+      version: 'All',
+      fromRole: 'All',
+      fromMPID: 'All',
+      toRole: 'All',
+      toMPID: 'All',
+      receivingApp: 'All',
+      eventTimestampFrom: '',
+      eventTimestampTo: '',
+      fileCreationDate: '',
+      fileId: '',
+      msgId: '',
+      searchFileContents: ''
+    };
   });
 
-  const [results, setResults] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [results, setResults] = useState(() => {
+    const saved = sessionStorage.getItem('dtcResults');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [hasSearched, setHasSearched] = useState(() => {
+    const saved = sessionStorage.getItem('dtcHasSearched');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('dtcFilters', JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    sessionStorage.setItem('dtcResults', JSON.stringify(results));
+  }, [results]);
+
+  useEffect(() => {
+    sessionStorage.setItem('dtcHasSearched', hasSearched.toString());
+  }, [hasSearched]);
 
   const mockResults = [
     {
@@ -34,9 +56,9 @@ const DtcActivity = () => {
       toMPID: 'EELC',
       created: '12/02/2026 08:02:40',
       eventType: 'MSG RCVD INTO EWAY',
-      publishedTopic: 'PUBLISHED TOPIC',
+      publishedTopic: 'Source file name',
       sentOut: 'SENT OUT TO APP Q',
-      writtenFlow: 'WRITTEN FLOW TO APP',
+      writtenFlow: 'Destination file name',
       applicationName: 'ELECTRALINK',
       recApp: 'DURABILL',
       durabillApp: 'DURABILL1_PHUB03',
@@ -52,9 +74,9 @@ const DtcActivity = () => {
       toMPID: 'LOND',
       created: '12/02/2026 07:57:50',
       eventType: 'MSG RCVD INTO EWAY',
-      publishedTopic: 'PUBLISHED TOPIC',
+      publishedTopic: 'Source file name',
       sentOut: 'SENT OUT TO APP Q',
-      writtenFlow: 'WRITTEN FLOW TO APP',
+      writtenFlow: 'Destination file name',
       applicationName: 'ELECTRALINK',
       recApp: 'DURABILL',
       durabillApp: 'DURABILL1_PHUB03',
@@ -228,18 +250,18 @@ const DtcActivity = () => {
                 <table className="dtc-results-table">
                   <thead>
                     <tr>
-                      <th rowSpan="2">Flow Vers</th>
-                      <th rowSpan="2">File Id</th>
-                      <th rowSpan="2">From Role</th>
-                      <th rowSpan="2">From MPID</th>
-                      <th rowSpan="2">To Role</th>
-                      <th rowSpan="2">To MPID</th>
-                      <th rowSpan="2">Created</th>
-                      <th rowSpan="2">Rec App</th>
-                      <th rowSpan="2">EWAY I</th>
+                      <th>Flow Vers</th>
+                      <th>File Id</th>
+                      <th>From Role</th>
+                      <th>From MPID</th>
+                      <th>To Role</th>
+                      <th>To MPID</th>
+                      <th>Created</th>
+                      <th>Rec App</th>
+                      <th>File Name</th>
                       <th>Event Type</th>
                       <th>Application Name</th>
-                      <th>Event Timestam</th>
+                      <th>Time Stamp</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -253,27 +275,30 @@ const DtcActivity = () => {
                           <td rowSpan="4">{result.toRole}</td>
                           <td rowSpan="4">{result.toMPID}</td>
                           <td rowSpan="4">{result.created}</td>
-                          <td rowSpan="4"></td>
-                          <td rowSpan="4">
-                            <a href="#" className="download-link">Download {result.downloadLink}</a>
+                          <td rowSpan="4">{result.recApp}</td>
+                          <td>
+                            <Link to={`/file-view/${result.fileId}`} className="file-link">Source filename</Link>
                           </td>
-                          <td>{result.eventType}</td>
-                          <td></td>
+                          <td>File sent to FileConnect</td>
+                          <td>Source app name</td>
                           <td>{result.eventTimestamp}</td>
                         </tr>
                         <tr>
-                          <td>{result.publishedTopic}</td>
-                          <td>{result.applicationName}</td>
-                          <td>12/02/2026 08:23:2</td>
+                          <td></td>
+                          <td>Publiced topic</td>
+                          <td></td>
+                          <td></td>
                         </tr>
                         <tr>
-                          <td>{result.sentOut}</td>
-                          <td><a href="#" className="app-link">{result.recApp}</a></td>
+                          <td></td>
+                          <td>Msg sent to Subcribed APP</td>
+                          <td>Subcribed app name</td>
                           <td>12/02/2026 08:32:4</td>
                         </tr>
                         <tr>
-                          <td>{result.writtenFlow}</td>
-                          <td>{result.durabillApp}</td>
+                          <td>Destination file name</td>
+                          <td>File Delivered to destination</td>
+                          <td>Destination app name</td>
                           <td>12/02/2026 08:30:2</td>
                         </tr>
                       </React.Fragment>

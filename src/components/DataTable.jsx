@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Download } from 'lucide-react';
 
-const DataTable = ({ data, columns }) => {
+const DataTable = ({ data, columns, onDownload }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -81,6 +81,7 @@ const DataTable = ({ data, columns }) => {
                 {col.label}
               </th>
             ))}
+            {onDownload && <th style={{ width: '80px' }}>Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -97,6 +98,17 @@ const DataTable = ({ data, columns }) => {
                   )}
                 </td>
               ))}
+              {onDownload && (
+                <td>
+                  <button 
+                    className="table-download-btn"
+                    onClick={() => onDownload(row)}
+                    title="Download"
+                  >
+                    <Download size={16} />
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
