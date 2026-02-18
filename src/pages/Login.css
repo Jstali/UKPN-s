@@ -1,0 +1,368 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.ukpn-login-page {
+  min-height: 100vh;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 82% 20%, rgba(255, 190, 92, 0.22), transparent 45%),
+    radial-gradient(circle at 8% 90%, rgba(245, 95, 34, 0.2), transparent 38%),
+    linear-gradient(130deg, #09142b 0%, #0c2241 48%, #11172a 100%);
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.ukpn-login-page::before,
+.ukpn-login-page::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.ukpn-login-page::before {
+  width: 280px;
+  height: 280px;
+  background: rgba(255, 139, 56, 0.28);
+  top: -70px;
+  right: 70px;
+}
+
+.ukpn-login-page::after {
+  width: 340px;
+  height: 340px;
+  background: rgba(78, 125, 255, 0.18);
+  bottom: -120px;
+  left: -80px;
+}
+
+.ukpn-login-layout {
+  width: min(1120px, 100%);
+  border-radius: 28px;
+  background: rgba(10, 17, 35, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 36px 90px rgba(7, 15, 33, 0.62);
+  backdrop-filter: blur(18px);
+  display: grid;
+  grid-template-columns: 1fr 440px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.ukpn-login-brand {
+  padding: 40px 48px 36px;
+  color: #f5f7fb;
+  background: linear-gradient(148deg, rgba(15, 29, 56, 0.9), rgba(20, 28, 44, 0.74));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ukpn-login-doc {
+  width: 90%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+
+.ukpn-login-logo-card {
+  width: 84px;
+  height: 84px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 26px;
+  box-shadow: 0 18px 34px rgba(4, 10, 22, 0.38);
+}
+
+.ukpn-login-logo {
+  width: 64px;
+  height: auto;
+}
+
+.ukpn-login-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.73);
+  margin: 0 0 10px;
+}
+
+.ukpn-login-heading {
+  margin: 0 0 12px;
+  font-size: clamp(30px, 3vw, 42px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.ukpn-login-subheading {
+  margin: 0 0 26px;
+  max-width: 420px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(242, 246, 255, 0.84);
+}
+
+.ukpn-login-hero {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.ukpn-login-points {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.ukpn-login-points span {
+  font-size: 14px;
+  color: rgba(239, 244, 255, 0.86);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ukpn-login-points span::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(130deg, #ff9f39, #ff6b2f);
+  box-shadow: 0 0 0 4px rgba(255, 128, 46, 0.16);
+}
+
+.ukpn-login-card-shell {
+  background: linear-gradient(180deg, rgba(245, 248, 255, 0.96), rgba(237, 243, 252, 0.93));
+  padding: 34px 30px;
+}
+
+.ukpn-login-card {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid #dde6f2;
+  box-shadow: 0 18px 40px rgba(17, 36, 68, 0.12);
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ukpn-login-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.ukpn-login-card-logo {
+  height: 50px;
+  width: auto;
+}
+
+.ukpn-login-card-title {
+  margin: 18px 0 6px;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: #1a2c4f;
+}
+
+.ukpn-login-card-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5d6e89;
+}
+
+.ukpn-login-form {
+  margin-top: 26px;
+  display: grid;
+  gap: 16px;
+}
+
+.ukpn-login-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2d3e5f;
+  margin-bottom: 8px;
+}
+
+.ukpn-login-input-wrap {
+  position: relative;
+}
+
+.ukpn-login-input-wrap svg {
+  width: 18px;
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7689a7;
+  pointer-events: none;
+}
+
+.ukpn-login-input-wrap input {
+  width: 100%;
+  border: 1px solid #cdd8e8;
+  border-radius: 12px;
+  padding: 13px 14px 13px 42px;
+  font-size: 14px;
+  color: #142741;
+  background: linear-gradient(180deg, #ffffff, #f9fbff);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ukpn-login-input-wrap input:focus {
+  outline: none;
+  border-color: #f37031;
+  box-shadow: 0 0 0 4px rgba(243, 112, 49, 0.2);
+}
+
+.ukpn-login-input-wrap input::placeholder {
+  color: #90a0ba;
+}
+
+.ukpn-login-error {
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fff1f1;
+  color: #9c1f1f;
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ukpn-login-submit {
+  margin-top: 2px;
+  border: 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(136deg, #f0692d 0%, #d94510 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(210, 66, 18, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ukpn-login-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(210, 66, 18, 0.42);
+}
+
+.ukpn-login-submit:active {
+  transform: translateY(0);
+}
+
+.ukpn-login-demo {
+  margin-top: 20px;
+  border-radius: 14px;
+  border: 1px solid #e3ecf7;
+  background: #f7faff;
+  padding: 14px 12px;
+}
+
+.ukpn-login-demo-title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #516581;
+}
+
+.ukpn-login-demo-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ukpn-login-demo-item {
+  border: 1px solid #d7e2f0;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.ukpn-login-demo-item strong {
+  display: block;
+  font-size: 13px;
+  color: #24395d;
+  margin-bottom: 2px;
+}
+
+.ukpn-login-demo-item span {
+  font-size: 12px;
+  color: #5f7391;
+}
+
+.ukpn-login-demo-item:hover {
+  border-color: #f4925d;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 980px) {
+  .ukpn-login-layout {
+    grid-template-columns: 1fr;
+    max-width: 530px;
+  }
+
+  .ukpn-login-brand {
+    padding: 32px 30px 24px;
+  }
+
+  .ukpn-login-hero {
+    display: none;
+  }
+
+  .ukpn-login-points {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ukpn-login-page {
+    padding: 14px;
+  }
+
+  .ukpn-login-brand {
+    padding: 26px 22px 18px;
+  }
+
+  .ukpn-login-heading {
+    font-size: 31px;
+  }
+
+  .ukpn-login-subheading {
+    margin-bottom: 14px;
+  }
+
+  .ukpn-login-card-shell {
+    padding: 16px;
+  }
+
+  .ukpn-login-card {
+    border-radius: 16px;
+    padding: 20px 16px;
+  }
+}

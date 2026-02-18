@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, Download } from 'lucide-react';
 
 const DataTable = ({ data, columns, onDownload }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -22,7 +24,15 @@ const DataTable = ({ data, columns, onDownload }) => {
     return 0;
   });
 
-  const totalPages = Math.ceil(sortedData.length / pageSize);
+  const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
+  
+  // Reset to page 1 if current page exceeds total pages
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = sortedData.slice(startIndex, startIndex + pageSize);
 
@@ -43,20 +53,30 @@ const DataTable = ({ data, columns, onDownload }) => {
   return (
     <div className="table-container">
       <div className="table-controls">
-        <div className="ukpn-search-container">
+        <div className="modern-search-container">
+          <Search className="search-icon" size={18} />
           <input
             type="text"
-            className="ukpn-search-input"
-            placeholder="Search"
+            className="modern-search-input"
+            placeholder="Search records..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
           />
-          <button className="ukpn-search-button">
-            <Search size={12} />
-          </button>
+          {searchTerm && (
+            <button 
+              className="search-clear-btn"
+              onClick={() => {
+                setSearchTerm('');
+                setCurrentPage(1);
+              }}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
         </div>
         <select
           className="page-size-selector"
@@ -91,6 +111,13 @@ const DataTable = ({ data, columns, onDownload }) => {
                 <td key={col.key}>
                   {col.key === 'status' ? (
                     <span className={`status-badge ${getStatusClass(row[col.key])}`}>
+                      {row[col.key]}
+                    </span>
+                  ) : col.key === 'application' ? (
+                    <span 
+                      style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
+                      onClick={() => navigate(`/audit-details`, { state: { record: row } })}
+                    >
                       {row[col.key]}
                     </span>
                   ) : (

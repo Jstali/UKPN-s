@@ -3,113 +3,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, X, Eye, Download, ArrowLeft, ChevronDown, FileJson } from 'lucide-react';
 import SpotlightCard from '../components/SpotlightCard';
+import admsData from '../data/ADMS_DEV_V1.js';
+import electralinkData from '../data/Electralink_DEV_V1.js';
+import mprsData from '../data/MPRS_DEV_V1.js';
+import msbiData from '../data/application subscription.js';
 
-const Subscriptions = () => {
+const Subscriptions = ({ user }) => {
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [showJson, setShowJson] = useState(false);
   
-  const existingSubscriptions = [
-    {
-      application: 'Electralink',
-      filterId: 'ELECTRALINK_v1',
-      headerStrings: ['ZHV|D0123004|P|EELC|%|%|TR01', 'ZHV|D0123004|%|%|E|ABCD|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/ELECTRALINK_1', '//UKPNNA-11'],
-      id: 'ELECTRALINK',
-      DTC_SUB_DEV: 'replace_with_new_partition_key_value',
-      _rid: 'nPkHAOvA5tABAAAAAAAAAA==',
-      _self: 'dbs/nPkHAA==/colls/nPkHAOvA5tA=/docs/nPkHAOvA5tABAAAAAAAAAA==/',
-      _etag: '"81008615-0000-1100-0000-68cd77990000"',
-      _attachments: 'attachments/',
-      _ts: 1758295961
-    },
-    {
-      application: 'MPRS',
-      filterId: 'MPRS_v1',
-      headerStrings: ['ZHV|D035001|Z|EELC|P|DCCO|TR01', 'ZHV|D035001|%|EELC|%|DCCO|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/IN/SAPP/Tet/destination/D0350_DCCO_1', '//UKPNNA-11'],
-      id: 'MPRS',
-      DTC_SUB_DEV: 'replace_with_new_partition_key_value',
-      _rid: 'nPkHAOvA5tABAAAAAAAAAA==',
-      _self: 'dbs/nPkHAA==/colls/nPkHAOvA5tA=/docs/nPkHAOvA5tABAAAAAAAAAA==/',
-      _etag: '"81008615-0000-1100-0000-68cd77990000"',
-      _attachments: 'attachments/',
-      _ts: 1758295961
-    },
-    {
-      application: 'MSBI_DEV_V1',
-      filterId: 'MSBI_DEV_V1',
-      headerStrings: [
-        'ZHV|D0139002|R|EELC|M|EXT|%|TR01',
-        'ZHV|D0139002|R|LOND|M|EXT|%|TR01',
-        'ZHV|D0139002|R|SEEB|M|EXT|%|TR01',
-        'ZHV|D0139002|R|EELC|X|EXT|%|TR01',
-        'ZHV|D0139002|R|LOND|X|EXT|%|TR01',
-        'ZHV|D0139002|R|SEEB|X|EXT|%|TR01'
-      ],
-      destinations: [
-        '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/COSMOS_COP/DTC_DEV/MSBI_OUT/Incoming',
-        '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/COSMOS_COP/DTC_DEV/MSBI_OUT/Incoming_D0132',
-        '//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/COSMOS_COP/DTC_DEV/MSBI_OUT/Incoming_D0134'
-      ],
-      id: 'MSBI_DEV_V1',
-      status: 'active',
-      _rid: 'nPkHALmcN2sQAAAAAAAAAA==',
-      _self: 'dbs/nPkHAA==/colls/nPkHALmcN2s=/docs/nPkHALmcN2sQAAAAAAAAAA==/',
-      _etag: '"1a00e07b-0000-1100-0000-6902392c0000"',
-      _attachments: 'attachments/',
-      _ts: 1761753388
-    },
-    {
-      application: 'Grey_it',
-      filterId: 'GREY_IT_v1',
-      headerStrings: ['ZHV|D0140001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Grey_it'],
-      id: 'GREY_IT'
-    },
-    {
-      application: 'Formfill',
-      filterId: 'FORMFILL_v1',
-      headerStrings: ['ZHV|D0146001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Formfill'],
-      id: 'FORMFILL'
-    },
-    {
-      application: 'DFlows',
-      filterId: 'DFLOWS_v1',
-      headerStrings: ['ZHV|D0141001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/DFlows'],
-      id: 'DFLOWS'
-    },
-    {
-      application: 'Durable',
-      filterId: 'DURABLE_v1',
-      headerStrings: ['ZHV|D0142001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Durable'],
-      id: 'DURABLE'
-    },
-    {
-      application: 'Mavis',
-      filterId: 'MAVIS_v1',
-      headerStrings: ['ZHV|D0143001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/Mavis'],
-      id: 'MAVIS'
-    },
-    {
-      application: 'ADMS',
-      filterId: 'ADMS_v1',
-      headerStrings: ['ZHV|D0144001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/ADMS'],
-      id: 'ADMS'
-    },
-    {
-      application: 'ADQM',
-      filterId: 'ADQM_v1',
-      headerStrings: ['ZHV|D0145001|P|EELC|%|%|TR01'],
-      destinations: ['//UKPNNA-1150.ukpn.local/UKPNFS01-DATA/X-DRIVE/IM/TR01/ADQM'],
-      id: 'ADQM'
-    }
-  ];
+  // Role-based access
+  const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
+  
+  // Combine all subscription data
+  const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
+  
+  // Transform data for display
+  const existingSubscriptions = allSubscriptions.map(app => {
+    const allHeaderStrings = app.rules.flatMap(rule => rule.Header_String.value);
+    const allDestinations = app.rules.map(rule => rule.destination);
+    
+    return {
+      application: app.Application,
+      filterId: app.filterId,
+      headerStrings: allHeaderStrings,
+      destinations: allDestinations,
+      id: app.id,
+      status: app.status,
+      rules: app.rules
+    };
+  });
 
   if (showForm) {
     return <SubscriptionForm onBack={() => setShowForm(false)} />;
@@ -162,20 +86,58 @@ const Subscriptions = () => {
               <p>{selectedApp.filterId}</p>
             </div>
             <div className="detail-section">
-              <h3>Header Strings</h3>
+              <h3>Status</h3>
+              <p style={{ color: selectedApp.status === 'active' ? '#10b981' : '#ef4444', fontWeight: '600' }}>
+                {selectedApp.status?.toUpperCase() || 'N/A'}
+              </p>
+            </div>
+            <div className="detail-section">
+              <h3>Subscription Rules ({selectedApp.rules?.length || 0})</h3>
+              {selectedApp.rules?.map((rule, idx) => (
+                <div key={idx} style={{ 
+                  background: '#f9fafb', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: '8px', 
+                  padding: '1rem', 
+                  marginBottom: '1rem' 
+                }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#374151' }}>
+                    Rule {idx + 1}
+                  </h4>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <strong style={{ color: '#6b7280' }}>Header Strings:</strong>
+                    {rule.Header_String.value.map((str, strIdx) => (
+                      <p key={strIdx} style={{ fontSize: '0.85rem', marginLeft: '1rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
+                        {str}
+                      </p>
+                    ))}
+                  </div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <strong style={{ color: '#6b7280' }}>File Name Template:</strong>
+                    <p style={{ fontSize: '0.85rem', marginLeft: '1rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
+                      {rule.Header_String.fileName}
+                    </p>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#6b7280' }}>Destination:</strong>
+                    <p style={{ fontSize: '0.85rem', marginLeft: '1rem', marginTop: '0.25rem', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                      {rule.destination}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="detail-section">
+              <h3>All Header Strings ({selectedApp.headerStrings.length})</h3>
               {selectedApp.headerStrings.map((str, idx) => (
-                <p key={idx} style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>{str}</p>
+                <p key={idx} style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontFamily: 'monospace' }}>{str}</p>
               ))}
             </div>
             <div className="detail-section">
-              <h3>Destinations</h3>
+              <h3>All Destinations ({selectedApp.destinations.length})</h3>
               {selectedApp.destinations.map((dest, idx) => (
-                <p key={idx} style={{ fontSize: '0.85rem', marginBottom: '0.5rem', wordBreak: 'break-all' }}>{dest}</p>
+                <p key={idx} style={{ fontSize: '0.85rem', marginBottom: '0.5rem', wordBreak: 'break-all', fontFamily: 'monospace' }}>{dest}</p>
               ))}
-            </div>
-            <div className="detail-section">
-              <h3>ID</h3>
-              <p>{selectedApp.id}</p>
             </div>
           </div>
         )}
@@ -196,9 +158,11 @@ const Subscriptions = () => {
       <h1 className="page-title">All Applications</h1>
 
       <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="button button-primary" onClick={() => setShowForm(true)}>
-          <Plus size={16} /> Add New Subscription
-        </button>
+        {canEdit && (
+          <button className="button button-primary" onClick={() => setShowForm(true)}>
+            <Plus size={16} /> Add New Subscription
+          </button>
+        )}
       </div>
 
       <div className="app-grid">
@@ -208,7 +172,12 @@ const Subscriptions = () => {
               className="app-card"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedApp(app)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedApp(app);
+              }}
+              style={{ cursor: 'pointer' }}
             >
               <h3>{app.application}</h3>
             </motion.div>
@@ -406,7 +375,26 @@ const SubscriptionForm = ({ onBack }) => {
                 </div>
 
                 <div className="form-group">
-                  <label>Header String Values</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label>Header String Values</label>
+                    <button
+                      type="button"
+                      style={{
+                        padding: '4px 8px',
+                        background: '#6B7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px'
+                      }}
+                    >
+                      <Eye size={14} />
+                    </button>
+                  </div>
                   {rule.headerStrings.map((str, strIndex) => (
                     <div key={strIndex} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <input
