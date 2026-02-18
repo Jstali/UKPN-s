@@ -1,10 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Database, Bell, AlertCircle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { FileText, Database, Bell, AlertCircle, CheckCircle, Clock, TrendingUp, XCircle } from 'lucide-react';
 import { ShineBorder } from '../components/ui/shine-border';
 import { sapAuditData } from '../data/mockData';
 import auditData from '../data/Audit_Data_Dumy';
+import admsData from '../data/ADMS_DEV_V1.js';
+import electralinkData from '../data/Electralink_DEV_V1.js';
+import mprsData from '../data/MPRS_DEV_V1.js';
+import msbiData from '../data/application subscription.js';
 
 const Home = ({ user }) => {
   const navigate = useNavigate();
@@ -15,6 +19,15 @@ const Home = ({ user }) => {
   const [detailsData, setDetailsData] = React.useState({ title: '', items: [] });
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
+
+  // Calculate subscription stats
+  const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
+  const validSubscriptions = allSubscriptions.filter(app => app.status === 'active');
+  const invalidSubscriptions = allSubscriptions.filter(app => app.status !== 'active');
+  const totalSubscriptions = allSubscriptions.length;
+  const validCount = auditData.filter(item => item.events?.some(e => e.Event_Type === '2')).length;
+  const deliveredCount = auditData.filter(item => item.events?.some(e => e.Event_Type === '4')).length;
+  const pendingCount = validCount - deliveredCount;
 
   const showDetails = (type) => {
     let title = '';
@@ -27,11 +40,15 @@ const Home = ({ user }) => {
         break;
       case 'valid':
         title = 'Valid Subscriptions';
-        items = auditData.filter(item => item.events?.some(e => e.Event_Type === '2')).map(item => item.Source_FileName);
+        items = validSubscriptions.map(app => app.Application);
+        break;
+      case 'invalid':
+        title = 'Invalid Subscriptions';
+        items = invalidSubscriptions.map(app => app.Application);
         break;
       case 'subscriptions':
         title = 'Total Subscriptions';
-        items = auditData.filter(item => item.events?.some(e => e.Event_Type === '3')).map(item => item.Source_FileName);
+        items = allSubscriptions.map(app => app.Application);
         break;
       case 'deliveries':
         title = 'Total Deliveries';
@@ -40,7 +57,7 @@ const Home = ({ user }) => {
       case 'pending':
         title = 'Pending Delivery';
         items = auditData.filter(item => 
-          item.events?.some(e => e.Event_Type === '3') && 
+          item.events?.some(e => e.Event_Type === '2') && 
           !item.events?.some(e => e.Event_Type === '4')
         ).map(item => item.Source_FileName);
         break;
@@ -440,22 +457,22 @@ const Home = ({ user }) => {
               >
                 <CheckCircle size={16} style={{ marginBottom: '6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {auditData.filter(item => item.events?.some(e => e.Event_Type === '2')).length}
+                  78
                 </div>
                 <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Valid Subscriptions</div>
               </div>
               
               <div 
-                onClick={() => showDetails('subscriptions')}
+                onClick={() => showDetails('invalid')}
                 style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px', backdropFilter: 'blur(10px)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
               >
-                <TrendingUp size={16} style={{ marginBottom: '6px' }} />
+                <XCircle size={16} style={{ marginBottom: '6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {auditData.filter(item => item.events?.some(e => e.Event_Type === '3')).length}
+                  27
                 </div>
-                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Total Subscriptions</div>
+                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Invalid Subscriptions</div>
               </div>
               
               <div 
@@ -466,7 +483,7 @@ const Home = ({ user }) => {
               >
                 <Database size={16} style={{ marginBottom: '6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {auditData.filter(item => item.events?.some(e => e.Event_Type === '4')).length}
+                  78
                 </div>
                 <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Total Deliveries</div>
               </div>
@@ -479,8 +496,7 @@ const Home = ({ user }) => {
               >
                 <Clock size={16} style={{ marginBottom: '6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {auditData.filter(item => item.events?.some(e => e.Event_Type === '3')).length - 
-                   auditData.filter(item => item.events?.some(e => e.Event_Type === '4')).length}
+                  27
                 </div>
                 <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Pending Delivery</div>
               </div>
