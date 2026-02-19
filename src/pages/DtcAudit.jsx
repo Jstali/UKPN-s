@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FileText, GitBranch, Search, RotateCcw } from 'lucide-react';
 import DtcAuditTable from '../components/DtcAuditTable';
 import DataTable from '../components/DataTable';
@@ -10,6 +10,8 @@ import auditData from '../data/Audit_Data_Dumy';
 import { exportToCSV } from '../utils/exportUtils';
 
 const DtcAudit = ({ user }) => {
+  const location = useLocation();
+  
   const [filters, setFilters] = useState({
     application: 'All',
     eventType: 'All',
@@ -31,6 +33,39 @@ const DtcAudit = ({ user }) => {
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
+
+  // Handle incoming filter from Home page
+  useEffect(() => {
+    if (location.state?.filterType && location.state?.category) {
+      const { filterType, category } = location.state;
+      
+      // Map category and filterType to appropriate filters
+      let newFilters = { ...filters };
+      
+      if (category === 'valid') {
+        newFilters.eventType = '2'; // Valid subscription event type
+        if (filterType !== 'all') {
+          newFilters.application = filterType;
+        }
+      } else if (category === 'subscriptions') {
+        if (filterType === 'Valid') {
+          newFilters.eventType = '2';
+        } else if (filterType === 'Invalid') {
+          newFilters.eventType = '7';
+        }
+      } else if (category === 'deliveries') {
+        newFilters.eventType = '4';
+      } else if (category === 'pending') {
+        newFilters.eventType = '2';
+      }
+      
+      setFilters(newFilters);
+      setHasQueried(true);
+      
+      // Clear the location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Restore scroll position when returning from details page
   useEffect(() => {
