@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/UKPN-s/static/css/main.94c1b1fa.css",
-    "main.js": "/UKPN-s/static/js/main.b186d117.js",
+    "main.css": "/UKPN-s/static/css/main.73dc5959.css",
+    "main.js": "/UKPN-s/static/js/main.78a0bf21.js",
     "index.html": "/UKPN-s/index.html",
-    "main.94c1b1fa.css.map": "/UKPN-s/static/css/main.94c1b1fa.css.map",
-    "main.b186d117.js.map": "/UKPN-s/static/js/main.b186d117.js.map"
+    "main.73dc5959.css.map": "/UKPN-s/static/css/main.73dc5959.css.map",
+    "main.78a0bf21.js.map": "/UKPN-s/static/js/main.78a0bf21.js.map"
   },
   "entrypoints": [
-    "static/css/main.94c1b1fa.css",
-    "static/js/main.b186d117.js"
+    "static/css/main.73dc5959.css",
+    "static/js/main.78a0bf21.js"
   ]
 }
