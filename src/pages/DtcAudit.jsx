@@ -1,68 +1,27 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
-import { FileText, GitBranch, Search, RotateCcw } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FileText, GitBranch, Filter } from 'lucide-react';
 import DtcAuditTable from '../components/DtcAuditTable';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
-import { ShineBorder } from '../components/ui/shine-border';
 import auditData from '../data/Audit_Data_Dumy';
 import { exportToCSV } from '../utils/exportUtils';
 
 const DtcAudit = ({ user }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   
-  const [filters, setFilters] = useState({
-    application: 'All',
-    eventType: 'All',
-    flow: 'All',
-    version: 'All',
-    fromRole: 'All',
-    fromMPID: 'All',
-    toRole: 'All',
-    toMPID: 'All',
-    receivingApp: 'All',
-    eventTimestampFrom: '',
-    eventTimestampTo: '',
-    fileCreationDate: '',
-    fileId: '',
-    msgId: '',
-    searchFileContents: ''
-  });
-
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
+  const [filters, setFilters] = useState(location.state?.filters || null);
 
-  // Handle incoming filter from Home page
+  // Handle incoming filters from filter page
   useEffect(() => {
-    if (location.state?.filterType && location.state?.category) {
-      const { filterType, category } = location.state;
-      
-      // Map category and filterType to appropriate filters
-      let newFilters = { ...filters };
-      
-      if (category === 'valid') {
-        newFilters.eventType = '2'; // Valid subscription event type
-        if (filterType !== 'all') {
-          newFilters.application = filterType;
-        }
-      } else if (category === 'subscriptions') {
-        if (filterType === 'Valid') {
-          newFilters.eventType = '2';
-        } else if (filterType === 'Invalid') {
-          newFilters.eventType = '7';
-        }
-      } else if (category === 'deliveries') {
-        newFilters.eventType = '4';
-      } else if (category === 'pending') {
-        newFilters.eventType = '2';
-      }
-      
-      setFilters(newFilters);
-      setHasQueried(true);
-      
-      // Clear the location state
+    if (location.state?.filters) {
+      setFilters(location.state.filters);
+      handleQuery(location.state.filters);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -78,33 +37,10 @@ const DtcAudit = ({ user }) => {
     }
   }, []);
 
-  const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleReset = () => {
-    setFilters({
-      application: 'All',
-      eventType: 'All',
-      flow: 'All',
-      version: 'All',
-      fromRole: 'All',
-      fromMPID: 'All',
-      toRole: 'All',
-      toMPID: 'All',
-      receivingApp: 'All',
-      eventTimestampFrom: '',
-      eventTimestampTo: '',
-      fileCreationDate: '',
-      fileId: '',
-      msgId: '',
-      searchFileContents: ''
-    });
-    setHasQueried(false);
-    setFilteredResults([]);
-  };
-
-  const handleQuery = () => {
+  const handleQuery = (filterData) => {
+    const filtersToUse = filterData || filters;
+    if (!filtersToUse) return;
+    
     // Flatten the data - create one row per event
     let results = [];
     auditData.forEach(item => {
@@ -134,14 +70,14 @@ const DtcAudit = ({ user }) => {
       }
     });
     // Apply filters
-    if (filters.application !== 'All') {
-      results = results.filter(item => item.application === filters.application);
+    if (filtersToUse.application !== 'All') {
+      results = results.filter(item => item.application === filtersToUse.application);
     }
-    if (filters.eventType !== 'All') {
-      results = results.filter(item => item.eventType === filters.eventType);
+    if (filtersToUse.eventType !== 'All') {
+      results = results.filter(item => item.eventType === filtersToUse.eventType);
     }
-    if (filters.flow !== 'All') {
-      results = results.filter(item => item.flowVersion === filters.flow);
+    if (filtersToUse.flow !== 'All') {
+      results = results.filter(item => item.flowVersion === filtersToUse.flow);
     }
     if (filters.version !== 'All') {
       results = results.filter(item => item.version === filters.version);
@@ -232,7 +168,6 @@ const DtcAudit = ({ user }) => {
     { key: 'eventType', label: 'Event Type' },
     { key: 'status', label: 'Status' },
     { key: 'application', label: 'Application' },
-    { key: 'processed', label: 'Processed' },
     { key: 'timestamp', label: 'Timestamp' },
     { key: 'eventId', label: 'Event ID' },
     { key: 'destinationPath', label: 'Destination Path' },
@@ -265,224 +200,63 @@ const DtcAudit = ({ user }) => {
           <strong>Business View:</strong> Showing flow details only
         </div>
       )}
-      <h1 className="page-title">DTC Audit</h1>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h1 className="page-title" style={{ margin: 0 }}>DTC Audit</h1>
+        <button
+          onClick={() => navigate('/dtc-audit-filter')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: '#667eea',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '600'
+          }}
+        >
+          <Filter size={18} />
+          Filters
+        </button>
+      </div>
 
       <div className="summary-cards">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
+          className="summary-card"
         >
-          <ShineBorder
-            className="summary-card"
-            color={["#f97316", "#fb923c", "#fdba74"]}
-            borderRadius={8}
-            borderWidth={2}
-            duration={10}
-          >
-            <div className="summary-icon" style={{ background: '#dbeafe', color: '#3b82f6' }}>
-              <FileText />
-            </div>
-            <div className="summary-content">
-              <h3>Total Events</h3>
-              <p><AnimatedCounter value={flattenedAuditData.length} /></p>
-            </div>
-          </ShineBorder>
+          <div className="summary-icon" style={{ background: '#dbeafe', color: '#3b82f6' }}>
+            <FileText />
+          </div>
+          <div className="summary-content">
+            <h3>Total Events</h3>
+            <p><AnimatedCounter value={flattenedAuditData.length} /></p>
+          </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
+          className="summary-card"
         >
-          <ShineBorder
-            className="summary-card"
-            color={["#3b82f6", "#60a5fa", "#93c5fd"]}
-            borderRadius={8}
-            borderWidth={2}
-            duration={10}
-          >
-            <div className="summary-icon" style={{ background: '#dcfce7', color: '#10b981' }}>
-              <GitBranch />
-            </div>
-            <div className="summary-content">
-              <h3>Unique Flows</h3>
-              <p><AnimatedCounter value={uniqueFlows} /></p>
-            </div>
-          </ShineBorder>
+          <div className="summary-icon" style={{ background: '#dcfce7', color: '#10b981' }}>
+            <GitBranch />
+          </div>
+          <div className="summary-content">
+            <h3>Unique Flows</h3>
+            <p><AnimatedCounter value={uniqueFlows} /></p>
+          </div>
         </motion.div>
       </div>
 
-      <motion.div
-        className="filters-section"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <div className="filters-grid">
-          {/* Row 1 */}
-          <div className="filter-field">
-            <label>Application</label>
-            <select value={filters.application} onChange={(e) => handleFilterChange('application', e.target.value)}>
-              {applicationOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>Event Type</label>
-            <select value={filters.eventType} onChange={(e) => handleFilterChange('eventType', e.target.value)}>
-              {eventTypeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>Flow</label>
-            <select value={filters.flow} onChange={(e) => handleFilterChange('flow', e.target.value)}>
-              {flowOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>Version</label>
-            <select value={filters.version} onChange={(e) => handleFilterChange('version', e.target.value)}>
-              {versionOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>From Role</label>
-            <select value={filters.fromRole} onChange={(e) => handleFilterChange('fromRole', e.target.value)}>
-              {fromRoleOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-
-          {/* Row 2 */}
-          <div className="filter-field">
-            <label>From MPID</label>
-            <select value={filters.fromMPID} onChange={(e) => handleFilterChange('fromMPID', e.target.value)}>
-              {fromMPIDOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>To Role</label>
-            <select value={filters.toRole} onChange={(e) => handleFilterChange('toRole', e.target.value)}>
-              {toRoleOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>To MPID</label>
-            <select value={filters.toMPID} onChange={(e) => handleFilterChange('toMPID', e.target.value)}>
-              {toMPIDOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-
-          {/* Row 3 */}
-          <div className="filter-field">
-            <label>Receiving App</label>
-            <select value={filters.receivingApp} onChange={(e) => handleFilterChange('receivingApp', e.target.value)}>
-              {recAppOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-          <div className="filter-field">
-            <label>Event Timestamp From</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <div style={{ flex: 1 }}>
-                <small style={{ display: 'block', marginBottom: '4px', color: '#6B7280', fontSize: '12px' }}>Date</small>
-                <input 
-                  type="date" 
-                  value={filters.eventTimestampFrom.split('T')[0] || ''}
-                  onChange={(e) => {
-                    const time = filters.eventTimestampFrom.split('T')[1] || '00:00';
-                    handleFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : '');
-                  }}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <small style={{ display: 'block', marginBottom: '4px', color: '#6B7280', fontSize: '12px' }}>Time</small>
-                <input 
-                  type="time" 
-                  value={filters.eventTimestampFrom.split('T')[1] || ''}
-                  onChange={(e) => {
-                    const date = filters.eventTimestampFrom.split('T')[0] || new Date().toISOString().split('T')[0];
-                    handleFilterChange('eventTimestampFrom', `${date}T${e.target.value}`);
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="filter-field">
-            <label>Event Timestamp To</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <div style={{ flex: 1 }}>
-                <small style={{ display: 'block', marginBottom: '4px', color: '#6B7280', fontSize: '12px' }}>Date</small>
-                <input 
-                  type="date" 
-                  value={filters.eventTimestampTo.split('T')[0] || ''}
-                  onChange={(e) => {
-                    const time = filters.eventTimestampTo.split('T')[1] || '23:59';
-                    handleFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : '');
-                  }}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <small style={{ display: 'block', marginBottom: '4px', color: '#6B7280', fontSize: '12px' }}>Time</small>
-                <input 
-                  type="time" 
-                  value={filters.eventTimestampTo.split('T')[1] || ''}
-                  onChange={(e) => {
-                    const date = filters.eventTimestampTo.split('T')[0] || new Date().toISOString().split('T')[0];
-                    handleFilterChange('eventTimestampTo', `${date}T${e.target.value}`);
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="filter-field">
-            <label>File Creation Date (yyyymmdd or yyyy or mmdd)</label>
-            <input 
-              type="text" 
-              value={filters.fileCreationDate}
-              onChange={(e) => handleFilterChange('fileCreationDate', e.target.value)}
-              placeholder="yyyymmdd"
-            />
-          </div>
-
-          {/* Row 4 */}
-          <div className="filter-field">
-            <label>File ID</label>
-            <input 
-              type="text" 
-              value={filters.fileId}
-              onChange={(e) => handleFilterChange('fileId', e.target.value)}
-            />
-          </div>
-          <div className="filter-field">
-            <label>Msg ID</label>
-            <input 
-              type="text" 
-              value={filters.msgId}
-              onChange={(e) => handleFilterChange('msgId', e.target.value)}
-            />
-          </div>
-          <div className="filter-field filter-field-large">
-            <label>Search File Contents For (e.g. MPAN Number)</label>
-            <input 
-              type="text" 
-              value={filters.searchFileContents}
-              onChange={(e) => handleFilterChange('searchFileContents', e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="filter-actions">
-          <button className="btn-query" onClick={handleQuery}>
-            <Search size={18} />
-            Query
-          </button>
-          <button className="btn-reset" onClick={handleReset}>
-            <RotateCcw size={18} />
-            Reset
-          </button>
-        </div>
-      </motion.div>
-
-      {hasQueried && (
+      {hasQueried && filters && (
         <>
           <motion.div
             className="selection-criteria"

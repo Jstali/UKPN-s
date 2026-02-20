@@ -1,8 +1,7 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Database, Bell, AlertCircle, CheckCircle, Clock, TrendingUp, XCircle, X, BarChart3, PieChart } from 'lucide-react';
-import { ShineBorder } from '../components/ui/shine-border';
 import { sapAuditData } from '../data/mockData';
 import auditData from '../data/Audit_Data_Dumy';
 import admsData from '../data/ADMS_DEV_V1.js';
@@ -15,8 +14,6 @@ const Home = ({ user }) => {
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in SAP Audit section');
-  const [showDetailsModal, setShowDetailsModal] = React.useState(false);
-  const [detailsData, setDetailsData] = React.useState({ title: '', items: [], value: 0, chartData: {} });
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 
@@ -91,45 +88,28 @@ const Home = ({ user }) => {
         break;
     }
 
-    setDetailsData({ title, items, value, chartData, type });
-    setShowDetailsModal(true);
-  };
-
-  const navigateToDetails = (filterType) => {
-    setShowDetailsModal(false);
-    navigate('/dtc-audit', { state: { filterType, category: detailsData.type } });
-  };
-
-  const downloadDetails = () => {
-    const content = detailsData.items.join('\n');
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${detailsData.title.replace(/\s+/g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    navigate('/analytics', { state: { title, items, value, chartData, type } });
   };
 
   const cards = [
     {
       title: 'DTC Audit',
       description: 'View and manage DTC audit records',
-      icon: <FileText size={32} />,
+      icon: <img src={`${process.env.PUBLIC_URL}/Screenshot 2026-02-19 at 16-55-49 Untitled design - iOS Icon.png`} alt="DTC Audit" style={{ width: 32, height: 32 }} />,
       path: '/dtc-audit',
       lastUpdated: '2026-02-16 14:30:00'
     },
     {
       title: 'SAP Audit',
       description: 'View and manage SAP audit records',
-      icon: <Database size={32} />,
+      icon: <img src={`${process.env.PUBLIC_URL}/Screenshot 2026-02-19 at 16-55-49 Untitled design - iOS Icon.png`} alt="SAP Audit" style={{ width: 32, height: 32 }} />,
       path: '/sap-audit',
       lastUpdated: '2026-02-16 14:25:00'
     },
     {
       title: 'Subscriptions',
       description: 'Create and manage subscription rules',
-      icon: <Bell size={32} />,
+      icon: <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_16-56-34_Untitled_design_-_iOS_Icon-removebg-preview.png`} alt="Subscriptions" style={{ width: 32, height: 32 }} />,
       path: '/subscriptions',
       lastUpdated: '2026-02-16 14:20:00'
     }
@@ -152,7 +132,8 @@ const Home = ({ user }) => {
           gap: '12px',
           position: 'relative',
           zIndex: 200,
-          marginTop: '20px'
+          marginTop: '20px',
+          borderRadius: '12px'
         }}>
           <button
             onClick={() => setShowEditModal(true)}
@@ -176,16 +157,9 @@ const Home = ({ user }) => {
             fontWeight: '600',
             fontSize: '14px',
             flex: 1,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap'
+            padding: '0 16px'
           }}>
-            <div style={{
-              display: 'inline-block',
-              paddingLeft: '100%',
-              animation: 'marquee 20s linear infinite'
-            }}>
-              {infoText}
-            </div>
+            {infoText}
           </div>
         </div>
       )}
@@ -258,304 +232,6 @@ const Home = ({ user }) => {
         </div>
       )}
 
-      <AnimatePresence>
-        {showDetailsModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              backdropFilter: 'blur(8px)',
-              padding: '20px'
-            }}
-            onClick={() => setShowDetailsModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                width: '1200px',
-                maxWidth: '95%',
-                maxHeight: '90vh',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-                overflow: 'hidden'
-              }}
-            >
-              {/* Header */}
-              <div style={{
-                background: 'white',
-                padding: '20px 32px',
-                borderBottom: '1px solid #e5e7eb',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600', color: '#1f2937' }}>{detailsData.title}</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#6b7280' }}>Analytics Dashboard</p>
-                </div>
-                <button
-                  onClick={() => setShowDetailsModal(false)}
-                  style={{
-                    background: '#f3f4f6',
-                    border: 'none',
-                    borderRadius: '8px',
-                    width: '36px',
-                    height: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    color: '#6b7280',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Content */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
-                {/* Metric Card */}
-                <div 
-                  onClick={() => navigateToDetails('all')}
-                  style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '32px',
-                    marginBottom: '24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-                  }}
-                >
-                  <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Total Count
-                  </div>
-                  <div style={{ fontSize: '64px', fontWeight: '700', color: '#667eea' }}>
-                    {detailsData.value}
-                  </div>
-                </div>
-
-                {/* Charts Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                  {/* Bar Chart */}
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                      <BarChart3 size={20} color="#667eea" />
-                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>Distribution by Category</h3>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {detailsData.chartData.labels?.map((label, index) => {
-                        const maxValue = Math.max(...detailsData.chartData.values);
-                        const percentage = (detailsData.chartData.values[index] / maxValue) * 100;
-                        return (
-                          <div 
-                            key={index}
-                            onClick={() => navigateToDetails(label)}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px', color: '#4b5563' }}>
-                              <span style={{ fontWeight: '500' }}>{label}</span>
-                              <span style={{ fontWeight: '700', color: '#1f2937' }}>{detailsData.chartData.values[index]}</span>
-                            </div>
-                            <div style={{ background: '#f3f4f6', borderRadius: '6px', height: '24px', overflow: 'hidden', position: 'relative' }}>
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${percentage}%` }}
-                                transition={{ duration: 1, delay: index * 0.1, ease: 'easeOut' }}
-                                style={{
-                                  height: '100%',
-                                  background: detailsData.chartData.colors[index],
-                                  borderRadius: '6px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'flex-end',
-                                  paddingRight: '8px'
-                                }}
-                              >
-                                <span style={{ fontSize: '11px', color: 'white', fontWeight: '600' }}>
-                                  {percentage > 15 ? `${percentage.toFixed(0)}%` : ''}
-                                </span>
-                              </motion.div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Donut Chart */}
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    padding: '24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                      <PieChart size={20} color="#667eea" />
-                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>Percentage Breakdown</h3>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                      {/* Donut SVG */}
-                      <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-                        {(() => {
-                          const total = detailsData.chartData.values.reduce((a, b) => a + b, 0);
-                          let currentAngle = 0;
-                          return detailsData.chartData.values.map((value, index) => {
-                            const percentage = value / total;
-                            const angle = percentage * 360;
-                            const radius = 70;
-                            const innerRadius = 45;
-                            const startAngle = currentAngle;
-                            const endAngle = currentAngle + angle;
-                            currentAngle = endAngle;
-
-                            const startRad = (startAngle * Math.PI) / 180;
-                            const endRad = (endAngle * Math.PI) / 180;
-
-                            const x1 = 90 + radius * Math.cos(startRad);
-                            const y1 = 90 + radius * Math.sin(startRad);
-                            const x2 = 90 + radius * Math.cos(endRad);
-                            const y2 = 90 + radius * Math.sin(endRad);
-                            const x3 = 90 + innerRadius * Math.cos(endRad);
-                            const y3 = 90 + innerRadius * Math.sin(endRad);
-                            const x4 = 90 + innerRadius * Math.cos(startRad);
-                            const y4 = 90 + innerRadius * Math.sin(startRad);
-
-                            const largeArc = angle > 180 ? 1 : 0;
-
-                            return (
-                              <motion.path
-                                key={index}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4} Z`}
-                                fill={detailsData.chartData.colors[index]}
-                              />
-                            );
-                          });
-                        })()}
-                      </svg>
-                      {/* Legend */}
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {detailsData.chartData.labels?.map((label, index) => {
-                          const total = detailsData.chartData.values.reduce((a, b) => a + b, 0);
-                          const percentage = ((detailsData.chartData.values[index] / total) * 100).toFixed(1);
-                          return (
-                            <div 
-                              key={index} 
-                              onClick={() => navigateToDetails(label)}
-                              style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '12px',
-                                cursor: 'pointer',
-                                padding: '8px',
-                                borderRadius: '6px',
-                                transition: 'background 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                            >
-                              <div style={{
-                                width: '12px',
-                                height: '12px',
-                                borderRadius: '3px',
-                                background: detailsData.chartData.colors[index],
-                                flexShrink: 0
-                              }} />
-                              <div style={{ flex: 1, fontSize: '13px', color: '#4b5563' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontWeight: '500' }}>{label}</span>
-                                  <span style={{ fontWeight: '700', color: '#1f2937', marginLeft: '8px' }}>{percentage}%</span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Items List */}
-                <div style={{
-                  background: 'white',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                }}>
-                  <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-                    Items List ({detailsData.items.length})
-                  </h3>
-                  <div style={{
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                    gap: '8px'
-                  }}>
-                    {detailsData.items.length > 0 ? (
-                      detailsData.items.map((item, index) => (
-                        <div key={index} style={{
-                          padding: '10px 12px',
-                          background: '#f9fafb',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          color: '#374151',
-                          fontFamily: 'monospace',
-                          border: '1px solid #e5e7eb'
-                        }}>
-                          {item}
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{ textAlign: 'center', color: '#9ca3af', padding: '20px', gridColumn: '1 / -1' }}>
-                        No items found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {failedRecords.length > 0 && (
         <div style={{
           background: '#fee2e2',
@@ -565,7 +241,9 @@ const Home = ({ user }) => {
           alignItems: 'center',
           gap: '12px',
           position: 'relative',
-          zIndex: 200
+          zIndex: 200,
+          marginTop: '12px',
+          borderRadius: '12px'
         }}>
           <button
             onClick={() => setShowFailedDropdown(!showFailedDropdown)}
@@ -618,16 +296,9 @@ const Home = ({ user }) => {
             fontWeight: '600',
             fontSize: '14px',
             flex: 1,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap'
+            padding: '0 16px'
           }}>
-            <div style={{
-              display: 'inline-block',
-              paddingLeft: '100%',
-              animation: 'marquee 20s linear infinite'
-            }}>
-              {marqueeText}
-            </div>
+            {marqueeText}
           </div>
         </div>
       )}
@@ -637,29 +308,22 @@ const Home = ({ user }) => {
           <h1 className="page-title">Welcome to File Connect</h1>
           <div className="cards-grid">
             {cards.map((card, index) => (
-              <ShineBorder
+              <motion.div
                 key={card.title}
                 className="card"
-                color={["#4c4ebd", "#B16207", "#F8AF59"]}
-                borderRadius={12}
-                borderWidth={2}
-                duration={10}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(card.path)}
               >
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="card-icon">
-                    {card.icon}
-                  </div>
-                  <h2 className="card-title">{card.title}</h2>
-                  <p className="card-description">{card.description}</p>
-                </motion.div>
-              </ShineBorder>
+                <div className="card-icon">
+                  {card.icon}
+                </div>
+                <h2 className="card-title">{card.title}</h2>
+                <p className="card-description">{card.description}</p>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -692,7 +356,7 @@ const Home = ({ user }) => {
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
               >
-                <FileText size={16} style={{ marginBottom: '6px' }} />
+                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.04.11-removebg-preview.png`} alt="Files Received" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>{auditData.length}</div>
                 <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Files Received</div>
               </div>
@@ -703,7 +367,7 @@ const Home = ({ user }) => {
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
               >
-                <CheckCircle size={16} style={{ marginBottom: '6px' }} />
+                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.13.13-removebg-preview.png`} alt="Valid Subscriptions" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
                   78
                 </div>
@@ -716,7 +380,7 @@ const Home = ({ user }) => {
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
               >
-                <TrendingUp size={16} style={{ marginBottom: '6px' }} />
+                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_16-56-34_Untitled_design_-_iOS_Icon-removebg-preview.png`} alt="Subscriptions" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
                   105
                 </div>
@@ -729,7 +393,7 @@ const Home = ({ user }) => {
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
               >
-                <Database size={16} style={{ marginBottom: '6px' }} />
+                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.09.12-removebg-preview.png`} alt="Total Deliveries" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
                   78
                 </div>
@@ -742,7 +406,7 @@ const Home = ({ user }) => {
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
               >
-                <Clock size={16} style={{ marginBottom: '6px' }} />
+                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.11.15-removebg-preview.png`} alt="Pending Delivery" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
                 <div style={{ fontSize: '18px', fontWeight: '700' }}>
                   27
                 </div>

@@ -4,10 +4,12 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import DtcAudit from './pages/DtcAudit';
+import DtcAuditFilter from './pages/DtcAuditFilter';
 import SapAudit from './pages/SapAudit';
 import Subscriptions from './pages/Subscriptions';
 import AuditDetails from './pages/AuditDetails';
 import FileView from './pages/FileView';
+import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import ClickSpark from './components/ClickSpark';
 import './index.css';
@@ -55,7 +57,9 @@ function App() {
           <Header user={user} onLogout={handleLogout} />
           <Routes>
             <Route path="/" element={<Home user={user} />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/dtc-audit" element={<DtcAudit user={user} />} />
+            <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />
             <Route path="/sap-audit" element={<SapAudit />} />
             <Route path="/subscriptions" element={<Subscriptions user={user} />} />
             <Route path="/audit-details" element={<AuditDetails />} />

@@ -204,9 +204,9 @@ code {
 }
 
 .page-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem 2rem 2rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 2rem;
   padding-top: 20px;
   min-height: calc(100vh - 200px);
 }
@@ -332,6 +332,15 @@ code {
   gap: 1rem;
   position: relative;
   overflow: hidden;
+  border: 2px solid #d1d5db;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  border-color: #9ca3af;
 }
 
 .summary-icon {
@@ -379,12 +388,22 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 12px 8px;
+  padding: 16px 12px;
+  text-align: left;
+  vertical-align: middle;
 }
 
 .table-container th {
-  padding: 12px 8px;
+  padding: 16px 12px;
   font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .table-container td[data-key="Header_String"],
@@ -827,7 +846,7 @@ pre {
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: center;
-  margin-top: -6rem;
+  margin-top: -8rem;
   padding-top: 0;
 }
 
@@ -1112,36 +1131,52 @@ pre {
 .filter-field {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  position: relative;
 }
 
-.filter-field label {
-  font-size: 0.875rem;
+.filter-field fieldset {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0;
+  background: white;
+}
+
+.filter-field legend {
+  font-size: 12px;
   font-weight: 500;
-  color: var(--ukpn-text);
+  color: #6b7280;
+  padding: 0 6px;
+  margin-left: -6px;
 }
 
 .filter-field select,
 .filter-field input {
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #D1D5DB;
-  border-radius: 6px;
-  background: #F9FAFB;
-  color: var(--ukpn-text);
-  font-size: 0.875rem;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #1f2937;
+  font-size: 15px;
   font-family: inherit;
-  transition: all 0.2s;
+  width: 100%;
+  outline: none;
   appearance: auto;
   -webkit-appearance: menulist;
   -moz-appearance: menulist;
 }
 
+.filter-field input::placeholder {
+  color: #9ca3af;
+}
+
 .filter-field select:focus,
 .filter-field input:focus {
   outline: none;
-  border-color: #5B6FD8;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(91, 111, 216, 0.1);
+}
+
+.filter-field fieldset:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 1px #667eea;
 }
 
 .filter-field-large {

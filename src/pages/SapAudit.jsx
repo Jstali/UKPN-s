@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { FileText, GitBranch, Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
-import { ShineBorder } from '../components/ui/shine-border';
 import { sapAuditData } from '../data/mockData';
 import { exportToCSV } from '../utils/exportUtils';
 
@@ -40,44 +39,30 @@ const SapAudit = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
+          className="summary-card"
         >
-          <ShineBorder
-            className="summary-card"
-            color={["#f97316", "#fb923c", "#fdba74"]}
-            borderRadius={8}
-            borderWidth={2}
-            duration={10}
-          >
-            <div className="summary-icon">
-              <FileText />
-            </div>
-            <div className="summary-content">
-              <h3>Total Files</h3>
-              <p><AnimatedCounter value={sapAuditData.length} /></p>
-            </div>
-          </ShineBorder>
+          <div className="summary-icon">
+            <FileText />
+          </div>
+          <div className="summary-content">
+            <h3>Total Files</h3>
+            <p><AnimatedCounter value={sapAuditData.length} /></p>
+          </div>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
+          className="summary-card"
         >
-          <ShineBorder
-            className="summary-card"
-            color={["#3b82f6", "#60a5fa", "#93c5fd"]}
-            borderRadius={8}
-            borderWidth={2}
-            duration={10}
-          >
-            <div className="summary-icon">
-              <GitBranch />
-            </div>
-            <div className="summary-content">
-              <h3>Unique Flows</h3>
-              <p><AnimatedCounter value={uniqueFlows} /></p>
-            </div>
-          </ShineBorder>
+          <div className="summary-icon">
+            <GitBranch />
+          </div>
+          <div className="summary-content">
+            <h3>Unique Flows</h3>
+            <p><AnimatedCounter value={uniqueFlows} /></p>
+          </div>
         </motion.div>
       </div>
 
