@@ -145,34 +145,34 @@ const DtcAuditFilter = () => {
 
   return (
     <motion.div
-      className="page-container"
+      className="page-container dtc-filter-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="breadcrumb">
+      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
         <Link to="/">Home</Link> → <Link to="/dtc-audit">DTC Audit</Link> → Filters
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 className="page-title">DTC Audit Filters</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem' }}>DTC Audit Filters</h1>
         <button
           onClick={() => navigate('/dtc-audit')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '10px 20px',
+            padding: '8px 18px',
             background: '#6b7280',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '13px',
             fontWeight: '600'
           }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
           Back to Audit
         </button>
       </div>

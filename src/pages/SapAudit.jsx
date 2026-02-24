@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FileText, GitBranch, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
 import { sapAuditData } from '../data/mockData';
@@ -24,29 +24,43 @@ const SapAudit = () => {
 
   return (
     <motion.div
-      className="page-container"
+      className="page-container non-dtc-audit-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="breadcrumb">
-        <Link to="/">Home</Link> → SAP Audit
+      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
+        <Link to="/">Home</Link> → Non DTC Audit
       </div>
-      <h1 className="page-title">SAP Audit</h1>
+      <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '12px' }}>Non DTC Audit</h1>
 
-      <div className="summary-cards">
+      <div className="summary-cards" style={{ gap: '1rem', marginBottom: '1rem' }}>
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
           className="summary-card"
+          style={{ padding: '1rem' }}
         >
-          <div className="summary-icon">
-            <FileText />
+          <div className="summary-icon" style={{
+            background: '#f5f3ff',
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <img
+              src={`${process.env.PUBLIC_URL}/file-removebg-preview.png`}
+              alt="Total Files"
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+            />
           </div>
           <div className="summary-content">
-            <h3>Total Files</h3>
-            <p><AnimatedCounter value={sapAuditData.length} /></p>
+            <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Total Files</h3>
+            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={sapAuditData.length} /></p>
           </div>
         </motion.div>
 
@@ -55,13 +69,27 @@ const SapAudit = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
           className="summary-card"
+          style={{ padding: '1rem' }}
         >
-          <div className="summary-icon">
-            <GitBranch />
+          <div className="summary-icon" style={{
+            background: '#f0f9ff',
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <img
+              src={`${process.env.PUBLIC_URL}/iteration-removebg-preview.png`}
+              alt="Unique Flows"
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+            />
           </div>
           <div className="summary-content">
-            <h3>Unique Flows</h3>
-            <p><AnimatedCounter value={uniqueFlows} /></p>
+            <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Unique Flows</h3>
+            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={uniqueFlows} /></p>
           </div>
         </motion.div>
       </div>
@@ -71,8 +99,8 @@ const SapAudit = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <DataTable 
-          data={sapAuditData} 
+        <DataTable
+          data={sapAuditData}
           columns={columns}
           onDownload={(row) => exportToCSV([row], columns, `sap_audit_${row.uniqueId}`)}
         />

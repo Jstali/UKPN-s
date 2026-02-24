@@ -55,16 +55,18 @@ function App() {
       >
         <div className="app-container">
           <Header user={user} onLogout={handleLogout} />
-          <Routes>
-            <Route path="/" element={<Home user={user} />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/dtc-audit" element={<DtcAudit user={user} />} />
-            <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />
-            <Route path="/sap-audit" element={<SapAudit />} />
-            <Route path="/subscriptions" element={<Subscriptions user={user} />} />
-            <Route path="/audit-details" element={<AuditDetails />} />
-            <Route path="/file-view/:fileId" element={<FileView />} />
-          </Routes>
+          <main className="app-main">
+            <Routes>
+              <Route path="/" element={<Home user={user} />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/dtc-audit" element={<DtcAudit user={user} />} />
+              <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />
+              <Route path="/sap-audit" element={<SapAudit />} />
+              <Route path="/subscriptions" element={<Subscriptions user={user} />} />
+              <Route path="/audit-details" element={<AuditDetails />} />
+              <Route path="/file-view/:fileId" element={<FileView />} />
+            </Routes>
+          </main>
           <Footer />
         </div>
       </ClickSpark>

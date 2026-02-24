@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Database, Bell, AlertCircle, CheckCircle, Clock, TrendingUp, XCircle, X, BarChart3, PieChart } from 'lucide-react';
+import { FileText, Database, Bell, AlertCircle, CheckCircle, Clock, TrendingUp, XCircle, X, BarChart3, PieChart, CircleCheckBig, PoundSterling, ShieldCheck, LayoutDashboard, ChevronRight } from 'lucide-react';
+import AnimatedCounter from '../components/AnimatedCounter';
 import { sapAuditData } from '../data/mockData';
 import auditData from '../data/Audit_Data_Dumy';
 import admsData from '../data/ADMS_DEV_V1.js';
@@ -14,6 +15,7 @@ const Home = ({ user }) => {
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in SAP Audit section');
+  const [dashboardUpdatedAt] = React.useState(() => new Date().toLocaleTimeString());
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 
@@ -121,49 +123,248 @@ const Home = ({ user }) => {
   ).join('   •   •   •   ');
 
   return (
-    <div className="page-container">
-      {canEditInfo && (
-        <div style={{
-          background: '#dbeafe',
-          borderBottom: '2px solid #93c5fd',
-          padding: '12px 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          position: 'relative',
-          zIndex: 200,
-          marginTop: '20px',
-          borderRadius: '12px'
-        }}>
-          <button
-            onClick={() => setShowEditModal(true)}
-            style={{
-              marginLeft: '16px',
-              padding: '6px 12px',
-              background: '#1e40af',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '12px',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Edit Info
-          </button>
-          <div style={{
-            color: '#1e40af',
-            fontWeight: '600',
-            fontSize: '14px',
-            flex: 1,
-            padding: '0 16px'
-          }}>
-            {infoText}
+    <div style={{ display: 'flex', flex: 1, minHeight: '100%' }}>
+      {/* Left Sidebar */}
+      <nav className="home-sidebar">
+        <div className="home-sidebar-header">
+          <LayoutDashboard size={18} />
+          <span>Navigation</span>
+        </div>
+        <div className="home-sidebar-nav">
+          {[
+            { label: 'DTC Audit', path: '/dtc-audit', icon: <img src={`${process.env.PUBLIC_URL}/Screenshot 2026-02-19 at 16-55-49 Untitled design - iOS Icon.png`} alt="DTC Audit" style={{ width: 20, height: 20 }} />, desc: 'DTC records & events' },
+            { label: 'Non DTC Audit', path: '/sap-audit', icon: <img src={`${process.env.PUBLIC_URL}/Screenshot 2026-02-19 at 16-55-49 Untitled design - iOS Icon.png`} alt="Non DTC Audit" style={{ width: 20, height: 20 }} />, desc: 'Non-DTC audit monitoring' },
+            { label: 'Subscription', path: '/subscriptions', icon: <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_16-56-34_Untitled_design_-_iOS_Icon-removebg-preview.png`} alt="Subscription" style={{ width: 20, height: 20 }} />, desc: 'Manage rules & routing' },
+          ].map((item) => (
+            <div
+              key={item.path}
+              className="home-sidebar-item"
+              onClick={() => navigate(item.path)}
+            >
+              <div className="home-sidebar-item-icon">{item.icon}</div>
+              <div className="home-sidebar-item-text">
+                <span className="home-sidebar-item-label">{item.label}</span>
+                <span className="home-sidebar-item-desc">{item.desc}</span>
+              </div>
+              <ChevronRight size={14} className="home-sidebar-item-arrow" />
+            </div>
+          ))}
+        </div>
+        <div className="home-sidebar-footer">
+          <div className="home-sidebar-footer-dot" />
+          <span>All systems operational</span>
+        </div>
+      </nav>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '32px' }}>
+          {/* Welcome Heading */}
+          <div style={{ padding: '20px 24px 16px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#1f2937', marginBottom: '3px' }}>
+              Welcome to File Connect
+            </h1>
+            <div style={{ width: '60px', height: '4px', background: '#667eea', marginBottom: '0' }}></div>
+          </div>
+
+          {/* Edit Info Bar */}
+          {canEditInfo && (
+            <div style={{
+              background: '#dbeafe',
+              marginTop: '8px',
+              marginLeft: '24px',
+              marginRight: '24px',
+              padding: '12px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              borderRadius: '12px'
+            }}>
+              <button
+                onClick={() => setShowEditModal(true)}
+                style={{
+                  padding: '6px 14px',
+                  background: '#1e40af',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Edit Info
+              </button>
+              <div style={{
+                color: '#1e40af',
+                fontWeight: '600',
+                fontSize: '14px',
+                flex: 1
+              }}>
+                {infoText}
+              </div>
+            </div>
+          )}
+
+          {/* View Failed Bar */}
+          {failedRecords.length > 0 && (
+            <div style={{
+              background: '#fee2e2',
+              padding: '12px 24px',
+              marginTop: canEditInfo ? '8px' : '16px',
+              marginBottom: '0',
+              marginLeft: '24px',
+              marginRight: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              position: 'relative',
+              borderRadius: '12px'
+            }}>
+              <button
+                onClick={() => setShowFailedDropdown(!showFailedDropdown)}
+                style={{
+                  padding: '6px 14px',
+                  background: '#991b1b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                View Failed
+              </button>
+              {showFailedDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '16px',
+                  background: 'white',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  zIndex: 100,
+                  minWidth: '400px'
+                }}>
+                  {failedRecords.map((record, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: '12px 16px',
+                        borderBottom: index < failedRecords.length - 1 ? '1px solid #fee2e2' : 'none',
+                        fontSize: '13px',
+                        color: '#991b1b'
+                      }}
+                    >
+                      ⚠️ {record.flow} - {record.fileId} ({record.startDate})
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{
+                color: '#991b1b',
+                fontWeight: '600',
+                fontSize: '14px',
+                flex: 1
+              }}>
+                {marqueeText}
+              </div>
+            </div>
+          )}
+
+          {/* File Status Section */}
+          <div style={{ padding: '10px 24px', marginTop: failedRecords.length > 0 ? '24px' : '16px' }}>
+
+            {/* File Status Dashboard */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="file-status-dashboard"
+            >
+              <div className="file-status-header">
+                <div className="file-status-header-left">
+                  <div className="file-status-dot" />
+                  <h3>File Status</h3>
+                </div>
+                <span className="file-status-badge">Live — Last 24 hours</span>
+              </div>
+
+              <div className="file-status-grid">
+                {[
+                  { key: 'files', label: 'Files Received', value: auditData.length, icon: <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.04.11-removebg-preview.png`} alt="Files Received" style={{ width: 28, height: 28 }} />, color: '#3b82f6', bgColor: '#eff6ff', borderColor: '#bfdbfe', trend: '+12%' },
+                  { key: 'valid', label: 'Valid Subscriptions', value: 78, icon: (
+                    <div className="icon-overlay-wrap">
+                      <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.13.13-removebg-preview.png`} alt="Valid Subscriptions" style={{ width: 28, height: 28 }} />
+                      {/* Cover the rubber stamp at bottom-right */}
+                      <div className="icon-overlay-cover" style={{ width: '14px', height: '16px', bottom: '0px', right: '0px', background: '#ecfdf5' }} />
+                      {/* Place a tick over the stamp area */}
+                      <div className="icon-overlay-symbol" style={{ bottom: '-1px', right: '-2px', fontSize: '14px', color: '#1f2937' }}>
+                        <CircleCheckBig size={13} strokeWidth={2.5} />
+                      </div>
+                    </div>
+                  ), color: '#10b981', bgColor: '#ecfdf5', borderColor: '#a7f3d0', trend: '+5%' },
+                  { key: 'subscriptions', label: 'Total Subscriptions', value: 105, icon: (
+                    <div className="icon-overlay-wrap">
+                      <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_16-56-34_Untitled_design_-_iOS_Icon-removebg-preview.png`} alt="Subscriptions" style={{ width: 28, height: 28 }} />
+                      {/* Cover the $ symbol in the center */}
+                      <div className="icon-overlay-cover" style={{ width: '10px', height: '12px', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#f5f3ff' }} />
+                      {/* Place £ over the dollar */}
+                      <div className="icon-overlay-symbol" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '11px', fontWeight: '900', color: '#1f2937', lineHeight: 1 }}>
+                        £
+                      </div>
+                    </div>
+                  ), color: '#8b5cf6', bgColor: '#f5f3ff', borderColor: '#c4b5fd', trend: null },
+                  { key: 'deliveries', label: 'Total Deliveries', value: 78, icon: <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.09.12-removebg-preview.png`} alt="Total Deliveries" style={{ width: 28, height: 28 }} />, color: '#f59e0b', bgColor: '#fffbeb', borderColor: '#fcd34d', trend: '+8%' },
+                  { key: 'pending', label: 'Pending Delivery', value: 27, icon: <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.11.15-removebg-preview.png`} alt="Pending Delivery" style={{ width: 28, height: 28 }} />, color: '#ef4444', bgColor: '#fef2f2', borderColor: '#fecaca', trend: '-3%' },
+                ].map((item, index) => (
+                  <motion.div
+                    key={item.key}
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 + index * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
+                    onClick={() => showDetails(item.key)}
+                    className="file-status-card"
+                    style={{ '--card-accent': item.color, '--card-bg': item.bgColor, '--card-border': item.borderColor }}
+                  >
+                    <div className="file-status-card-accent" />
+                    <div className="file-status-card-icon" style={{ background: item.bgColor, color: item.color }}>
+                      {item.icon}
+                    </div>
+                    <div className="file-status-card-value" style={{ color: item.color }}>
+                      <AnimatedCounter value={item.value} />
+                    </div>
+                    <div className="file-status-card-label">{item.label}</div>
+                    {item.trend && (
+                      <div className="file-status-card-trend" style={{
+                        color: item.trend.startsWith('+') ? '#10b981' : '#ef4444',
+                        background: item.trend.startsWith('+') ? '#ecfdf5' : '#fef2f2'
+                      }}>
+                        {item.trend.startsWith('+') ? <TrendingUp size={12} /> : null}
+                        {item.trend}
+                      </div>
+                    )}
+                    <div className="file-status-card-arrow">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="file-status-footer">
+                <div className="file-status-footer-dot" />
+                Updated: {dashboardUpdatedAt}
+              </div>
+            </motion.div>
           </div>
         </div>
-      )}
 
+      {/* Edit Modal */}
       {showEditModal && (
         <div style={{
           position: 'fixed',
@@ -231,204 +432,6 @@ const Home = ({ user }) => {
           </div>
         </div>
       )}
-
-      {failedRecords.length > 0 && (
-        <div style={{
-          background: '#fee2e2',
-          borderBottom: '2px solid #fca5a5',
-          padding: '12px 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          position: 'relative',
-          zIndex: 200,
-          marginTop: '12px',
-          borderRadius: '12px'
-        }}>
-          <button
-            onClick={() => setShowFailedDropdown(!showFailedDropdown)}
-            style={{
-              marginLeft: '16px',
-              padding: '6px 12px',
-              background: '#991b1b',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '12px',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            View Failed
-          </button>
-          {showFailedDropdown && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              left: '16px',
-              background: 'white',
-              border: '1px solid #fca5a5',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              maxHeight: '300px',
-              overflowY: 'auto',
-              zIndex: 100,
-              minWidth: '400px'
-            }}>
-              {failedRecords.map((record, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: '12px 16px',
-                    borderBottom: index < failedRecords.length - 1 ? '1px solid #fee2e2' : 'none',
-                    fontSize: '13px',
-                    color: '#991b1b'
-                  }}
-                >
-                  ⚠️ {record.flow} - {record.fileId} ({record.startDate})
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{
-            color: '#991b1b',
-            fontWeight: '600',
-            fontSize: '14px',
-            flex: 1,
-            padding: '0 16px'
-          }}>
-            {marqueeText}
-          </div>
-        </div>
-      )}
-
-      <div className="home-hero">
-        <div className="home-content">
-          <h1 className="page-title">Welcome to File Connect</h1>
-          <div className="cards-grid">
-            {cards.map((card, index) => (
-              <motion.div
-                key={card.title}
-                className="card"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate(card.path)}
-              >
-                <div className="card-icon">
-                  {card.icon}
-                </div>
-                <h2 className="card-title">{card.title}</h2>
-                <p className="card-description">{card.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-        <div className="home-image">
-          {/* Mini Dashboard */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              color: 'white',
-              boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)',
-              marginBottom: '20px',
-              marginTop: '200px',
-              maxWidth: '600px'
-            }}
-          >
-            <div style={{ marginBottom: '12px', textAlign: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', opacity: 0.9 }}>File Status</h3>
-              <p style={{ margin: '4px 0 0', fontSize: '10px', opacity: 0.7 }}>Last 24 hours</p>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-              <div 
-                onClick={() => showDetails('files')}
-                style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px', backdropFilter: 'blur(10px)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-              >
-                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.04.11-removebg-preview.png`} alt="Files Received" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>{auditData.length}</div>
-                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Files Received</div>
-              </div>
-              
-              <div 
-                onClick={() => showDetails('valid')}
-                style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px', backdropFilter: 'blur(10px)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-              >
-                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.13.13-removebg-preview.png`} alt="Valid Subscriptions" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  78
-                </div>
-                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Valid Subscriptions</div>
-              </div>
-              
-              <div 
-                onClick={() => showDetails('subscriptions')}
-                style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px', backdropFilter: 'blur(10px)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-              >
-                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_16-56-34_Untitled_design_-_iOS_Icon-removebg-preview.png`} alt="Subscriptions" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  105
-                </div>
-                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Total Subscriptions</div>
-              </div>
-              
-              <div 
-                onClick={() => showDetails('deliveries')}
-                style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px', backdropFilter: 'blur(10px)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-              >
-                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.09.12-removebg-preview.png`} alt="Total Deliveries" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  78
-                </div>
-                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Total Deliveries</div>
-              </div>
-              
-              <div 
-                onClick={() => showDetails('pending')}
-                style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px', backdropFilter: 'blur(10px)', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-              >
-                <img src={`${process.env.PUBLIC_URL}/Screenshot_2026-02-19_at_18.11.15-removebg-preview.png`} alt="Pending Delivery" style={{ width: 24, height: 24, marginBottom: '6px', display: 'block', margin: '0 auto 6px' }} />
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  27
-                </div>
-                <div style={{ fontSize: '9px', opacity: 0.8, marginTop: '4px' }}>Pending Delivery</div>
-              </div>
-            </div>
-            
-            <div style={{ marginTop: '12px', textAlign: 'center' }}>
-              <p style={{ margin: 0, fontSize: '10px', opacity: 0.7 }}>Updated: {new Date().toLocaleTimeString()}</p>
-            </div>
-          </motion.div>
-          
-          <img 
-            src={`${process.env.PUBLIC_URL}/100_website_hero-graphic-2025_artwork.avif`}
-            alt="UKPN Network"
-            onError={(e) => {
-              console.error('Image failed to load:', e.target.src);
-              e.target.style.display = 'none';
-            }}
-          />
-        </div>
-      </div>
     </div>
   );
 };

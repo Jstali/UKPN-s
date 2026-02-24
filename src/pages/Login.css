@@ -1,52 +1,146 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
+/* ===== UKPN Login Background ===== */
 .ukpn-login-page {
   min-height: 100vh;
   padding: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 82% 20%, rgba(255, 190, 92, 0.22), transparent 45%),
-    radial-gradient(circle at 8% 90%, rgba(245, 95, 34, 0.2), transparent 38%),
-    linear-gradient(130deg, #09142b 0%, #0c2241 48%, #11172a 100%);
+  background: #ffffff;
   font-family: 'Manrope', 'Segoe UI', sans-serif;
   position: relative;
   overflow: hidden;
 }
 
-.ukpn-login-page::before,
+/* Energy wave pattern - top red accent */
+.ukpn-login-page::before {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 400px;
+  top: -120px;
+  left: -50%;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 50%, rgba(200, 16, 46, 0.15), transparent),
+    radial-gradient(ellipse 60% 50% at 70% 40%, rgba(200, 16, 46, 0.12), transparent);
+  border-radius: 0 0 50% 50%;
+  pointer-events: none;
+  animation: wave-drift 12s ease-in-out infinite alternate;
+}
+
+/* Green eco highlight - bottom */
 .ukpn-login-page::after {
   content: '';
   position: absolute;
-  border-radius: 999px;
-  filter: blur(50px);
+  width: 200%;
+  height: 350px;
+  bottom: -100px;
+  left: -50%;
+  background:
+    radial-gradient(ellipse 70% 60% at 60% 50%, rgba(0, 166, 81, 0.1), transparent),
+    radial-gradient(ellipse 50% 50% at 30% 60%, rgba(0, 166, 81, 0.08), transparent);
+  border-radius: 50% 50% 0 0;
   pointer-events: none;
+  animation: wave-drift 15s ease-in-out infinite alternate-reverse;
 }
 
-.ukpn-login-page::before {
-  width: 280px;
-  height: 280px;
-  background: rgba(255, 139, 56, 0.28);
-  top: -70px;
-  right: 70px;
+@keyframes wave-drift {
+  0% { transform: translateX(-2%); }
+  100% { transform: translateX(2%); }
 }
 
-.ukpn-login-page::after {
-  width: 340px;
-  height: 340px;
-  background: rgba(78, 125, 255, 0.18);
-  bottom: -120px;
-  left: -80px;
+/* Spark lines overlay */
+.ukpn-login-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
 }
 
+.ukpn-login-sparks .spark-line {
+  position: absolute;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  height: 1px;
+  animation: spark-move linear infinite;
+}
+
+@keyframes spark-move {
+  0% { transform: translateX(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(100vw); opacity: 0; }
+}
+
+/* Metallic texture overlay */
+.ukpn-login-texture {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.008) 2px,
+      rgba(255, 255, 255, 0.008) 4px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Floating orbs for depth */
+.ukpn-login-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ukpn-login-orb--red {
+  width: 300px;
+  height: 300px;
+  background: rgba(200, 16, 46, 0.12);
+  top: 10%;
+  right: 8%;
+  animation: orb-float 18s ease-in-out infinite;
+}
+
+.ukpn-login-orb--blue {
+  width: 400px;
+  height: 400px;
+  background: rgba(1, 33, 105, 0.25);
+  bottom: 5%;
+  left: 5%;
+  animation: orb-float 22s ease-in-out infinite reverse;
+}
+
+.ukpn-login-orb--green {
+  width: 250px;
+  height: 250px;
+  background: rgba(0, 166, 81, 0.08);
+  bottom: 15%;
+  right: 20%;
+  animation: orb-float 20s ease-in-out infinite 3s;
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -30px) scale(1.05); }
+  66% { transform: translate(-15px, 20px) scale(0.95); }
+}
+
+/* ===== Login Layout ===== */
 .ukpn-login-layout {
   width: min(1120px, 100%);
   border-radius: 28px;
-  background: rgba(10, 17, 35, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 36px 90px rgba(7, 15, 33, 0.62);
-  backdrop-filter: blur(18px);
+  background: rgba(10, 17, 35, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 36px 90px rgba(1, 10, 30, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
   display: grid;
   grid-template-columns: 1fr 440px;
   overflow: hidden;
@@ -54,20 +148,41 @@
   z-index: 1;
 }
 
+/* ===== Brand Panel (Left) ===== */
 .ukpn-login-brand {
   padding: 40px 48px 36px;
   color: #f5f7fb;
-  background: linear-gradient(148deg, rgba(15, 29, 56, 0.9), rgba(20, 28, 44, 0.74));
+  background: linear-gradient(148deg, rgba(1, 33, 105, 0.6), rgba(10, 50, 112, 0.4));
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle diagonal lines on brand panel */
+.ukpn-login-brand::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 40px,
+      rgba(255, 255, 255, 0.015) 40px,
+      rgba(255, 255, 255, 0.015) 41px
+    );
+  pointer-events: none;
 }
 
 .ukpn-login-doc {
   width: 90%;
   height: auto;
   border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 1;
 }
 
 .ukpn-login-logo-card {
@@ -138,10 +253,11 @@
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: linear-gradient(130deg, #ff9f39, #ff6b2f);
-  box-shadow: 0 0 0 4px rgba(255, 128, 46, 0.16);
+  background: linear-gradient(130deg, #C8102E, #ff4444);
+  box-shadow: 0 0 0 4px rgba(200, 16, 46, 0.16);
 }
 
+/* ===== Login Card (Right) ===== */
 .ukpn-login-card-shell {
   background: linear-gradient(180deg, rgba(245, 248, 255, 0.96), rgba(237, 243, 252, 0.93));
   padding: 34px 30px;
@@ -149,13 +265,14 @@
 
 .ukpn-login-card {
   height: 100%;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 22px;
-  border: 1px solid #dde6f2;
+  border: 1px solid rgba(221, 230, 242, 0.8);
   box-shadow: 0 18px 40px rgba(17, 36, 68, 0.12);
   padding: 26px 24px;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(10px);
 }
 
 .ukpn-login-card-top {
@@ -175,7 +292,7 @@
   font-size: 30px;
   line-height: 1.05;
   letter-spacing: -0.025em;
-  color: #1a2c4f;
+  color: #012169;
 }
 
 .ukpn-login-card-text {
@@ -185,6 +302,7 @@
   color: #5d6e89;
 }
 
+/* ===== Form ===== */
 .ukpn-login-form {
   margin-top: 26px;
   display: grid;
@@ -195,7 +313,7 @@
   display: block;
   font-size: 13px;
   font-weight: 700;
-  color: #2d3e5f;
+  color: #012169;
   margin-bottom: 8px;
 }
 
@@ -226,8 +344,8 @@
 
 .ukpn-login-input-wrap input:focus {
   outline: none;
-  border-color: #f37031;
-  box-shadow: 0 0 0 4px rgba(243, 112, 49, 0.2);
+  border-color: #C8102E;
+  box-shadow: 0 0 0 4px rgba(200, 16, 46, 0.12);
 }
 
 .ukpn-login-input-wrap input::placeholder {
@@ -244,6 +362,7 @@
   font-weight: 600;
 }
 
+/* ===== Submit Button ===== */
 .ukpn-login-submit {
   margin-top: 2px;
   border: 0;
@@ -253,25 +372,41 @@
   justify-content: center;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(136deg, #f0692d 0%, #d94510 100%);
+  background: linear-gradient(136deg, #C8102E 0%, #9a0c22 100%);
   color: #fff;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(210, 66, 18, 0.35);
+  box-shadow: 0 12px 24px rgba(200, 16, 46, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ukpn-login-submit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(136deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+
+.ukpn-login-submit:hover::before {
+  transform: translateX(100%);
 }
 
 .ukpn-login-submit:hover {
   transform: translateY(-1px);
-  box-shadow: 0 16px 28px rgba(210, 66, 18, 0.42);
+  box-shadow: 0 16px 32px rgba(200, 16, 46, 0.4);
 }
 
 .ukpn-login-submit:active {
   transform: translateY(0);
 }
 
+/* ===== Demo Section ===== */
 .ukpn-login-demo {
   margin-top: 20px;
   border-radius: 14px;
@@ -317,10 +452,11 @@
 }
 
 .ukpn-login-demo-item:hover {
-  border-color: #f4925d;
+  border-color: #C8102E;
   transform: translateY(-1px);
 }
 
+/* ===== Responsive ===== */
 @media (max-width: 980px) {
   .ukpn-login-layout {
     grid-template-columns: 1fr;

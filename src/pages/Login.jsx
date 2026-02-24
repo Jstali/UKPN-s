@@ -40,6 +40,19 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="ukpn-login-page">
+      {/* Background decorative elements */}
+      <div className="ukpn-login-texture" />
+      <div className="ukpn-login-orb ukpn-login-orb--red" />
+      <div className="ukpn-login-orb ukpn-login-orb--blue" />
+      <div className="ukpn-login-orb ukpn-login-orb--green" />
+      <div className="ukpn-login-sparks">
+        <div className="spark-line" style={{ top: '18%', width: '180px', animationDuration: '6s', animationDelay: '0s' }} />
+        <div className="spark-line" style={{ top: '42%', width: '120px', animationDuration: '8s', animationDelay: '2s' }} />
+        <div className="spark-line" style={{ top: '65%', width: '200px', animationDuration: '7s', animationDelay: '4s' }} />
+        <div className="spark-line" style={{ top: '82%', width: '150px', animationDuration: '9s', animationDelay: '1s' }} />
+        <div className="spark-line" style={{ top: '30%', width: '100px', animationDuration: '10s', animationDelay: '5s' }} />
+      </div>
+
       <motion.div
         className="ukpn-login-layout"
         initial={{ opacity: 0, y: 20 }}

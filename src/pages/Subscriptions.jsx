@@ -42,16 +42,16 @@ const Subscriptions = ({ user }) => {
   if (selectedApp) {
     return (
       <motion.div
-        className="page-container"
+        className="page-container subscriptions-page subscriptions-compact"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="breadcrumb">
+        <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
           <Link to="/">Home</Link> → <Link to="/subscriptions">Subscriptions</Link> → {selectedApp.application}
         </div>
-        <h1 className="page-title">{selectedApp.application}</h1>
+        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '12px' }}>{selectedApp.application}</h1>
 
-        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.75rem' }}>
           <button className="button button-secondary" onClick={() => setSelectedApp(null)}>
             <ArrowLeft size={16} /> Back
           </button>
@@ -147,17 +147,17 @@ const Subscriptions = ({ user }) => {
 
   return (
     <motion.div
-      className="page-container"
+      className="page-container subscriptions-page subscriptions-compact"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="breadcrumb">
+      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
         <Link to="/">Home</Link> → Subscriptions
       </div>
-      <h1 className="page-title">All Applications</h1>
+      <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '12px' }}>All Applications</h1>
 
-      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
         {canEdit && (
           <button className="button button-primary" onClick={() => setShowForm(true)}>
             <Plus size={16} /> Add New Subscription
@@ -290,23 +290,23 @@ const SubscriptionForm = ({ onBack }) => {
 
   return (
     <motion.div
-      className="page-container"
+      className="page-container subscriptions-page subscriptions-compact"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="breadcrumb">
+      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
         <Link to="/">Home</Link> → <span onClick={onBack} style={{ cursor: 'pointer', color: 'var(--ukpn-secondary)' }}>Subscriptions</span> → New
       </div>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <h1 className="page-title">Create New Subscription</h1>
-        <p style={{ color: '#9D1320', marginBottom: '2rem' }}>
+        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '4px' }}>Create New Subscription</h1>
+        <p style={{ color: '#9D1320', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
           Manually create and manage subscription rules
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="form-container">
-        <div className="form-section">
+        <div className="form-section basic-info-section">
           <h3>Basic Information</h3>
           <div className="form-group">
             <label>Filter ID</label>

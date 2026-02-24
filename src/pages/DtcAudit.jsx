@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FileText, GitBranch, Filter } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import DtcAuditTable from '../components/DtcAuditTable';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
@@ -11,7 +11,7 @@ import { exportToCSV } from '../utils/exportUtils';
 const DtcAudit = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
@@ -40,7 +40,7 @@ const DtcAudit = ({ user }) => {
   const handleQuery = (filterData) => {
     const filtersToUse = filterData || filters;
     if (!filtersToUse) return;
-    
+
     // Flatten the data - create one row per event
     let results = [];
     auditData.forEach(item => {
@@ -148,7 +148,7 @@ const DtcAudit = ({ user }) => {
   const toRoleOptions = ['All'];
   const toMPIDOptions = ['All'];
   const recAppOptions = ['All'];
-  
+
   const uniqueFlows = 0;
 
   // Role-based access - Business users only see flow details
@@ -179,64 +179,78 @@ const DtcAudit = ({ user }) => {
 
   return (
     <motion.div
-      className="page-container"
+      className="page-container dtc-audit-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="breadcrumb">
+      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
         <Link to="/">Home</Link> → DTC Audit
       </div>
       {isBusiness && (
-        <div style={{ 
-          background: '#dbeafe', 
-          border: '1px solid #93c5fd', 
-          padding: '12px 16px', 
-          borderRadius: '8px', 
-          marginBottom: '20px',
+        <div style={{
+          background: '#dbeafe',
+          border: '1px solid #93c5fd',
+          padding: '8px 14px',
+          borderRadius: '8px',
+          marginBottom: '10px',
           color: '#1e40af',
-          fontSize: '14px'
+          fontSize: '13px'
         }}>
           <strong>Business View:</strong> Showing flow details only
         </div>
       )}
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>DTC Audit</h1>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem' }}>DTC Audit</h1>
         <button
           onClick={() => navigate('/dtc-audit-filter')}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '10px 20px',
+            padding: '8px 18px',
             background: '#667eea',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '13px',
             fontWeight: '600'
           }}
         >
-          <Filter size={18} />
+          <Filter size={16} />
           Filters
         </button>
       </div>
 
-      <div className="summary-cards">
+      <div className="summary-cards" style={{ gap: '1rem', marginBottom: '1rem' }}>
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
           className="summary-card"
+          style={{ padding: '1rem' }}
         >
-          <div className="summary-icon" style={{ background: '#dbeafe', color: '#3b82f6' }}>
-            <FileText />
+          <div className="summary-icon" style={{
+            background: '#f5f3ff',
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <img
+              src={`${process.env.PUBLIC_URL}/download-removebg-preview.png`}
+              alt="Total Events"
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+            />
           </div>
           <div className="summary-content">
-            <h3>Total Events</h3>
-            <p><AnimatedCounter value={flattenedAuditData.length} /></p>
+            <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Total Events</h3>
+            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={flattenedAuditData.length} /></p>
           </div>
         </motion.div>
 
@@ -245,13 +259,27 @@ const DtcAudit = ({ user }) => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
           className="summary-card"
+          style={{ padding: '1rem' }}
         >
-          <div className="summary-icon" style={{ background: '#dcfce7', color: '#10b981' }}>
-            <GitBranch />
+          <div className="summary-icon" style={{
+            background: '#f0f9ff',
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <img
+              src={`${process.env.PUBLIC_URL}/iteration-removebg-preview.png`}
+              alt="Unique Flows"
+              style={{ width: '28px', height: '28px', objectFit: 'contain' }}
+            />
           </div>
           <div className="summary-content">
-            <h3>Unique Flows</h3>
-            <p><AnimatedCounter value={uniqueFlows} /></p>
+            <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Unique Flows</h3>
+            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={uniqueFlows} /></p>
           </div>
         </motion.div>
       </div>
@@ -304,8 +332,8 @@ const DtcAudit = ({ user }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
       >
-        <DataTable 
-          data={flattenedAuditData} 
+        <DataTable
+          data={flattenedAuditData}
           columns={columns}
           onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
         />
