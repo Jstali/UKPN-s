@@ -18,11 +18,11 @@ const Footer = () => {
         </div>
         <div className="footer-social">
           <span className="footer-chat">Chat with us online</span>
-          <a href="#" className="social-icon"><Facebook size={20} /></a>
-          <a href="#" className="social-icon"><Twitter size={20} /></a>
-          <a href="#" className="social-icon"><Youtube size={20} /></a>
-          <a href="#" className="social-icon"><Linkedin size={20} /></a>
-          <a href="#" className="social-icon"><MessageCircle size={20} /></a>
+          <a href="#" className="social-icon"><Facebook size={16} /></a>
+          <a href="#" className="social-icon"><Twitter size={16} /></a>
+          <a href="#" className="social-icon"><Youtube size={16} /></a>
+          <a href="#" className="social-icon"><Linkedin size={16} /></a>
+          <a href="#" className="social-icon"><MessageCircle size={16} /></a>
         </div>
       </div>
     </footer>

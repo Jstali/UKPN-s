@@ -39,7 +39,7 @@ const Header = ({ user, onLogout }) => {
           <img 
             src={`${process.env.PUBLIC_URL}/ukpn-logo.svg`}
             alt="UKPN"
-            style={{ height: '40px', width: 'auto' }}
+            style={{ height: '36px', width: 'auto' }}
           />
         </Link>
         {user && (
@@ -49,7 +49,7 @@ const Header = ({ user, onLogout }) => {
             gap: '20px', 
             marginLeft: 'auto'
           }}>
-            <div style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+            <div style={{ fontSize: '15px', fontWeight: '600', color: '#1f2937' }}>
               {greeting}, {user.username}
             </div>
             <div style={{ position: 'relative' }}>
@@ -59,17 +59,17 @@ const Header = ({ user, onLogout }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '8px 16px',
+                  padding: '7px 15px',
                   background: '#d44009',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '7px',
                   color: 'white',
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   fontWeight: '500'
                 }}
               >
-                <User size={20} />
+                <User size={18} />
                 <span>{user.role}</span>
               </button>
               {showDropdown && (

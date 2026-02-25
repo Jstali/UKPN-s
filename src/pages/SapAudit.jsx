@@ -53,7 +53,7 @@ const SapAudit = () => {
             flexShrink: 0
           }}>
             <img
-              src={`${process.env.PUBLIC_URL}/file-removebg-preview.png`}
+              src={`${process.env.PUBLIC_URL}/Total files.png`}
               alt="Total Files"
               style={{ width: '28px', height: '28px', objectFit: 'contain' }}
             />
@@ -82,7 +82,7 @@ const SapAudit = () => {
             flexShrink: 0
           }}>
             <img
-              src={`${process.env.PUBLIC_URL}/iteration-removebg-preview.png`}
+              src={`${process.env.PUBLIC_URL}/Total files.png`}
               alt="Unique Flows"
               style={{ width: '28px', height: '28px', objectFit: 'contain' }}
             />

@@ -61,7 +61,7 @@ const Login = ({ onLogin }) => {
       >
         <aside className="ukpn-login-brand">
           <img
-            src={`${process.env.PUBLIC_URL}/23134_ukpn_ar_23_doc_download_link_309x232px.avif`}
+            src={`${process.env.PUBLIC_URL}/Ukpn image 1.avif`}
             alt="UKPN document"
             className="ukpn-login-doc"
           />
