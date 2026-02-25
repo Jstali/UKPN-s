@@ -10,6 +10,7 @@ import Subscriptions from './pages/Subscriptions';
 import AuditDetails from './pages/AuditDetails';
 import FileView from './pages/FileView';
 import Analytics from './pages/Analytics';
+import PerformanceGraphPage from './pages/PerformanceGraphPage';
 import Login from './pages/Login';
 import ClickSpark from './components/ClickSpark';
 import './index.css';
@@ -65,6 +66,7 @@ function App() {
               <Route path="/subscriptions" element={<Subscriptions user={user} />} />
               <Route path="/audit-details" element={<AuditDetails />} />
               <Route path="/file-view/:fileId" element={<FileView />} />
+              <Route path="/performance-graph" element={<PerformanceGraphPage />} />
             </Routes>
           </main>
           <Footer />
