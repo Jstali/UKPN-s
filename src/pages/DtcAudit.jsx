@@ -259,7 +259,7 @@ const DtcAudit = ({ user }) => {
 
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="summary-card" style={{ padding: '1rem' }}>
           <div className="summary-icon" style={{ background: '#f0f9ff', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <img src={`${process.env.PUBLIC_URL}/Total files.png`} alt="Unique Flows" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <img src={`${process.env.PUBLIC_URL}/unique flows.jpg`} alt="Unique Flows" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
           </div>
           <div className="summary-content">
             <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Unique Flows</h3>
@@ -328,6 +328,7 @@ const DtcAudit = ({ user }) => {
           data={hasQueried ? filteredResults : flattenedAuditData}
           columns={columns}
           onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
+          exportConfig={{ filename: 'dtc_audit_report' }}
         />
       </motion.div>
     </motion.div>

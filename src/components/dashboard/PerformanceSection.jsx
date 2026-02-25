@@ -24,20 +24,20 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 24px', borderBottom: '1px solid #f1f5f9'
+          padding: '16px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Gauge size={18} color="#8b5cf6" />
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>Performance — Avg File Processing Time</h3>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
+          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#cbd5e1' }} />
-            Measured at: {dashboardUpdatedAt}
+            Updated: {dashboardUpdatedAt}
           </div>
           <span style={{
             fontSize: '12px', fontWeight: 600, color: '#8b5cf6',
             background: '#f5f3ff', padding: '4px 12px', borderRadius: '20px',
-            border: '1px solid #c4b5fd'
+            border: '1px solid #c4b5fd', flexShrink: 0
           }}>Last 24 hours</span>
         </div>
 

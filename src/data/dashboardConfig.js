@@ -27,9 +27,9 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
     label: 'Files Received',
     value: auditDataLength,
     iconSrc: 'File recieved.png',
-    color: '#16a34a',
-    bgColor: '#f0fdf4',
-    borderColor: '#bbf7d0',
+    color: '#7c3aed',
+    bgColor: '#f5f3ff',
+    borderColor: '#c4b5fd',
     trend: '+12%',
   },
   {
@@ -44,7 +44,7 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
   },
   {
     key: 'subscriptions',
-    label: 'Total Subscriptions',
+    label: 'Total Files Subscribed',
     value: 105,
     iconSrc: 'Subscription.png',
     color: '#16a34a',

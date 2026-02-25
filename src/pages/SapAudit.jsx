@@ -82,7 +82,7 @@ const SapAudit = () => {
             flexShrink: 0
           }}>
             <img
-              src={`${process.env.PUBLIC_URL}/Total files.png`}
+              src={`${process.env.PUBLIC_URL}/unique flows.jpg`}
               alt="Unique Flows"
               style={{ width: '28px', height: '28px', objectFit: 'contain' }}
             />

@@ -53,7 +53,7 @@ const Home = ({ user }) => {
         chartData: { labels: ['ADMS', 'Electralink', 'MPRS', 'MSBI'], values: [25, 20, 18, 15], colors: ['#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'] }
       },
       subscriptions: {
-        title: 'Total Subscriptions',
+        title: 'Total Files Subscribed',
         items: allSubscriptions.map(app => app.Application),
         value: 105,
         chartData: { labels: ['Valid', 'Invalid'], values: [78, 27], colors: ['#10b981', '#ef4444'] }
@@ -97,21 +97,32 @@ const Home = ({ user }) => {
             </h1>
             <div style={{ width: '44px', height: '3px', background: '#667eea', marginBottom: '0' }} />
           </div>
-          <button
-            onClick={handleToggleAutoRefresh}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '7px 16px', borderRadius: '8px',
-              border: `1.5px solid ${autoRefresh ? '#bbf7d0' : '#e2e8f0'}`,
-              background: autoRefresh ? '#f0fdf4' : '#f8fafc',
-              color: autoRefresh ? '#16a34a' : '#64748b',
-              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <RefreshCw size={14} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
-            {autoRefresh ? 'Disable Auto Refresh' : 'Enable Auto Refresh'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: autoRefresh ? '#16a34a' : '#94a3b8' }}>
+              Auto Refresh
+            </span>
+            <button
+              onClick={handleToggleAutoRefresh}
+              style={{
+                position: 'relative', width: '44px', height: '24px', borderRadius: '12px',
+                border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
+                background: autoRefresh ? '#22c55e' : '#cbd5e1',
+                padding: 0,
+              }}
+              title={autoRefresh ? 'Disable Auto Refresh' : 'Enable Auto Refresh'}
+            >
+              <div style={{
+                position: 'absolute', top: '2px',
+                left: autoRefresh ? '22px' : '2px',
+                width: '20px', height: '20px', borderRadius: '50%',
+                background: '#fff', transition: 'left 0.3s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <RefreshCw size={11} color={autoRefresh ? '#22c55e' : '#94a3b8'} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Edit Info Bar — marquee shows for all roles with canEditInfo or Business, Edit button hidden for Business */}

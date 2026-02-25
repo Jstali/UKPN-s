@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, Download } from 'lucide-react';
+import ExportDropdown from './ExportDropdown';
+import EmailModal from './EmailModal';
+import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 
-const DataTable = ({ data, columns, onDownload }) => {
+const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   const filteredData = data.filter(item =>
     Object.values(item).some(val =>
@@ -78,20 +82,32 @@ const DataTable = ({ data, columns, onDownload }) => {
             </button>
           )}
         </div>
-        <select
-          className="page-size-selector"
-          value={pageSize}
-          onChange={(e) => {
-            setPageSize(Number(e.target.value));
-            setCurrentPage(1);
-          }}
-        >
-          <option value={10}>10 per page</option>
-          <option value={25}>25 per page</option>
-          <option value={50}>50 per page</option>
-          <option value={100}>100 per page</option>
-        </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {exportConfig && (
+            <ExportDropdown
+              onExportPDF={() => exportToPDF(sortedData, columns, exportConfig.filename)}
+              onExportExcel={() => exportToExcel(sortedData, columns, exportConfig.filename)}
+              onExportCSV={() => exportToCSV(sortedData, columns, exportConfig.filename)}
+              onSendEmail={() => setShowEmailModal(true)}
+            />
+          )}
+          <select
+            className="page-size-selector"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+        </div>
       </div>
+
+      {showEmailModal && <EmailModal onClose={() => setShowEmailModal(false)} />}
 
       <table className="data-table">
         <thead>
