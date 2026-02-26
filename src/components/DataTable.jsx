@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X } from 'lucide-react';
 import ExportDropdown from './ExportDropdown';
@@ -168,6 +168,32 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
   const filterBtnRefs = useRef({});
+  const [colWidths, setColWidths] = useState({});
+  const resizing = useRef(null);
+
+  const handleResizeStart = useCallback((colKey, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const th = e.target.parentElement;
+    const startWidth = th.offsetWidth;
+
+    const onMouseMove = (moveE) => {
+      const diff = moveE.clientX - startX;
+      const newWidth = Math.max(60, startWidth + diff);
+      setColWidths(prev => ({ ...prev, [colKey]: newWidth }));
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      resizing.current = null;
+    };
+
+    resizing.current = colKey;
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, []);
 
   // Global search
   const globalFiltered = data.filter(item =>
@@ -306,111 +332,141 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
 
       {showEmailModal && <EmailModal onClose={() => setShowEmailModal(false)} />}
 
-      <table className="data-table">
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={{ position: 'relative', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span
-                    onClick={() => handleSort(col.key)}
-                    style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: '3px' }}
-                  >
-                    {col.label}
-                    <span style={{ display: 'inline-flex', flexDirection: 'column', marginLeft: '2px', lineHeight: 0 }}>
-                      <ArrowUp
-                        size={10}
-                        color={sortConfig.key === col.key && sortConfig.direction === 'asc' ? '#4c4ebd' : '#cbd5e1'}
-                        strokeWidth={sortConfig.key === col.key && sortConfig.direction === 'asc' ? 3 : 2}
-                        style={{ marginBottom: '-1px' }}
-                      />
-                      <ArrowDown
-                        size={10}
-                        color={sortConfig.key === col.key && sortConfig.direction === 'desc' ? '#4c4ebd' : '#cbd5e1'}
-                        strokeWidth={sortConfig.key === col.key && sortConfig.direction === 'desc' ? 3 : 2}
-                        style={{ marginTop: '-1px' }}
-                      />
-                    </span>
-                  </span>
-                  <button
-                    ref={(el) => { filterBtnRefs.current[col.key] = el; }}
-                    onClick={(e) => toggleFilter(col.key, e)}
-                    title={`Filter ${col.label}`}
-                    style={{
-                      background: columnFilters[col.key] ? '#eef2ff' : 'transparent',
-                      border: 'none', cursor: 'pointer', padding: '2px',
-                      borderRadius: '4px', display: 'flex', alignItems: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {DATE_COLUMNS.includes(col.key) ? (
-                      <Calendar size={12} color={columnFilters[col.key] ? '#4c4ebd' : '#94a3b8'} />
-                    ) : (
-                      <Filter size={12} color={columnFilters[col.key] ? '#4c4ebd' : '#94a3b8'} />
-                    )}
-                  </button>
-                </div>
-                {activeFilter === col.key && (
-                  <ColumnFilterPopover
-                    col={col}
-                    columnFilters={columnFilters}
-                    setColumnFilters={(fn) => { setColumnFilters(fn); setCurrentPage(1); }}
-                    onClose={() => setActiveFilter(null)}
-                    allData={data}
-                    anchorRef={{ current: filterBtnRefs.current[col.key] }}
-                  />
-                )}
-              </th>
-            ))}
-            {onDownload && <th style={{ width: '80px' }}>Action</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedData.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
-                No records found
-              </td>
-            </tr>
-          ) : (
-            paginatedData.map((row, idx) => (
-              <tr key={idx}>
-                {columns.map((col) => (
-                  <td key={col.key}>
-                    {col.key === 'status' ? (
-                      <span className={`status-badge ${getStatusClass(row[col.key])}`}>
-                        {row[col.key]}
-                      </span>
-                    ) : col.key === 'application' ? (
-                      <span
-                        style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
-                        onClick={() => navigate(`/audit-details`, { state: { record: row } })}
-                      >
-                        {row[col.key]}
-                      </span>
-                    ) : (
-                      row[col.key]
-                    )}
-                  </td>
-                ))}
-                {onDownload && (
-                  <td>
-                    <button
-                      className="table-download-btn"
-                      onClick={() => onDownload(row)}
-                      title="Download"
-                    >
-                      <Download size={16} />
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))
+      <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+        <table
+          className="data-table"
+          style={Object.keys(colWidths).length > 0 ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : undefined}
+        >
+          {Object.keys(colWidths).length > 0 && (
+            <colgroup>
+              {columns.map((col) => (
+                <col key={col.key} style={{ width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined }} />
+              ))}
+              {onDownload && <col style={{ width: '80px' }} />}
+            </colgroup>
           )}
-        </tbody>
-      </table>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  style={{
+                    position: 'sticky', top: 0, zIndex: 20, userSelect: 'none',
+                    width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined,
+                    minWidth: '60px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span
+                      onClick={() => handleSort(col.key)}
+                      style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}
+                    >
+                      {col.label}
+                      <span style={{ display: 'inline-flex', flexDirection: 'column', marginLeft: '2px', lineHeight: 0, flexShrink: 0 }}>
+                        <ArrowUp
+                          size={10}
+                          color={sortConfig.key === col.key && sortConfig.direction === 'asc' ? '#4c4ebd' : '#cbd5e1'}
+                          strokeWidth={sortConfig.key === col.key && sortConfig.direction === 'asc' ? 3 : 2}
+                          style={{ marginBottom: '-1px' }}
+                        />
+                        <ArrowDown
+                          size={10}
+                          color={sortConfig.key === col.key && sortConfig.direction === 'desc' ? '#4c4ebd' : '#cbd5e1'}
+                          strokeWidth={sortConfig.key === col.key && sortConfig.direction === 'desc' ? 3 : 2}
+                          style={{ marginTop: '-1px' }}
+                        />
+                      </span>
+                    </span>
+                    <button
+                      ref={(el) => { filterBtnRefs.current[col.key] = el; }}
+                      onClick={(e) => toggleFilter(col.key, e)}
+                      title={`Filter ${col.label}`}
+                      style={{
+                        background: columnFilters[col.key] ? '#eef2ff' : 'transparent',
+                        border: 'none', cursor: 'pointer', padding: '2px',
+                        borderRadius: '4px', display: 'flex', alignItems: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {DATE_COLUMNS.includes(col.key) ? (
+                        <Calendar size={12} color={columnFilters[col.key] ? '#4c4ebd' : '#94a3b8'} />
+                      ) : (
+                        <Filter size={12} color={columnFilters[col.key] ? '#4c4ebd' : '#94a3b8'} />
+                      )}
+                    </button>
+                  </div>
+                  {/* Resize handle */}
+                  <div
+                    onMouseDown={(e) => handleResizeStart(col.key, e)}
+                    style={{
+                      position: 'absolute', right: 0, top: 0, bottom: 0, width: '5px',
+                      cursor: 'col-resize', zIndex: 25,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  />
+                  {activeFilter === col.key && (
+                    <ColumnFilterPopover
+                      col={col}
+                      columnFilters={columnFilters}
+                      setColumnFilters={(fn) => { setColumnFilters(fn); setCurrentPage(1); }}
+                      onClose={() => setActiveFilter(null)}
+                      allData={data}
+                      anchorRef={{ current: filterBtnRefs.current[col.key] }}
+                    />
+                  )}
+                </th>
+              ))}
+              {onDownload && <th style={{ width: '80px', position: 'sticky', top: 0, zIndex: 20 }}>Action</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedData.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                  No records found
+                </td>
+              </tr>
+            ) : (
+              paginatedData.map((row, idx) => (
+                <tr key={idx}>
+                  {columns.map((col) => (
+                    <td key={col.key}>
+                      {col.key === 'status' ? (
+                        <span className={`status-badge ${getStatusClass(row[col.key])}`}>
+                          {row[col.key]}
+                        </span>
+                      ) : col.key === 'application' ? (
+                        <span
+                          style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
+                          onClick={() => navigate(`/audit-details`, { state: { record: row } })}
+                        >
+                          {row[col.key]}
+                        </span>
+                      ) : (
+                        row[col.key]
+                      )}
+                    </td>
+                  ))}
+                  {onDownload && (
+                    <td>
+                      <button
+                        className="table-download-btn"
+                        onClick={() => onDownload(row)}
+                        title="Download"
+                      >
+                        <Download size={16} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      <div className="pagination">
+      <div className="pagination" style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', padding: '12px 0', marginTop: '0' }}>
         <div className="pagination-info">
           Showing {sortedData.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + pageSize, sortedData.length)} of {sortedData.length} entries
         </div>
