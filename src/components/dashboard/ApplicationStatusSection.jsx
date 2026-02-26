@@ -5,7 +5,7 @@ import { APP_STATUS_ITEMS } from '../../data/dashboardConfig';
 
 const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
   return (
-    <div style={{ padding: '10px 24px', marginTop: '16px' }}>
+    <div style={{ padding: '0 24px', marginTop: '10px' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -21,7 +21,7 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
+          padding: '12px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
         }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Activity size={18} color="#667eea" />
@@ -39,14 +39,14 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
         </div>
 
         {/* Overall Status */}
-        <div style={{ padding: '18px 24px' }}>
+        <div style={{ padding: '12px 20px' }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '16px 20px', borderRadius: '12px',
+              padding: '12px 18px', borderRadius: '10px',
               border: '1.5px solid #d1fae5', background: '#f0fdf4'
             }}
           >

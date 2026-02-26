@@ -7,7 +7,7 @@ const FileStatusSection = ({ auditDataLength, dashboardUpdatedAt, onShowDetails 
   const items = FILE_STATUS_ITEMS(auditDataLength);
 
   return (
-    <div style={{ padding: '10px 24px', marginTop: '16px' }}>
+    <div style={{ padding: '0 24px', marginTop: '10px' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -23,7 +23,7 @@ const FileStatusSection = ({ auditDataLength, dashboardUpdatedAt, onShowDetails 
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
+          padding: '12px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
         }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
@@ -46,7 +46,7 @@ const FileStatusSection = ({ auditDataLength, dashboardUpdatedAt, onShowDetails 
         </div>
 
         {/* Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', padding: '18px 24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', padding: '12px 20px' }}>
           {items.map((item, index) => (
             <motion.div
               key={item.key}
@@ -55,20 +55,20 @@ const FileStatusSection = ({ auditDataLength, dashboardUpdatedAt, onShowDetails 
               transition={{ delay: 0.4 + index * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
               onClick={() => onShowDetails(item.key)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '14px',
-                padding: '16px 16px', borderRadius: '12px',
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '12px 12px', borderRadius: '10px',
                 border: `1.5px solid ${item.borderColor}`,
-                background: item.bgColor, cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                background: item.bgColor, cursor: 'pointer'
               }}
-              whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              whileHover={{ y: -3, boxShadow: '0 6px 16px rgba(0,0,0,0.1)', scale: 1.02, transition: { duration: 0.15 } }}
+              whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
             >
               <div style={{
-                width: '42px', height: '42px', borderRadius: '10px',
+                width: '36px', height: '36px', borderRadius: '8px',
                 background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
               }}>
-                <img src={`${process.env.PUBLIC_URL}/${item.iconSrc}`} alt={item.label} style={{ width: 38, height: 38, objectFit: 'contain' }} />
+                <img src={`${process.env.PUBLIC_URL}/${item.iconSrc}`} alt={item.label} style={{ width: 30, height: 30, objectFit: 'contain' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '18px', fontWeight: 800, color: item.color, lineHeight: 1 }}>

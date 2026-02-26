@@ -8,7 +8,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ padding: '10px 24px', marginTop: '16px' }}>
+    <div style={{ padding: '0 24px', marginTop: '10px' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -24,7 +24,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
+          padding: '12px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
         }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Gauge size={18} color="#8b5cf6" />
@@ -41,11 +41,11 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
           }}>Last 24 hours</span>
         </div>
 
-        <div style={{ padding: '18px 24px' }}>
+        <div style={{ padding: '12px 20px' }}>
           {/* Overall Average */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 18px', background: '#f8fafc', borderRadius: '10px', marginBottom: '14px'
+            padding: '10px 16px', background: '#f8fafc', borderRadius: '8px', marginBottom: '10px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Clock size={18} color="#64748b" />
@@ -55,7 +55,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
           </div>
 
           {/* Per-Application Breakdown */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
             {PERFORMANCE_ITEMS.map((app, index) => {
               const ratio = Math.min(app.actual / (app.threshold * 2), 1);
 
@@ -67,15 +67,15 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
                   transition={{ delay: 0.6 + index * 0.06 }}
                   onClick={() => navigate('/performance-graph', { state: { app } })}
                   style={{
-                    padding: '16px 16px', borderRadius: '12px',
+                    padding: '12px 14px', borderRadius: '10px',
                     border: '1.5px solid #e2e8f0',
                     background: '#ffffff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    cursor: 'pointer'
                   }}
-                  whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  whileHover={{ y: -3, boxShadow: '0 6px 16px rgba(0,0,0,0.1)', scale: 1.02, transition: { duration: 0.15 } }}
+                  whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{app.name}</span>
                     <span style={{ fontSize: '16px', fontWeight: 800, color: '#16a34a' }}>{app.avgTime}</span>
                   </div>

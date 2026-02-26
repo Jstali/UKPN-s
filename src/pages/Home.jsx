@@ -87,7 +87,7 @@ const Home = ({ user }) => {
 
   return (
     <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: '100%' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '32px', paddingLeft: '48px', paddingRight: '48px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '16px', paddingLeft: '48px', paddingRight: '48px' }}>
 
         {/* Welcome Heading + Auto Refresh */}
         <div style={{ padding: '14px 24px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -187,8 +187,8 @@ const Home = ({ user }) => {
         )}
 
         {/* Navigation Cards */}
-        <div style={{ padding: '0 24px', marginTop: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+        <div style={{ padding: '0 24px', marginTop: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
             {NAV_CARDS.map((item) => (
               <motion.div
                 key={item.path}
@@ -198,18 +198,19 @@ const Home = ({ user }) => {
                 onClick={() => navigate(item.path)}
                 style={{
                   background: '#ffffff', border: '2px solid #e2e8f0', borderRadius: '14px',
-                  padding: '20px 22px', cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', gap: '16px', transition: 'all 0.2s ease',
+                  padding: '14px 18px', cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', gap: '16px',
                   boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
                 }}
-                whileHover={{ y: -3, boxShadow: '0 6px 20px rgba(0,0,0,0.1)' }}
+                whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(102,126,234,0.18)', borderColor: '#667eea', scale: 1.02, transition: { duration: 0.15 } }}
+                whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
               >
                 <div style={{
-                  width: '52px', height: '52px', borderRadius: '12px', background: 'white',
+                  width: '44px', height: '44px', borderRadius: '10px', background: 'white',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
                 }}>
-                  <img src={`${process.env.PUBLIC_URL}/${item.icon}`} alt={item.label} style={{ width: 44, height: 44, objectFit: 'contain' }} />
+                  <img src={`${process.env.PUBLIC_URL}/${item.icon}`} alt={item.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '16px', fontWeight: '700', color: '#1f2937', marginBottom: '3px' }}>{item.label}</div>
