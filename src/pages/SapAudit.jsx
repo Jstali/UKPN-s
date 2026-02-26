@@ -1,14 +1,37 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
+import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
 import { sapAuditData } from '../data/mockData';
 import { exportToCSV } from '../utils/exportUtils';
 
 const SapAudit = () => {
   const uniqueFlows = [...new Set(sapAuditData.map(item => item.flow))].length;
+
+  const flowCounts = useMemo(() => {
+    const counts = {};
+    sapAuditData.forEach(row => {
+      const flow = row.flow || 'UNKNOWN';
+      counts[flow] = (counts[flow] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, []);
+
+  const eventTypeCounts = useMemo(() => {
+    const counts = {};
+    sapAuditData.forEach(row => {
+      const et = row.eventType || 'Unknown';
+      counts[et] = (counts[et] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, []);
 
   const columns = [
     { key: 'uniqueId', label: 'Unique ID' },
@@ -94,10 +117,29 @@ const SapAudit = () => {
         </motion.div>
       </div>
 
+      {/* Color Bars */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        style={{
+          background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
+          padding: '18px 24px', marginBottom: '16px',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)',
+        }}
+      >
+        {flowCounts.length > 0 && (
+          <ColorBar data={flowCounts} label="Flows" colors={FLOW_COLORS} />
+        )}
+        {eventTypeCounts.length > 0 && (
+          <ColorBar data={eventTypeCounts} label="Event Type" colors={EVENT_TYPE_COLORS} />
+        )}
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.5 }}
       >
         <DataTable
           data={sapAuditData}
