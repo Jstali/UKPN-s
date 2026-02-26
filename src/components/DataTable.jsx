@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X } from 'lucide-react';
 import ExportDropdown from './ExportDropdown';
@@ -7,10 +7,32 @@ import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
 
-const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose }) => {
+// Wildcard matching: cos* = startsWith, *cos = endsWith, *cos* = contains, plain = contains
+const wildcardMatch = (value, pattern) => {
+  const val = value.toLowerCase();
+  const pat = pattern.toLowerCase();
+  const startsWithStar = pat.startsWith('*');
+  const endsWithStar = pat.endsWith('*');
+  const core = pat.replace(/^\*|\*$/g, '');
+  if (!core) return true;
+  if (startsWithStar && endsWithStar) return val.includes(core);
+  if (startsWithStar) return val.endsWith(core);
+  if (endsWithStar) return val.startsWith(core);
+  return val.includes(core);
+};
+
+const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
   const ref = useRef(null);
   const isDateCol = DATE_COLUMNS.includes(col.key);
   const filterVal = columnFilters[col.key] || '';
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (anchorRef?.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [anchorRef]);
 
   useEffect(() => {
     const handle = (e) => {
@@ -29,27 +51,46 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose }) 
     });
   };
 
+  const handleSelect = (val) => {
+    handleChange(val);
+    onClose();
+  };
+
+  // Get unique values for this column and filter by wildcard pattern
+  const matchingValues = useMemo(() => {
+    if (isDateCol || !filterVal) return [];
+    const unique = [...new Set(allData.map(row => String(row[col.key] || '')).filter(Boolean))];
+    return unique.filter(v => wildcardMatch(v, filterVal)).sort();
+  }, [allData, col.key, filterVal, isDateCol]);
+
+  const showDropdown = !isDateCol && filterVal && matchingValues.length > 0;
+
   return (
     <div
       ref={ref}
       onClick={(e) => e.stopPropagation()}
       style={{
-        position: 'absolute', top: '100%', left: 0, zIndex: 100,
+        position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999,
         background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: '10px',
-        minWidth: isDateCol ? '200px' : '180px', marginTop: '4px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.15)', padding: '12px',
+        minWidth: '240px', maxWidth: '320px',
       }}
     >
       <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>
         {isDateCol ? 'Filter by date' : `Filter ${col.label}`}
       </div>
+      {!isDateCol && (
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '6px' }}>
+          Use * as wildcard: cos*, *cos, *cos*
+        </div>
+      )}
       {isDateCol ? (
         <input
           type="date"
           value={filterVal}
           onChange={(e) => handleChange(e.target.value)}
           style={{
-            width: '100%', padding: '6px 8px', border: '1.5px solid #e2e8f0',
+            width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
             borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box',
           }}
           onFocus={(e) => (e.target.style.borderColor = '#4c4ebd')}
@@ -63,7 +104,7 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose }) 
           onChange={(e) => handleChange(e.target.value)}
           placeholder={`Search ${col.label}...`}
           style={{
-            width: '100%', padding: '6px 8px', border: '1.5px solid #e2e8f0',
+            width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
             borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box',
           }}
           onFocus={(e) => (e.target.style.borderColor = '#4c4ebd')}
@@ -71,11 +112,41 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose }) 
           autoFocus
         />
       )}
+      {showDropdown && (
+        <div style={{
+          marginTop: '6px', maxHeight: '180px', overflowY: 'auto',
+          border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff',
+        }}>
+          <div style={{ padding: '4px 10px', fontSize: '10px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>
+            {matchingValues.length} match{matchingValues.length !== 1 ? 'es' : ''} found
+          </div>
+          {matchingValues.map((val) => (
+            <div
+              key={val}
+              onClick={() => handleSelect(val)}
+              style={{
+                padding: '7px 10px', fontSize: '12px', color: '#334155',
+                cursor: 'pointer', borderBottom: '1px solid #f1f5f9',
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#eef2ff')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              {val}
+            </div>
+          ))}
+        </div>
+      )}
+      {!isDateCol && filterVal && matchingValues.length === 0 && (
+        <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', textAlign: 'center', padding: '6px 0' }}>
+          No matches found
+        </div>
+      )}
       {filterVal && (
         <button
           onClick={() => handleChange('')}
           style={{
-            marginTop: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 600,
+            marginTop: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: 600,
             background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0',
             borderRadius: '6px', cursor: 'pointer', width: '100%',
           }}
@@ -96,6 +167,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
+  const filterBtnRefs = useRef({});
 
   // Global search
   const globalFiltered = data.filter(item =>
@@ -104,13 +176,12 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
     )
   );
 
-  // Per-column filters
+  // Per-column filters (supports wildcard: cos*, *cos, *cos*)
   const filteredData = globalFiltered.filter(item => {
     return Object.entries(columnFilters).every(([key, val]) => {
       if (!val) return true;
       const cellVal = String(item[key] || '');
       if (DATE_COLUMNS.includes(key)) {
-        // Match date portion: val is YYYY-MM-DD, cellVal is dd/MM/yyyy HH:mm:ss
         const parts = cellVal.split(' ')[0]?.split('/');
         if (parts && parts.length === 3) {
           const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
@@ -118,7 +189,11 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
         }
         return cellVal.includes(val);
       }
-      return cellVal.toLowerCase().includes(val.toLowerCase());
+      // If filter has no wildcard and matches an exact value (user picked from dropdown), do exact match
+      if (!val.includes('*')) {
+        return cellVal.toLowerCase() === val.toLowerCase() || cellVal.toLowerCase().includes(val.toLowerCase());
+      }
+      return wildcardMatch(cellVal, val);
     });
   });
 
@@ -258,6 +333,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
                     </span>
                   </span>
                   <button
+                    ref={(el) => { filterBtnRefs.current[col.key] = el; }}
                     onClick={(e) => toggleFilter(col.key, e)}
                     title={`Filter ${col.label}`}
                     style={{
@@ -280,6 +356,8 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
                     columnFilters={columnFilters}
                     setColumnFilters={(fn) => { setColumnFilters(fn); setCurrentPage(1); }}
                     onClose={() => setActiveFilter(null)}
+                    allData={data}
+                    anchorRef={{ current: filterBtnRefs.current[col.key] }}
                   />
                 )}
               </th>

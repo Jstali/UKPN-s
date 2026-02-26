@@ -40,11 +40,13 @@ const flattenAuditEvents = (data) => {
         flatData.push({
           ...item,
           flowVersion: parsed.flowVersion || 'UNKNOWN',
+          fileId: item.File_ID || '',
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
           toRole: parsed.toRole,
           toMPID: parsed.toMPID,
           recApp: parsed.recApp,
+          fileName: item.Source_FileName,
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Event_Type || 'Unknown',
           status: event.Status || 'Unknown',
