@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { Filter, RotateCcw, ChevronDown } from 'lucide-react';
@@ -34,10 +34,17 @@ const parseHeader = (headerStr) => {
 const flattenAuditEvents = (data) => {
   const flatData = [];
   data.forEach(item => {
+    const parsed = parseHeader(item.Header_String);
     if (item.events && item.events.length > 0) {
       item.events.forEach(event => {
         flatData.push({
           ...item,
+          flowVersion: parsed.flowVersion || 'UNKNOWN',
+          fromRole: parsed.fromRole,
+          fromMPID: parsed.fromMPID,
+          toRole: parsed.toRole,
+          toMPID: parsed.toMPID,
+          recApp: parsed.recApp,
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Event_Type || 'Unknown',
           status: event.Status || 'Unknown',
@@ -135,6 +142,89 @@ const CRITERIA_FIELDS = [
   { label: 'Search File Contents', key: 'searchFileContents' },
 ];
 
+const FLOW_COLORS = [
+  '#1e40af', '#7c3aed', '#0d9488', '#b45309', '#be123c',
+  '#4338ca', '#0369a1', '#15803d', '#a16207', '#9333ea',
+  '#0f766e', '#c2410c', '#1d4ed8', '#7e22ce', '#047857',
+  '#b91c1c', '#4f46e5', '#0e7490', '#65a30d', '#dc2626',
+];
+
+const APP_COLORS = [
+  '#0891b2', '#d97706', '#7c3aed', '#059669', '#e11d48',
+  '#2563eb', '#c026d3', '#ca8a04', '#0d9488', '#9333ea',
+  '#dc2626', '#0284c7', '#16a34a', '#db2777', '#ea580c',
+  '#4f46e5', '#0e7490', '#65a30d', '#be185d', '#1d4ed8',
+];
+
+const ColorBar = ({ data, label, colors }) => {
+  const [hovered, setHovered] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ left: 0 });
+  const barRef = React.useRef(null);
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+
+  const handleMouseEnter = useCallback((i, e) => {
+    setHovered(i);
+    if (barRef.current) {
+      const barRect = barRef.current.getBoundingClientRect();
+      const segRect = e.currentTarget.getBoundingClientRect();
+      const segCenter = segRect.left + segRect.width / 2 - barRect.left;
+      setTooltipPos({ left: segCenter });
+    }
+  }, []);
+
+  return (
+    <div style={{ marginBottom: '14px', position: 'relative' }}>
+      <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>{label}</div>
+      <div style={{ position: 'relative' }}>
+        {hovered !== null && (
+          <div style={{
+            position: 'absolute', bottom: '100%', left: tooltipPos.left,
+            transform: 'translateX(-50%)', marginBottom: '6px',
+            background: '#1e293b', color: '#fff', padding: '6px 12px', borderRadius: '8px',
+            fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', zIndex: 50,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)', pointerEvents: 'none',
+          }}>
+            {data[hovered].name}: {data[hovered].count}
+            <div style={{
+              position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+              width: 0, height: 0, borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent', borderTop: '5px solid #1e293b',
+            }} />
+          </div>
+        )}
+        <div ref={barRef} style={{
+          display: 'flex', height: '28px', borderRadius: '8px', overflow: 'hidden',
+          border: '1px solid #e2e8f0',
+        }}>
+          {data.map((item, i) => {
+            const widthPct = (item.count / total) * 100;
+            return (
+              <div
+                key={item.name}
+                onMouseEnter={(e) => handleMouseEnter(i, e)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  width: `${widthPct}%`, background: colors[i % colors.length],
+                  cursor: 'pointer', transition: 'opacity 0.2s',
+                  opacity: hovered !== null && hovered !== i ? 0.5 : 1,
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', marginTop: '8px' }}>
+        {data.map((item, i) => (
+          <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#64748b' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: colors[i % colors.length], flexShrink: 0 }} />
+            {item.name}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const DtcAudit = ({ user }) => {
   const location = useLocation();
 
@@ -192,6 +282,30 @@ const DtcAudit = ({ user }) => {
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
   const columns = hasQueried ? FILTERED_COLUMNS : defaultColumns;
+
+  const tableData = hasQueried ? filteredResults : flattenedAuditData;
+
+  const flowCounts = useMemo(() => {
+    const counts = {};
+    tableData.forEach(row => {
+      const flow = row.flowVersion || 'UNKNOWN';
+      counts[flow] = (counts[flow] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [tableData]);
+
+  const appCounts = useMemo(() => {
+    const counts = {};
+    tableData.forEach(row => {
+      const app = row.application || 'Unknown';
+      counts[app] = (counts[app] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [tableData]);
 
   return (
     <motion.div
@@ -321,6 +435,25 @@ const DtcAudit = ({ user }) => {
           </div>
         </motion.div>
       )}
+
+      {/* Color Bars */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        style={{
+          background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
+          padding: '18px 24px', marginBottom: '16px',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)',
+        }}
+      >
+        {flowCounts.length > 0 && (
+          <ColorBar data={flowCounts} label="Flows" colors={FLOW_COLORS} />
+        )}
+        {appCounts.length > 0 && (
+          <ColorBar data={appCounts} label="Applications" colors={APP_COLORS} />
+        )}
+      </motion.div>
 
       {/* Data Table */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>

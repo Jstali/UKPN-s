@@ -395,7 +395,7 @@ code {
 
 .table-container table {
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto;
   word-wrap: break-word;
 }
 
@@ -417,8 +417,8 @@ code {
   background: #f9fafb;
   border-bottom: 2px solid #e5e7eb;
   white-space: nowrap;
-  position: sticky;
-  top: 0;
+  position: relative;
+  overflow: visible;
   z-index: 10;
 }
 
@@ -483,6 +483,8 @@ code {
   cursor: pointer;
   user-select: none;
   font-family: inherit;
+  position: relative;
+  overflow: visible;
 }
 
 .data-table th:hover {
@@ -1794,6 +1796,7 @@ pre {
 .dtc-audit-page .data-table th {
   padding: 0.6rem 0.75rem;
   font-size: 0.75rem;
+  overflow: visible;
 }
 
 .dtc-audit-page .data-table td {

@@ -1,9 +1,91 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X } from 'lucide-react';
 import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
+
+const DATE_COLUMNS = ['created', 'timestamp'];
+
+const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose }) => {
+  const ref = useRef(null);
+  const isDateCol = DATE_COLUMNS.includes(col.key);
+  const filterVal = columnFilters[col.key] || '';
+
+  useEffect(() => {
+    const handle = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [onClose]);
+
+  const handleChange = (val) => {
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      if (val) next[col.key] = val;
+      else delete next[col.key];
+      return next;
+    });
+  };
+
+  return (
+    <div
+      ref={ref}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'absolute', top: '100%', left: 0, zIndex: 100,
+        background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: '10px',
+        minWidth: isDateCol ? '200px' : '180px', marginTop: '4px',
+      }}
+    >
+      <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>
+        {isDateCol ? 'Filter by date' : `Filter ${col.label}`}
+      </div>
+      {isDateCol ? (
+        <input
+          type="date"
+          value={filterVal}
+          onChange={(e) => handleChange(e.target.value)}
+          style={{
+            width: '100%', padding: '6px 8px', border: '1.5px solid #e2e8f0',
+            borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box',
+          }}
+          onFocus={(e) => (e.target.style.borderColor = '#4c4ebd')}
+          onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+          autoFocus
+        />
+      ) : (
+        <input
+          type="text"
+          value={filterVal}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={`Search ${col.label}...`}
+          style={{
+            width: '100%', padding: '6px 8px', border: '1.5px solid #e2e8f0',
+            borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box',
+          }}
+          onFocus={(e) => (e.target.style.borderColor = '#4c4ebd')}
+          onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+          autoFocus
+        />
+      )}
+      {filterVal && (
+        <button
+          onClick={() => handleChange('')}
+          style={{
+            marginTop: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 600,
+            background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0',
+            borderRadius: '6px', cursor: 'pointer', width: '100%',
+          }}
+        >
+          Clear
+        </button>
+      )}
+    </div>
+  );
+};
 
 const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   const navigate = useNavigate();
@@ -12,12 +94,33 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   const [pageSize, setPageSize] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [columnFilters, setColumnFilters] = useState({});
+  const [activeFilter, setActiveFilter] = useState(null);
 
-  const filteredData = data.filter(item =>
+  // Global search
+  const globalFiltered = data.filter(item =>
     Object.values(item).some(val =>
       String(val).toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
+  // Per-column filters
+  const filteredData = globalFiltered.filter(item => {
+    return Object.entries(columnFilters).every(([key, val]) => {
+      if (!val) return true;
+      const cellVal = String(item[key] || '');
+      if (DATE_COLUMNS.includes(key)) {
+        // Match date portion: val is YYYY-MM-DD, cellVal is dd/MM/yyyy HH:mm:ss
+        const parts = cellVal.split(' ')[0]?.split('/');
+        if (parts && parts.length === 3) {
+          const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          return cellDate === val;
+        }
+        return cellVal.includes(val);
+      }
+      return cellVal.toLowerCase().includes(val.toLowerCase());
+    });
+  });
 
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortConfig.key) return 0;
@@ -29,8 +132,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   });
 
   const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
-  
-  // Reset to page 1 if current page exceeds total pages
+
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
@@ -46,6 +148,13 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
     });
   };
+
+  const toggleFilter = (key, e) => {
+    e.stopPropagation();
+    setActiveFilter(prev => prev === key ? null : key);
+  };
+
+  const activeFilterCount = Object.keys(columnFilters).filter(k => columnFilters[k]).length;
 
   const getStatusClass = (status) => {
     if (status === 'Success') return 'status-success';
@@ -70,7 +179,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
             }}
           />
           {searchTerm && (
-            <button 
+            <button
               className="search-clear-btn"
               onClick={() => {
                 setSearchTerm('');
@@ -83,6 +192,19 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => { setColumnFilters({}); setCurrentPage(1); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '6px 12px', background: '#fef2f2', color: '#dc2626',
+                border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer',
+                fontSize: '11px', fontWeight: 600,
+              }}
+            >
+              <X size={12} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+            </button>
+          )}
           {exportConfig && (
             <ExportDropdown
               onExportPDF={() => exportToPDF(sortedData, columns, exportConfig.filename)}
@@ -113,53 +235,106 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key} onClick={() => handleSort(col.key)}>
-                {col.label}
+              <th key={col.key} style={{ position: 'relative', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span
+                    onClick={() => handleSort(col.key)}
+                    style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: '3px' }}
+                  >
+                    {col.label}
+                    <span style={{ display: 'inline-flex', flexDirection: 'column', marginLeft: '2px', lineHeight: 0 }}>
+                      <ArrowUp
+                        size={10}
+                        color={sortConfig.key === col.key && sortConfig.direction === 'asc' ? '#4c4ebd' : '#cbd5e1'}
+                        strokeWidth={sortConfig.key === col.key && sortConfig.direction === 'asc' ? 3 : 2}
+                        style={{ marginBottom: '-1px' }}
+                      />
+                      <ArrowDown
+                        size={10}
+                        color={sortConfig.key === col.key && sortConfig.direction === 'desc' ? '#4c4ebd' : '#cbd5e1'}
+                        strokeWidth={sortConfig.key === col.key && sortConfig.direction === 'desc' ? 3 : 2}
+                        style={{ marginTop: '-1px' }}
+                      />
+                    </span>
+                  </span>
+                  <button
+                    onClick={(e) => toggleFilter(col.key, e)}
+                    title={`Filter ${col.label}`}
+                    style={{
+                      background: columnFilters[col.key] ? '#eef2ff' : 'transparent',
+                      border: 'none', cursor: 'pointer', padding: '2px',
+                      borderRadius: '4px', display: 'flex', alignItems: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {DATE_COLUMNS.includes(col.key) ? (
+                      <Calendar size={12} color={columnFilters[col.key] ? '#4c4ebd' : '#94a3b8'} />
+                    ) : (
+                      <Filter size={12} color={columnFilters[col.key] ? '#4c4ebd' : '#94a3b8'} />
+                    )}
+                  </button>
+                </div>
+                {activeFilter === col.key && (
+                  <ColumnFilterPopover
+                    col={col}
+                    columnFilters={columnFilters}
+                    setColumnFilters={(fn) => { setColumnFilters(fn); setCurrentPage(1); }}
+                    onClose={() => setActiveFilter(null)}
+                  />
+                )}
               </th>
             ))}
             {onDownload && <th style={{ width: '80px' }}>Action</th>}
           </tr>
         </thead>
         <tbody>
-          {paginatedData.map((row, idx) => (
-            <tr key={idx}>
-              {columns.map((col) => (
-                <td key={col.key}>
-                  {col.key === 'status' ? (
-                    <span className={`status-badge ${getStatusClass(row[col.key])}`}>
-                      {row[col.key]}
-                    </span>
-                  ) : col.key === 'application' ? (
-                    <span 
-                      style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
-                      onClick={() => navigate(`/audit-details`, { state: { record: row } })}
-                    >
-                      {row[col.key]}
-                    </span>
-                  ) : (
-                    row[col.key]
-                  )}
-                </td>
-              ))}
-              {onDownload && (
-                <td>
-                  <button 
-                    className="table-download-btn"
-                    onClick={() => onDownload(row)}
-                    title="Download"
-                  >
-                    <Download size={16} />
-                  </button>
-                </td>
-              )}
+          {paginatedData.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                No records found
+              </td>
             </tr>
-          ))}
+          ) : (
+            paginatedData.map((row, idx) => (
+              <tr key={idx}>
+                {columns.map((col) => (
+                  <td key={col.key}>
+                    {col.key === 'status' ? (
+                      <span className={`status-badge ${getStatusClass(row[col.key])}`}>
+                        {row[col.key]}
+                      </span>
+                    ) : col.key === 'application' ? (
+                      <span
+                        style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
+                        onClick={() => navigate(`/audit-details`, { state: { record: row } })}
+                      >
+                        {row[col.key]}
+                      </span>
+                    ) : (
+                      row[col.key]
+                    )}
+                  </td>
+                ))}
+                {onDownload && (
+                  <td>
+                    <button
+                      className="table-download-btn"
+                      onClick={() => onDownload(row)}
+                      title="Download"
+                    >
+                      <Download size={16} />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 
       <div className="pagination">
         <div className="pagination-info">
-          Showing {startIndex + 1} to {Math.min(startIndex + pageSize, sortedData.length)} of {sortedData.length} entries
+          Showing {sortedData.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + pageSize, sortedData.length)} of {sortedData.length} entries
         </div>
         <div className="pagination-buttons">
           <button
