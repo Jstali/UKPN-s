@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, RefreshCw } from 'lucide-react';
-import { sapAuditData } from '../data/mockData';
+import { nonDtcAuditData } from '../data/mockData';
 import auditData from '../data/Audit_Data_Dumy';
 import admsData from '../data/ADMS_DEV_V1.js';
 import electralinkData from '../data/Electralink_DEV_V1.js';
@@ -18,7 +18,7 @@ const Home = ({ user }) => {
   const navigate = useNavigate();
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
-  const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in SAP Audit section');
+  const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section');
   const [dashboardUpdatedAt, setDashboardUpdatedAt] = React.useState(() => new Date().toLocaleTimeString());
   const [autoRefresh, setAutoRefresh] = React.useState(false);
 
@@ -80,7 +80,7 @@ const Home = ({ user }) => {
     if (!autoRefresh) setDashboardUpdatedAt(new Date().toLocaleTimeString());
   };
 
-  const failedRecords = sapAuditData.filter(item => item.status === 'Failed');
+  const failedRecords = nonDtcAuditData.filter(item => item.status === 'Failed');
   const marqueeText = failedRecords.map(item =>
     `⚠️ Failed: ${item.flow} - ${item.fileId} (${item.startDate})`
   ).join('   •   •   •   ');

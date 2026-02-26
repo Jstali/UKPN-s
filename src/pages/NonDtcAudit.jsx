@@ -5,15 +5,15 @@ import { Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AnimatedCounter from '../components/AnimatedCounter';
 import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
-import { sapAuditData } from '../data/mockData';
+import { nonDtcAuditData } from '../data/mockData';
 import { exportToCSV } from '../utils/exportUtils';
 
-const SapAudit = () => {
-  const uniqueFlows = [...new Set(sapAuditData.map(item => item.flow))].length;
+const NonDtcAudit = () => {
+  const uniqueFlows = [...new Set(nonDtcAuditData.map(item => item.flow))].length;
 
   const flowCounts = useMemo(() => {
     const counts = {};
-    sapAuditData.forEach(row => {
+    nonDtcAuditData.forEach(row => {
       const flow = row.flow || 'UNKNOWN';
       counts[flow] = (counts[flow] || 0) + 1;
     });
@@ -24,7 +24,7 @@ const SapAudit = () => {
 
   const eventTypeCounts = useMemo(() => {
     const counts = {};
-    sapAuditData.forEach(row => {
+    nonDtcAuditData.forEach(row => {
       const et = row.eventType || 'Unknown';
       counts[et] = (counts[et] || 0) + 1;
     });
@@ -83,7 +83,7 @@ const SapAudit = () => {
           </div>
           <div className="summary-content">
             <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Total Files</h3>
-            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={sapAuditData.length} /></p>
+            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={nonDtcAuditData.length} /></p>
           </div>
         </motion.div>
 
@@ -142,13 +142,13 @@ const SapAudit = () => {
         transition={{ delay: 0.5 }}
       >
         <DataTable
-          data={sapAuditData}
+          data={nonDtcAuditData}
           columns={columns}
-          onDownload={(row) => exportToCSV([row], columns, `sap_audit_${row.uniqueId}`)}
+          onDownload={(row) => exportToCSV([row], columns, `non_dtc_audit_${row.uniqueId}`)}
         />
       </motion.div>
     </motion.div>
   );
 };
 
-export default SapAudit;
+export default NonDtcAudit;

@@ -5,7 +5,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import DtcAudit from './pages/DtcAudit';
 import DtcAuditFilter from './pages/DtcAuditFilter';
-import SapAudit from './pages/SapAudit';
+import NonDtcAudit from './pages/NonDtcAudit';
 import Subscriptions from './pages/Subscriptions';
 import AuditDetails from './pages/AuditDetails';
 import FileView from './pages/FileView';
@@ -62,7 +62,7 @@ function App() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/dtc-audit" element={<DtcAudit user={user} />} />
               <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />
-              <Route path="/sap-audit" element={<SapAudit />} />
+              <Route path="/non-dtc-audit" element={<NonDtcAudit />} />
               <Route path="/subscriptions" element={<Subscriptions user={user} />} />
               <Route path="/audit-details" element={<AuditDetails />} />
               <Route path="/file-view/:fileId" element={<FileView />} />

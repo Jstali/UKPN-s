@@ -9,7 +9,7 @@ export const NAV_CARDS = [
   },
   {
     label: 'Non DTC Audit',
-    path: '/sap-audit',
+    path: '/non-dtc-audit',
     icon: 'DTC Audit.png',
     desc: 'Non-DTC audit monitoring and records',
   },
