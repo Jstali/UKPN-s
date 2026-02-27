@@ -158,7 +158,7 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
   );
 };
 
-const DataTable = ({ data, columns, onDownload, exportConfig }) => {
+const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -169,7 +169,10 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   const [activeFilter, setActiveFilter] = useState(null);
   const filterBtnRefs = useRef({});
   const [colWidths, setColWidths] = useState({});
+  const [viewAll, setViewAll] = useState(false);
   const resizing = useRef(null);
+
+  const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
 
   const handleResizeStart = useCallback((colKey, e) => {
     e.preventDefault();
@@ -267,32 +270,42 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
   return (
     <div className="table-container">
       <div className="table-controls">
-        <div className="modern-search-container">
-          <Search className="search-icon" size={18} />
-          <input
-            type="text"
-            className="modern-search-input"
-            placeholder="Search records..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-          {searchTerm && (
-            <button
-              className="search-clear-btn"
-              onClick={() => {
-                setSearchTerm('');
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="modern-search-container">
+            <Search className="search-icon" size={18} />
+            <input
+              type="text"
+              className="modern-search-input"
+              placeholder="Search records..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              aria-label="Clear search"
-            >
-              ×
-            </button>
+            />
+            {searchTerm && (
+              <button
+                className="search-clear-btn"
+                onClick={() => {
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          {exportConfig && (
+            <ExportDropdown
+              onExportPDF={() => exportToPDF(sortedData, columns, exportConfig.filename)}
+              onExportExcel={() => exportToExcel(sortedData, columns, exportConfig.filename)}
+              onExportCSV={() => exportToCSV(sortedData, columns, exportConfig.filename)}
+              onSendEmail={() => setShowEmailModal(true)}
+            />
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
           {activeFilterCount > 0 && (
             <button
               onClick={() => { setColumnFilters({}); setCurrentPage(1); }}
@@ -306,27 +319,36 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
               <X size={12} /> Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
           )}
-          {exportConfig && (
-            <ExportDropdown
-              onExportPDF={() => exportToPDF(sortedData, columns, exportConfig.filename)}
-              onExportExcel={() => exportToExcel(sortedData, columns, exportConfig.filename)}
-              onExportCSV={() => exportToCSV(sortedData, columns, exportConfig.filename)}
-              onSendEmail={() => setShowEmailModal(true)}
-            />
-          )}
           <select
             className="page-size-selector"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
+              setViewAll(false);
             }}
           >
             <option value={10}>10 per page</option>
             <option value={25}>25 per page</option>
             <option value={50}>50 per page</option>
             <option value={100}>100 per page</option>
+            <option value={200}>200 per page</option>
           </select>
+          <span
+            onClick={() => setViewAll(!viewAll)}
+            style={{
+              color: viewAll ? '#dc2626' : '#4f46e5',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              textDecoration: 'underline',
+              textUnderlineOffset: '2px',
+              marginLeft: '14px',
+            }}
+          >
+            {viewAll ? 'Collapse Table' : 'View in Detail'}
+          </span>
         </div>
       </div>
 
@@ -339,7 +361,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
         >
           {Object.keys(colWidths).length > 0 && (
             <colgroup>
-              {columns.map((col) => (
+              {activeColumns.map((col) => (
                 <col key={col.key} style={{ width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined }} />
               ))}
               {onDownload && <col style={{ width: '80px' }} />}
@@ -347,7 +369,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
           )}
           <thead>
             <tr>
-              {columns.map((col) => (
+              {activeColumns.map((col) => (
                 <th
                   key={col.key}
                   style={{
@@ -423,14 +445,14 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                <td colSpan={activeColumns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
                   No records found
                 </td>
               </tr>
             ) : (
               paginatedData.map((row, idx) => (
                 <tr key={idx}>
-                  {columns.map((col) => (
+                  {activeColumns.map((col) => (
                     <td key={col.key}>
                       {col.key === 'status' ? (
                         <span className={`status-badge ${getStatusClass(row[col.key])}`}>
@@ -468,7 +490,7 @@ const DataTable = ({ data, columns, onDownload, exportConfig }) => {
 
       <div className="pagination" style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid #e5e7eb', padding: '12px 0', marginTop: '0' }}>
         <div className="pagination-info">
-          Showing {sortedData.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + pageSize, sortedData.length)} of {sortedData.length} entries
+          {`Showing ${sortedData.length === 0 ? 0 : startIndex + 1} to ${Math.min(startIndex + pageSize, sortedData.length)} of ${sortedData.length} entries`}
         </div>
         <div className="pagination-buttons">
           <button

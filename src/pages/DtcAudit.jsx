@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { Filter, RotateCcw, ChevronDown } from 'lucide-react';
+import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
-import AnimatedCounter from '../components/AnimatedCounter';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import auditData from '../data/Audit_Data_Dumy';
 import { exportToCSV } from '../utils/exportUtils';
@@ -142,7 +141,6 @@ const CRITERIA_FIELDS = [
   { label: 'Created Date', key: 'fileCreationDate' },
   { label: 'File ID', key: 'fileId' },
   { label: 'Msg ID', key: 'msgId' },
-  { label: 'Search File Contents', key: 'searchFileContents' },
 ];
 
 const DtcAudit = ({ user }) => {
@@ -227,51 +225,76 @@ const DtcAudit = ({ user }) => {
       .sort((a, b) => b.count - a.count);
   }, [tableData]);
 
+  const [showApps, setShowApps] = useState(false);
+
+  const uniqueFlowCount = useMemo(() => {
+    const flows = new Set(tableData.map(r => r.flowVersion).filter(Boolean));
+    return flows.size;
+  }, [tableData]);
+
   return (
     <motion.div
       className="page-container dtc-audit-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3 }}
     >
-      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-        <Link to="/">Home</Link> → DTC Audit
-      </div>
-
-      {isBusiness && (
-        <div style={{
-          background: '#dbeafe', border: '1px solid #93c5fd', padding: '8px 14px',
-          borderRadius: '8px', marginBottom: '10px', color: '#1e40af', fontSize: '13px'
-        }}>
-          <strong>Business View:</strong> Showing flow details only
+      {/* Compact Header: Breadcrumb + Title + KPIs + Actions — all in one row */}
+      <div className="dtc-header-bar">
+        <div className="dtc-header-left">
+          <div className="dtc-breadcrumb-inline">
+            <Link to="/">Home</Link>
+            <ChevronRight size={12} />
+            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Audit</span>
+          </div>
         </div>
-      )}
 
-      {/* Title + Filter Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem' }}>DTC Audit</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Inline KPI chips */}
+        <div className="dtc-kpi-row">
+          <div className="dtc-kpi-chip">
+            <BarChart3 size={14} color="#6366f1" />
+            <span className="dtc-kpi-label">Events</span>
+            <span className="dtc-kpi-value">{flattenedAuditData.length.toLocaleString()}</span>
+          </div>
+          <div className="dtc-kpi-chip">
+            <Activity size={14} color="#0ea5e9" />
+            <span className="dtc-kpi-label">Flows</span>
+            <span className="dtc-kpi-value">{uniqueFlowCount}</span>
+          </div>
           {hasQueried && (
-            <button onClick={handleReset} style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 18px', background: '#f1f5f9', color: '#475569',
-              border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
-              fontSize: '13px', fontWeight: '600', transition: 'all 0.2s ease'
-            }}>
-              <RotateCcw size={14} /> Reset
+            <div className="dtc-kpi-chip dtc-kpi-results">
+              <span className="dtc-kpi-label">Results</span>
+              <span className="dtc-kpi-value">{filteredResults.length.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="dtc-header-actions">
+          {isBusiness && (
+            <span className="dtc-business-badge">Business View</span>
+          )}
+          <button
+            className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
+            onClick={() => setShowApps(!showApps)}
+          >
+            Charts
+            <ChevronDown size={12} style={{
+              transform: showApps ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease'
+            }} />
+          </button>
+          {hasQueried && (
+            <button onClick={handleReset} className="dtc-reset-btn">
+              <RotateCcw size={13} /> Reset
             </button>
           )}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 18px', background: showFilters ? '#4f46e5' : '#667eea',
-              color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer',
-              fontSize: '13px', fontWeight: '600', transition: 'all 0.2s ease'
-            }}
+            className={`dtc-filter-btn ${showFilters ? 'active' : ''}`}
           >
-            <Filter size={16} /> Filters
-            <ChevronDown size={14} style={{
+            <Filter size={14} /> Filters
+            <ChevronDown size={12} style={{
               transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease'
             }} />
@@ -279,33 +302,25 @@ const DtcAudit = ({ user }) => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-cards" style={{ gap: '1rem', marginBottom: '1rem' }}>
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="summary-card" style={{ padding: '1rem' }}>
-          <div className="summary-icon" style={{ background: '#f5f3ff', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <img src={`${process.env.PUBLIC_URL}/Total files.png`} alt="Total Events" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-          </div>
-          <div className="summary-content">
-            <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Total Events</h3>
-            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={flattenedAuditData.length} /></p>
-          </div>
-        </motion.div>
+      {/* Collapsible Applications bar */}
+      <AnimatePresence>
+        {showApps && appCounts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="dtc-apps-bar"
+          >
+            <ColorBar data={appCounts} label="Applications" colors={APP_COLORS} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="summary-card" style={{ padding: '1rem' }}>
-          <div className="summary-icon" style={{ background: '#f0f9ff', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <img src={`${process.env.PUBLIC_URL}/unique flows.jpg`} alt="Unique Flows" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-          </div>
-          <div className="summary-content">
-            <h3 style={{ fontSize: '0.78rem', marginBottom: '0.25rem' }}>Unique Flows</h3>
-            <p style={{ fontSize: '1.5rem' }}><AnimatedCounter value={0} /></p>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Inline Filter Section — between cards and table */}
+      {/* Collapsible Filter Section */}
       <AnimatePresence>
         {showFilters && (
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '8px' }}>
             <DtcFilterDropdown
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -319,28 +334,28 @@ const DtcAudit = ({ user }) => {
       {/* Selection Criteria Summary — shown after Apply Filter */}
       {hasQueried && appliedFilters && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
           style={{
-            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
-            marginBottom: '16px', overflow: 'hidden',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)'
+            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
+            marginBottom: '12px', overflow: 'hidden',
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
           }}
         >
           <div style={{
-            padding: '14px 24px', borderBottom: '1px solid #f1f5f9',
+            padding: '10px 20px', borderBottom: '1px solid #f1f5f9',
             textAlign: 'center'
           }}>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>Your Selection Criteria is</h3>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Your Selection Criteria is</h3>
           </div>
 
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '8px 24px', padding: '16px 24px'
+            gap: '6px 20px', padding: '12px 20px'
           }}>
             {CRITERIA_FIELDS.map(({ label, key }) => (
-              <div key={key} style={{ fontSize: '13px', color: '#475569', padding: '4px 0' }}>
+              <div key={key} style={{ fontSize: '13px', color: '#475569', padding: '3px 0' }}>
                 <span style={{ fontWeight: 700, color: '#1e293b' }}>{label}:</span>{' '}
                 {appliedFilters[key] || 'All'}
               </div>
@@ -348,42 +363,29 @@ const DtcAudit = ({ user }) => {
           </div>
 
           <div style={{
-            padding: '12px 24px', borderTop: '1px solid #f1f5f9',
-            textAlign: 'center', fontSize: '14px', color: '#475569'
+            padding: '10px 20px', borderTop: '1px solid #f1f5f9',
+            textAlign: 'center', fontSize: '13px', color: '#475569'
           }}>
             There have been <span style={{ fontWeight: 700, color: '#ef4444' }}>{exceptionCount} DTC exception messages</span> since N/A relating to your applications
           </div>
         </motion.div>
       )}
 
-      {/* Color Bars */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        style={{
-          background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
-          padding: '18px 24px', marginBottom: '16px',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)',
-        }}
-      >
-        {flowCounts.length > 0 && (
-          <ColorBar data={flowCounts} label="Flows" colors={FLOW_COLORS} />
-        )}
-        {appCounts.length > 0 && (
-          <ColorBar data={appCounts} label="Applications" colors={APP_COLORS} />
-        )}
-      </motion.div>
-
-      {/* Data Table */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
-        <DataTable
-          data={hasQueried ? filteredResults : flattenedAuditData}
-          columns={columns}
-          onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
-          exportConfig={{ filename: 'dtc_audit_report' }}
-        />
-      </motion.div>
+      {/* Data Table — flush, no extra wrapper */}
+      <DataTable
+        data={hasQueried ? filteredResults : flattenedAuditData}
+        columns={columns}
+        compactColumns={[
+          { key: 'recApp', label: 'Source App' },
+          { key: 'fileName', label: 'File Name' },
+          { key: 'eventType', label: 'Event Type' },
+          { key: 'status', label: 'Status' },
+          { key: 'application', label: 'Dest App' },
+          { key: 'flowVersion', label: 'Flows' },
+        ]}
+        onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
+        exportConfig={{ filename: 'dtc_audit_report' }}
+      />
     </motion.div>
   );
 };

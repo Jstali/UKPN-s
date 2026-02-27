@@ -69,30 +69,25 @@ const DtcAuditTable = ({ data }) => {
           <option value={25}>25 per page</option>
           <option value={50}>50 per page</option>
           <option value={100}>100 per page</option>
+          <option value={200}>200 per page</option>
         </select>
       </div>
 
       <table className="dtc-results-table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>File Name</th>
+            <th>Unique ID</th>
+            <th>Flow ID</th>
+            <th>Flow Version</th>
             <th>Event Type</th>
-            <th>Status</th>
-            <th>Application</th>
-            <th>Processed</th>
-            <th>Timestamp</th>
-            <th>Event ID</th>
-            <th>Destination Path</th>
-            <th>Destination File</th>
-            <th>Source Path</th>
-            <th>Header String</th>
+            <th>Source Application</th>
+            <th>Destination Application</th>
           </tr>
         </thead>
         <tbody>
           {paginatedData.length === 0 ? (
             <tr>
-              <td colSpan={12} style={{ textAlign: 'center', padding: '20px' }}>No results found</td>
+              <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>No results found</td>
             </tr>
           ) : (
             paginatedData.map((result, index) => (
@@ -100,17 +95,11 @@ const DtcAuditTable = ({ data }) => {
                 <td>
                   <Link to={`/audit-details`} state={{ record: result }} className="file-link">{result.id}</Link>
                 </td>
-                <td>{result.fileName}</td>
+                <td>{result.flowVersion?.replace(/\d+$/, '') || ''}</td>
+                <td>{result.flowVersion?.match(/\d+$/)?.[0] || ''}</td>
                 <td><strong>{result.eventType}</strong></td>
-                <td>{result.status}</td>
-                <td>{result.application}</td>
-                <td>{result.processed}</td>
-                <td>{new Date(result.timestamp).toLocaleString()}</td>
-                <td>{result.eventId}</td>
-                <td>{result.destinationPath}</td>
-                <td>{result.destinationFileName}</td>
-                <td>{result.sourcePath}</td>
-                <td>{result.headerString}</td>
+                <td>{result.recApp || result.application || ''}</td>
+                <td>{result.application || ''}</td>
               </tr>
             ))
           )}

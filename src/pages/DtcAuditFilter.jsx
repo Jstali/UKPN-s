@@ -352,17 +352,6 @@ const DtcAuditFilter = () => {
               />
             </fieldset>
           </div>
-          <div className="filter-field filter-field-large">
-            <fieldset>
-              <legend>Search File Contents For (e.g. MPAN Number)</legend>
-              <input 
-                type="text" 
-                value={filters.searchFileContents}
-                onChange={(e) => handleFilterChange('searchFileContents', e.target.value)}
-                placeholder="Enter search term"
-              />
-            </fieldset>
-          </div>
         </div>
 
         <div className="filter-actions">
@@ -401,7 +390,6 @@ const DtcAuditFilter = () => {
               <div><strong>Created Date:</strong> {filters.fileCreationDate || 'N/A'}</div>
               <div><strong>File ID:</strong> {filters.fileId || 'N/A'}</div>
               <div><strong>Msg ID:</strong> {filters.msgId || 'N/A'}</div>
-              <div><strong>Search File Contents:</strong> {filters.searchFileContents || 'N/A'}</div>
             </div>
             <p className="exception-message">
               There have been <span className="exception-count">{exceptionCount} DTC exception messages</span> since N/A relating to your applications
@@ -447,6 +435,7 @@ const DtcAuditFilter = () => {
                   <option value={25}>25</option>
                   <option value={50}>50</option>
                   <option value={100}>100</option>
+                  <option value={200}>200</option>
                 </select>
                 <span style={{ fontSize: '14px', color: '#6b7280' }}>
                   {startIndex + 1} to {Math.min(endIndex, filteredResults.length)} of {filteredResults.length}

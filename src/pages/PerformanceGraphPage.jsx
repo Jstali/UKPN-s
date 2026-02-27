@@ -81,7 +81,7 @@ const PerformanceGraphPage = () => {
             fontSize: '12px', fontWeight: 600, color: '#8b5cf6',
             background: '#f5f3ff', padding: '4px 12px', borderRadius: '20px',
             border: '1px solid #c4b5fd'
-          }}>Live</span>
+          }}>{range === '24h' ? 'Live — Last 24 hours' : range === '7d' ? 'Last 7 Days' : range === '30d' ? 'Last 30 Days' : 'Last 1 Year'}</span>
         </div>
 
         <div style={{ padding: '20px 24px' }}>

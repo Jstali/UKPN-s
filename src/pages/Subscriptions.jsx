@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, X, Eye, Download, ArrowLeft, ChevronDown, FileJson } from 'lucide-react';
-import SpotlightCard from '../components/SpotlightCard';
+import {
+  Plus, Trash2, X, Eye, Download, ArrowLeft, FileJson, Server,
+  Layers, CheckCircle, XCircle, Copy, ChevronRight, Search,
+  Filter, FolderOpen, FileText, Globe, Clock
+} from 'lucide-react';
 import admsData from '../data/ADMS_DEV_V1.js';
 import electralinkData from '../data/Electralink_DEV_V1.js';
 import mprsData from '../data/MPRS_DEV_V1.js';
 import msbiData from '../data/application subscription.js';
 
+const APP_COLORS = {
+  ADMS: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
+  Electralink: { accent: '#f59e0b', light: '#fffbeb', border: '#fde68a' },
+  MPRS: { accent: '#10b981', light: '#ecfdf5', border: '#a7f3d0' },
+  MSBI: { accent: '#8b5cf6', light: '#f5f3ff', border: '#c4b5fd' },
+};
+
+const getAppColor = (appName) => {
+  const key = Object.keys(APP_COLORS).find(k => appName?.toUpperCase().includes(k));
+  return APP_COLORS[key] || { accent: '#6b7280', light: '#f9fafb', border: '#d1d5db' };
+};
+
 const Subscriptions = ({ user }) => {
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [showJson, setShowJson] = useState(false);
-  
-  // Role-based access
+  const [copiedRule, setCopiedRule] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedRules, setExpandedRules] = useState({});
+
   const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
-  
-  // Combine all subscription data
+
   const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
-  
-  // Transform data for display
+
   const existingSubscriptions = allSubscriptions.map(app => {
     const allHeaderStrings = app.rules.flatMap(rule => rule.Header_String.value);
     const allDestinations = app.rules.map(rule => rule.destination);
-    
+
     return {
       application: app.Application,
       filterId: app.filterId,
@@ -35,170 +50,344 @@ const Subscriptions = ({ user }) => {
     };
   });
 
+  const filteredSubscriptions = existingSubscriptions.filter(app =>
+    app.application.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    app.filterId.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCopyRule = (rule, idx) => {
+    const text = `Header Strings: ${rule.Header_String.value.join(', ')}\nFile Name: ${rule.Header_String.fileName}\nDestination: ${rule.destination}`;
+    navigator.clipboard.writeText(text);
+    setCopiedRule(idx);
+    setTimeout(() => setCopiedRule(null), 2000);
+  };
+
+  const toggleRule = (idx) => {
+    setExpandedRules(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
   if (showForm) {
     return <SubscriptionForm onBack={() => setShowForm(false)} />;
   }
 
+  // ─── Detail View ───
   if (selectedApp) {
+    const colors = getAppColor(selectedApp.application);
+    const totalHeaders = selectedApp.headerStrings.length;
+    const uniqueDest = new Set(selectedApp.destinations).size;
+
     return (
       <motion.div
-        className="page-container subscriptions-page subscriptions-compact"
+        className="sp-page"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
         <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-          <Link to="/">Home</Link> → <Link to="/subscriptions">Subscriptions</Link> → {selectedApp.application}
-        </div>
-        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '12px' }}>{selectedApp.application}</h1>
-
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.75rem' }}>
-          <button className="button button-secondary" onClick={() => setSelectedApp(null)}>
-            <ArrowLeft size={16} /> Back
-          </button>
-          <button className="button button-primary" onClick={() => setShowJson(!showJson)}>
-            <FileJson size={16} /> {showJson ? 'Hide JSON' : 'View JSON'}
-          </button>
-          <button 
-            className="button button-success" 
-            onClick={() => {
-              const text = `Application: ${selectedApp.application}\nFilter ID: ${selectedApp.filterId}\n\nHeader Strings:\n${selectedApp.headerStrings.join('\n')}\n\nDestinations:\n${selectedApp.destinations.join('\n')}\n\nID: ${selectedApp.id}`;
-              const blob = new Blob([text], { type: 'text/plain' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${selectedApp.application}.txt`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <Download size={16} /> Download
-          </button>
+          <Link to="/">Home</Link> → <Link to="/subscriptions" onClick={(e) => { e.preventDefault(); setSelectedApp(null); }}>Subscriptions</Link> → {selectedApp.application}
         </div>
 
-        {showJson ? (
-          <div style={{ background: '#1e1e1e', color: '#d4d4d4', padding: '1.5rem', borderRadius: '8px', overflow: 'auto' }}>
-            <pre>{JSON.stringify(selectedApp, null, 2)}</pre>
+        {/* Detail Hero Card */}
+        <div className="sp-hero-card">
+          <div className="sp-hero-left">
+            <div className="sp-hero-icon" style={{ background: colors.light, borderColor: colors.border }}>
+              <Server size={22} style={{ color: colors.accent }} />
+            </div>
+            <div>
+              <h1 className="sp-hero-title">{selectedApp.application}</h1>
+              <div className="sp-hero-tags">
+                <span className={`sp-tag ${selectedApp.status === 'active' ? 'sp-tag-green' : 'sp-tag-red'}`}>
+                  {selectedApp.status === 'active' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                  {selectedApp.status?.toUpperCase()}
+                </span>
+                <span className="sp-tag sp-tag-neutral"><Filter size={12} /> {selectedApp.filterId}</span>
+                <span className="sp-tag sp-tag-neutral"><Layers size={12} /> {selectedApp.rules?.length} Rules</span>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="details-container">
-            <div className="detail-section">
-              <h3>Filter ID</h3>
-              <p>{selectedApp.filterId}</p>
-            </div>
-            <div className="detail-section">
-              <h3>Status</h3>
-              <p style={{ color: selectedApp.status === 'active' ? '#10b981' : '#ef4444', fontWeight: '600' }}>
-                {selectedApp.status?.toUpperCase() || 'N/A'}
-              </p>
-            </div>
-            <div className="detail-section">
-              <h3>Subscription Rules ({selectedApp.rules?.length || 0})</h3>
-              {selectedApp.rules?.map((rule, idx) => (
-                <div key={idx} style={{ 
-                  background: '#f9fafb', 
-                  border: '1px solid #e5e7eb', 
-                  borderRadius: '8px', 
-                  padding: '1rem', 
-                  marginBottom: '1rem' 
-                }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.75rem', color: '#374151' }}>
-                    Rule {idx + 1}
-                  </h4>
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <strong style={{ color: '#6b7280' }}>Header Strings:</strong>
-                    {rule.Header_String.value.map((str, strIdx) => (
-                      <p key={strIdx} style={{ fontSize: '0.85rem', marginLeft: '1rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                        {str}
-                      </p>
-                    ))}
-                  </div>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <strong style={{ color: '#6b7280' }}>File Name Template:</strong>
-                    <p style={{ fontSize: '0.85rem', marginLeft: '1rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                      {rule.Header_String.fileName}
-                    </p>
-                  </div>
+          <div className="sp-hero-actions">
+            <button className="sp-btn sp-btn-ghost" onClick={() => setSelectedApp(null)}>
+              <ArrowLeft size={15} /> Back
+            </button>
+            <button className={`sp-btn ${showJson ? 'sp-btn-filled' : 'sp-btn-ghost'}`} onClick={() => setShowJson(!showJson)}>
+              <FileJson size={15} /> {showJson ? 'Details' : 'JSON'}
+            </button>
+            <button
+              className="sp-btn sp-btn-accent"
+              onClick={() => {
+                const text = `Application: ${selectedApp.application}\nFilter ID: ${selectedApp.filterId}\n\nHeader Strings:\n${selectedApp.headerStrings.join('\n')}\n\nDestinations:\n${selectedApp.destinations.join('\n')}\n\nID: ${selectedApp.id}`;
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${selectedApp.application}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download size={15} /> Export
+            </button>
+          </div>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {showJson ? (
+            <motion.div
+              key="json"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="sp-card"
+            >
+              <div className="sp-card-header">
+                <div className="sp-card-header-left">
+                  <FileJson size={15} color="#667eea" />
+                  <span className="sp-card-title">JSON Output</span>
+                </div>
+              </div>
+              <div className="sp-json-body">
+                <pre>{JSON.stringify(selectedApp, null, 2)}</pre>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="details"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+            >
+              {/* KPI Row */}
+              <div className="sp-kpi-row">
+                <div className="sp-kpi">
+                  <div className="sp-kpi-icon" style={{ background: '#eef2ff' }}><Layers size={18} color="#6366f1" /></div>
                   <div>
-                    <strong style={{ color: '#6b7280' }}>Destination:</strong>
-                    <p style={{ fontSize: '0.85rem', marginLeft: '1rem', marginTop: '0.25rem', wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                      {rule.destination}
-                    </p>
+                    <div className="sp-kpi-value">{selectedApp.rules?.length || 0}</div>
+                    <div className="sp-kpi-label">Rules</div>
                   </div>
                 </div>
-              ))}
-            </div>
-            <div className="detail-section">
-              <h3>All Header Strings ({selectedApp.headerStrings.length})</h3>
-              {selectedApp.headerStrings.map((str, idx) => (
-                <p key={idx} style={{ fontSize: '0.9rem', marginBottom: '0.5rem', fontFamily: 'monospace' }}>{str}</p>
-              ))}
-            </div>
-            <div className="detail-section">
-              <h3>All Destinations ({selectedApp.destinations.length})</h3>
-              {selectedApp.destinations.map((dest, idx) => (
-                <p key={idx} style={{ fontSize: '0.85rem', marginBottom: '0.5rem', wordBreak: 'break-all', fontFamily: 'monospace' }}>{dest}</p>
-              ))}
-            </div>
-          </div>
-        )}
+                <div className="sp-kpi">
+                  <div className="sp-kpi-icon" style={{ background: '#fef3c7' }}><FileText size={18} color="#d97706" /></div>
+                  <div>
+                    <div className="sp-kpi-value">{totalHeaders}</div>
+                    <div className="sp-kpi-label">Header Strings</div>
+                  </div>
+                </div>
+                <div className="sp-kpi">
+                  <div className="sp-kpi-icon" style={{ background: '#ecfdf5' }}><FolderOpen size={18} color="#059669" /></div>
+                  <div>
+                    <div className="sp-kpi-value">{uniqueDest}</div>
+                    <div className="sp-kpi-label">Destinations</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rules Table Card */}
+              <div className="sp-card">
+                <div className="sp-card-header">
+                  <div className="sp-card-header-left">
+                    <Layers size={15} color="#667eea" />
+                    <span className="sp-card-title">Subscription Rules</span>
+                    <span className="sp-card-count">{selectedApp.rules?.length}</span>
+                  </div>
+                </div>
+                <div className="sp-rules-table">
+                  <div className="sp-rules-thead">
+                    <div className="sp-rules-th sp-rules-th-num">#</div>
+                    <div className="sp-rules-th" style={{ flex: 2 }}>Header Strings</div>
+                    <div className="sp-rules-th" style={{ flex: 1 }}>File Template</div>
+                    <div className="sp-rules-th" style={{ flex: 2 }}>Destination</div>
+                    <div className="sp-rules-th sp-rules-th-action"></div>
+                  </div>
+                  {selectedApp.rules?.map((rule, idx) => {
+                    const isExpanded = expandedRules[idx];
+                    const headerCount = rule.Header_String.value.length;
+                    return (
+                      <motion.div
+                        key={idx}
+                        className="sp-rules-row"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: idx * 0.03 }}
+                      >
+                        <div className="sp-rules-td sp-rules-td-num">
+                          <span className="sp-rule-num" style={{ background: colors.light, color: colors.accent, borderColor: colors.border }}>
+                            {idx + 1}
+                          </span>
+                        </div>
+                        <div className="sp-rules-td" style={{ flex: 2 }}>
+                          <code className="sp-mono">{rule.Header_String.value[0]}</code>
+                          {headerCount > 1 && (
+                            <button className="sp-more-btn" onClick={() => toggleRule(idx)}>
+                              {isExpanded ? 'Show less' : `+${headerCount - 1} more`}
+                            </button>
+                          )}
+                          {isExpanded && rule.Header_String.value.slice(1).map((str, i) => (
+                            <code key={i} className="sp-mono sp-mono-extra">{str}</code>
+                          ))}
+                        </div>
+                        <div className="sp-rules-td" style={{ flex: 1 }}>
+                          <code className="sp-mono sp-mono-blue">{rule.Header_String.fileName}</code>
+                        </div>
+                        <div className="sp-rules-td" style={{ flex: 2 }}>
+                          <code className="sp-mono sp-mono-green">{rule.destination}</code>
+                        </div>
+                        <div className="sp-rules-td sp-rules-td-action">
+                          <button
+                            className="sp-icon-btn"
+                            onClick={() => handleCopyRule(rule, idx)}
+                            title="Copy rule"
+                          >
+                            {copiedRule === idx ? <CheckCircle size={14} color="#059669" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     );
   }
 
+  // ─── Main Grid View ───
+  const activeCount = existingSubscriptions.filter(a => a.status === 'active').length;
+  const totalRules = existingSubscriptions.reduce((sum, a) => sum + (a.rules?.length || 0), 0);
+
   return (
     <motion.div
-      className="page-container subscriptions-page subscriptions-compact"
+      className="sp-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
     >
       <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
         <Link to="/">Home</Link> → Subscriptions
       </div>
-      <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '12px' }}>All Applications</h1>
 
-      <div style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Page Header */}
+      <div className="sp-page-header">
+        <div>
+          <h1 className="sp-page-title">Subscriptions</h1>
+          <p className="sp-page-subtitle">Manage application subscription rules & routing</p>
+        </div>
         {canEdit && (
-          <button className="button button-primary" onClick={() => setShowForm(true)}>
-            <Plus size={16} /> Add New Subscription
+          <button className="sp-btn sp-btn-filled" onClick={() => setShowForm(true)}>
+            <Plus size={15} /> New Subscription
           </button>
         )}
       </div>
 
-      <div className="app-grid">
-        {existingSubscriptions.map((app) => (
-          <SpotlightCard key={app.id}>
-            <motion.div
-              className="app-card"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSelectedApp(app);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <h3>{app.application}</h3>
-            </motion.div>
-          </SpotlightCard>
-        ))}
+      {/* Overview KPIs */}
+      <div className="sp-kpi-row sp-kpi-row-overview">
+        <div className="sp-kpi">
+          <div className="sp-kpi-icon" style={{ background: '#eef2ff' }}><Globe size={18} color="#6366f1" /></div>
+          <div>
+            <div className="sp-kpi-value">{existingSubscriptions.length}</div>
+            <div className="sp-kpi-label">Applications</div>
+          </div>
+        </div>
+        <div className="sp-kpi">
+          <div className="sp-kpi-icon" style={{ background: '#ecfdf5' }}><CheckCircle size={18} color="#059669" /></div>
+          <div>
+            <div className="sp-kpi-value">{activeCount}</div>
+            <div className="sp-kpi-label">Active</div>
+          </div>
+        </div>
+        <div className="sp-kpi">
+          <div className="sp-kpi-icon" style={{ background: '#fef3c7' }}><Layers size={18} color="#d97706" /></div>
+          <div>
+            <div className="sp-kpi-value">{totalRules}</div>
+            <div className="sp-kpi-label">Total Rules</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Application Table Card */}
+      <div className="sp-card">
+        <div className="sp-card-header">
+          <div className="sp-card-header-left">
+            <Server size={15} color="#667eea" />
+            <span className="sp-card-title">All Applications</span>
+            <span className="sp-card-count">{filteredSubscriptions.length}</span>
+          </div>
+          <div className="sp-card-header-right">
+            <div className="sp-search">
+              <Search size={14} />
+              <input
+                type="text"
+                placeholder="Search applications..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="sp-app-table">
+          <div className="sp-app-thead">
+            <div className="sp-app-th" style={{ flex: 2 }}>Application</div>
+            <div className="sp-app-th" style={{ flex: 1 }}>Filter ID</div>
+            <div className="sp-app-th" style={{ flex: 1 }}>Status</div>
+            <div className="sp-app-th" style={{ flex: 1 }}>Rules</div>
+            <div className="sp-app-th" style={{ flex: 1 }}>Headers</div>
+            <div className="sp-app-th sp-app-th-action"></div>
+          </div>
+          {filteredSubscriptions.map((app, index) => {
+            const colors = getAppColor(app.application);
+            return (
+              <motion.div
+                key={app.id}
+                className="sp-app-row"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => setSelectedApp(app)}
+              >
+                <div className="sp-app-td" style={{ flex: 2 }}>
+                  <div className="sp-app-name-cell">
+                    <div className="sp-app-dot" style={{ background: colors.accent }} />
+                    <span className="sp-app-name">{app.application}</span>
+                  </div>
+                </div>
+                <div className="sp-app-td" style={{ flex: 1 }}>
+                  <code className="sp-filter-id">{app.filterId}</code>
+                </div>
+                <div className="sp-app-td" style={{ flex: 1 }}>
+                  <span className={`sp-tag-sm ${app.status === 'active' ? 'sp-tag-green' : 'sp-tag-red'}`}>
+                    {app.status === 'active' ? <CheckCircle size={11} /> : <XCircle size={11} />}
+                    {app.status?.toUpperCase()}
+                  </span>
+                </div>
+                <div className="sp-app-td" style={{ flex: 1 }}>
+                  <span className="sp-app-num">{app.rules?.length || 0}</span>
+                </div>
+                <div className="sp-app-td" style={{ flex: 1 }}>
+                  <span className="sp-app-num">{app.headerStrings.length}</span>
+                </div>
+                <div className="sp-app-td sp-app-td-action">
+                  <ChevronRight size={16} className="sp-row-arrow" />
+                </div>
+              </motion.div>
+            );
+          })}
+          {filteredSubscriptions.length === 0 && (
+            <div className="sp-empty">No applications match your search.</div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
 };
+
+// ─── Create Form ───
 const SubscriptionForm = ({ onBack }) => {
   const [formData, setFormData] = useState({
     filterId: '',
     application: '',
     id: '',
-    rules: [
-      {
-        headerStrings: [''],
-        fileName: '',
-        destinations: ['']
-      }
-    ]
+    rules: [{ headerStrings: [''], fileName: '', destinations: [''] }]
   });
 
   const [showPreview, setShowPreview] = useState(false);
@@ -257,20 +446,18 @@ const SubscriptionForm = ({ onBack }) => {
     setFormData({ ...formData, rules: newRules });
   };
 
-  const generateJSON = () => {
-    return {
-      filterId: formData.filterId,
-      rules: formData.rules.map(rule => ({
-        Header_String: {
-          value: rule.headerStrings.filter(s => s.trim() !== ''),
-          fileName: rule.fileName || '{uuid}'
-        },
-        destinations: rule.destinations.filter(d => d.trim() !== '')
-      })),
-      Application: formData.application,
-      id: formData.id
-    };
-  };
+  const generateJSON = () => ({
+    filterId: formData.filterId,
+    rules: formData.rules.map(rule => ({
+      Header_String: {
+        value: rule.headerStrings.filter(s => s.trim() !== ''),
+        fileName: rule.fileName || '{uuid}'
+      },
+      destinations: rule.destinations.filter(d => d.trim() !== '')
+    })),
+    Application: formData.application,
+    id: formData.id
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -284,234 +471,227 @@ const SubscriptionForm = ({ onBack }) => {
       filterId: '',
       application: '',
       id: '',
-      rules: [{ headerStrings: [''], fileName: '', destination: '' }]
+      rules: [{ headerStrings: [''], fileName: '', destinations: [''] }]
     });
   };
 
   return (
     <motion.div
-      className="page-container subscriptions-page subscriptions-compact"
+      className="sp-page"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
     >
       <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
         <Link to="/">Home</Link> → <span onClick={onBack} style={{ cursor: 'pointer', color: 'var(--ukpn-secondary)' }}>Subscriptions</span> → New
       </div>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem', marginBottom: '4px' }}>Create New Subscription</h1>
-        <p style={{ color: '#9D1320', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
-          Manually create and manage subscription rules
-        </p>
+
+      <div className="sp-page-header">
+        <div>
+          <h1 className="sp-page-title">Create Subscription</h1>
+          <p className="sp-page-subtitle">Define subscription rules and routing for a new application</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="form-container">
-        <div className="form-section basic-info-section">
-          <h3>Basic Information</h3>
-          <div className="form-group">
-            <label>Filter ID</label>
-            <input
-              type="text"
-              className="form-input"
-              value={formData.filterId}
-              onChange={(e) => setFormData({ ...formData, filterId: e.target.value })}
-              placeholder="e.g., ADMS"
-              required
-            />
+      <form onSubmit={handleSubmit}>
+        {/* Basic Info Card */}
+        <div className="sp-card" style={{ marginBottom: '16px' }}>
+          <div className="sp-card-header">
+            <div className="sp-card-header-left">
+              <Server size={15} color="#667eea" />
+              <span className="sp-card-title">Basic Information</span>
+            </div>
           </div>
-          <div className="form-group">
-            <label>Application</label>
-            <input
-              type="text"
-              className="form-input"
-              value={formData.application}
-              onChange={(e) => setFormData({ ...formData, application: e.target.value })}
-              placeholder="e.g., ADMS"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>ID</label>
-            <input
-              type="text"
-              className="form-input"
-              value={formData.id}
-              onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-              placeholder="e.g., ADMS"
-              required
-            />
+          <div className="sp-card-body">
+            <div className="sp-form-row">
+              <div className="sp-field">
+                <label className="sp-label">Filter ID <span className="sp-req">*</span></label>
+                <input
+                  type="text"
+                  className="sp-input"
+                  value={formData.filterId}
+                  onChange={(e) => setFormData({ ...formData, filterId: e.target.value })}
+                  placeholder="e.g., ADMS"
+                  required
+                />
+              </div>
+              <div className="sp-field">
+                <label className="sp-label">Application <span className="sp-req">*</span></label>
+                <input
+                  type="text"
+                  className="sp-input"
+                  value={formData.application}
+                  onChange={(e) => setFormData({ ...formData, application: e.target.value })}
+                  placeholder="e.g., ADMS"
+                  required
+                />
+              </div>
+              <div className="sp-field">
+                <label className="sp-label">ID <span className="sp-req">*</span></label>
+                <input
+                  type="text"
+                  className="sp-input"
+                  value={formData.id}
+                  onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                  placeholder="e.g., ADMS_DEV_V1"
+                  required
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="form-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3>Rules</h3>
-            <button type="button" className="button button-primary" onClick={addRule}>
-              <Plus size={16} /> Add Rule
+        {/* Rules Card */}
+        <div className="sp-card" style={{ marginBottom: '16px' }}>
+          <div className="sp-card-header">
+            <div className="sp-card-header-left">
+              <Layers size={15} color="#667eea" />
+              <span className="sp-card-title">Subscription Rules</span>
+              <span className="sp-card-count">{formData.rules.length}</span>
+            </div>
+            <button type="button" className="sp-btn sp-btn-filled sp-btn-sm" onClick={addRule}>
+              <Plus size={14} /> Add Rule
             </button>
           </div>
-
-          <AnimatePresence>
-            {formData.rules.map((rule, ruleIndex) => (
-              <motion.div
-                key={ruleIndex}
-                className="rule-card"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="rule-header">
-                  <span className="rule-title">Rule {ruleIndex + 1}</span>
-                  {formData.rules.length > 1 && (
-                    <button
-                      type="button"
-                      className="button button-danger"
-                      onClick={() => removeRule(ruleIndex)}
-                    >
-                      <Trash2 size={16} /> Remove
-                    </button>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <label>Header String Values</label>
-                    <button
-                      type="button"
-                      style={{
-                        padding: '4px 8px',
-                        background: '#6B7280',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '12px'
-                      }}
-                    >
-                      <Eye size={14} />
-                    </button>
+          <div className="sp-card-body">
+            <AnimatePresence>
+              {formData.rules.map((rule, ruleIndex) => (
+                <motion.div
+                  key={ruleIndex}
+                  className="sp-rule-block"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <div className="sp-rule-block-header">
+                    <span className="sp-rule-badge">{ruleIndex + 1}</span>
+                    <span className="sp-rule-block-title">Rule {ruleIndex + 1}</span>
+                    {formData.rules.length > 1 && (
+                      <button type="button" className="sp-btn-danger-sm" onClick={() => removeRule(ruleIndex)}>
+                        <Trash2 size={13} /> Remove
+                      </button>
+                    )}
                   </div>
-                  {rule.headerStrings.map((str, strIndex) => (
-                    <div key={strIndex} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+
+                  <div className="sp-rule-block-body">
+                    {/* Header Strings */}
+                    <div className="sp-field">
+                      <div className="sp-field-row">
+                        <label className="sp-label">Header String Values</label>
+                        <button type="button" className="sp-link-btn" onClick={() => addHeaderString(ruleIndex)}>
+                          <Plus size={13} /> Add
+                        </button>
+                      </div>
+                      {rule.headerStrings.map((str, strIndex) => (
+                        <div key={strIndex} className="sp-input-group">
+                          <input
+                            type="text"
+                            className="sp-input"
+                            value={str}
+                            onChange={(e) => updateHeaderString(ruleIndex, strIndex, e.target.value)}
+                            placeholder="e.g., ZHV|D0132001|X|+|R|EELC|+|OPER"
+                          />
+                          {rule.headerStrings.length > 1 && (
+                            <button type="button" className="sp-input-remove" onClick={() => removeHeaderString(ruleIndex, strIndex)}>
+                              <X size={15} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* File Name */}
+                    <div className="sp-field">
+                      <label className="sp-label">File Name Template</label>
                       <input
                         type="text"
-                        className="form-input"
-                        value={str}
-                        onChange={(e) => updateHeaderString(ruleIndex, strIndex, e.target.value)}
-                        placeholder="e.g., ZHV|D0132001|X|+|R|EELC|+|OPER"
+                        className="sp-input"
+                        value={rule.fileName}
+                        onChange={(e) => updateRule(ruleIndex, 'fileName', e.target.value)}
+                        placeholder="{uuid}"
                       />
-                      {rule.headerStrings.length > 1 && (
-                        <button
-                          type="button"
-                          className="button button-danger"
-                          onClick={() => removeHeaderString(ruleIndex, strIndex)}
-                        >
-                          <X size={16} />
-                        </button>
-                      )}
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => addHeaderString(ruleIndex)}
-                    style={{ marginTop: '0.5rem' }}
-                  >
-                    <Plus size={16} /> Add Header String
-                  </button>
-                </div>
 
-                <div className="form-group">
-                  <label>File Name Template</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={rule.fileName}
-                    onChange={(e) => updateRule(ruleIndex, 'fileName', e.target.value)}
-                    placeholder="{uuid}"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Destination Paths</label>
-                  {rule.destinations.map((dest, destIndex) => (
-                    <div key={destIndex} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={dest}
-                        onChange={(e) => updateDestination(ruleIndex, destIndex, e.target.value)}
-                        placeholder="//UKPNFORvFS01/WorkHub/Disconnections/D0132Flows"
-                        required
-                      />
-                      {rule.destinations.length > 1 && (
-                        <button
-                          type="button"
-                          className="button button-danger"
-                          onClick={() => removeDestination(ruleIndex, destIndex)}
-                        >
-                          <X size={16} />
+                    {/* Destinations */}
+                    <div className="sp-field">
+                      <div className="sp-field-row">
+                        <label className="sp-label">Destination Paths</label>
+                        <button type="button" className="sp-link-btn" onClick={() => addDestination(ruleIndex)}>
+                          <Plus size={13} /> Add
                         </button>
-                      )}
+                      </div>
+                      {rule.destinations.map((dest, destIndex) => (
+                        <div key={destIndex} className="sp-input-group">
+                          <input
+                            type="text"
+                            className="sp-input"
+                            value={dest}
+                            onChange={(e) => updateDestination(ruleIndex, destIndex, e.target.value)}
+                            placeholder="//UKPNFORvFS01/WorkHub/Disconnections/..."
+                            required
+                          />
+                          {rule.destinations.length > 1 && (
+                            <button type="button" className="sp-input-remove" onClick={() => removeDestination(ruleIndex, destIndex)}>
+                              <X size={15} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => addDestination(ruleIndex)}
-                    style={{ marginTop: '0.5rem' }}
-                  >
-                    <Plus size={16} /> Add Destination
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
 
-        <div className="form-actions">
-          <button type="submit" className="button button-success">
-            Submit
+        {/* Actions */}
+        <div className="sp-form-footer">
+          <button type="submit" className="sp-btn sp-btn-accent">
+            <CheckCircle size={15} /> Create Subscription
           </button>
-          <button type="button" className="button button-secondary" onClick={onBack}>
-            <ArrowLeft size={16} /> Back
+          <button type="button" className="sp-btn sp-btn-ghost" onClick={() => setShowPreview(true)}>
+            <Eye size={15} /> Preview JSON
           </button>
-          <button type="button" className="button button-secondary" onClick={handleReset}>
+          <button type="button" className="sp-btn sp-btn-ghost" onClick={handleReset}>
             Reset
           </button>
-          <button type="button" className="button button-primary" onClick={() => setShowPreview(true)}>
-            <Eye size={16} /> Preview JSON
+          <button type="button" className="sp-btn sp-btn-ghost" onClick={onBack}>
+            <ArrowLeft size={15} /> Cancel
           </button>
         </div>
       </form>
 
+      {/* JSON Preview Modal */}
       <AnimatePresence>
         {showPreview && (
           <motion.div
-            className="modal-overlay"
+            className="sp-modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowPreview(false)}
           >
             <motion.div
-              className="modal-content"
-              initial={{ scale: 0.8, opacity: 0 }}
+              className="sp-modal"
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              exit={{ scale: 0.92, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="modal-header">
-                <h2 className="modal-title">JSON Preview</h2>
-                <span className="modal-close" onClick={() => setShowPreview(false)}>
-                  <X size={24} />
-                </span>
+              <div className="sp-modal-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileJson size={16} color="#667eea" />
+                  <h3 className="sp-modal-title">JSON Preview</h3>
+                </div>
+                <button className="sp-icon-btn" onClick={() => setShowPreview(false)}>
+                  <X size={18} />
+                </button>
               </div>
-              <pre>{JSON.stringify(generateJSON(), null, 2)}</pre>
+              <div className="sp-json-body">
+                <pre>{JSON.stringify(generateJSON(), null, 2)}</pre>
+              </div>
             </motion.div>
           </motion.div>
         )}

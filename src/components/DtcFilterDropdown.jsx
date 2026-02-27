@@ -136,16 +136,6 @@ const DtcFilterDropdown = ({ filters, onFilterChange, onReset, onApply }) => {
             />
           </div>
 
-          {/* Search File Contents */}
-          <div style={{ gridColumn: 'span 4' }}>
-            <label style={labelStyle}>Search File Contents For (e.g. MPAN Number)</label>
-            <input type="text"
-              value={filters.searchFileContents}
-              onChange={(e) => onFilterChange('searchFileContents', e.target.value)}
-              placeholder="Enter search term"
-              style={inputStyle}
-            />
-          </div>
         </div>
       </div>
 

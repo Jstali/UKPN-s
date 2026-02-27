@@ -86,152 +86,110 @@ const Home = ({ user }) => {
   ).join('   •   •   •   ');
 
   return (
-    <div style={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: '100%' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '16px', paddingLeft: '48px', paddingRight: '48px' }}>
+    <div className="dashboard-root">
+      <div className="dashboard-body">
 
-        {/* Welcome Heading + Auto Refresh */}
-        <div style={{ padding: '14px 24px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Welcome Strip — compact single row */}
+        <div className="dashboard-welcome-strip">
           <div>
-            <h1 style={{ fontSize: '20px', fontWeight: '700', color: '#1f2937', marginBottom: '3px' }}>
-              Welcome to File Connect
-            </h1>
-            <div style={{ width: '44px', height: '3px', background: '#667eea', marginBottom: '0' }} />
+            <h1 className="dashboard-welcome-title">Welcome to File Connect</h1>
+            <div className="dashboard-welcome-bar" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: autoRefresh ? '#16a34a' : '#94a3b8' }}>
+          <div className="dashboard-auto-refresh">
+            <span className="dashboard-auto-refresh-label" style={{ color: autoRefresh ? '#16a34a' : '#94a3b8' }}>
               Auto Refresh
             </span>
             <button
               onClick={handleToggleAutoRefresh}
-              style={{
-                position: 'relative', width: '44px', height: '24px', borderRadius: '12px',
-                border: 'none', cursor: 'pointer', transition: 'all 0.3s ease',
-                background: autoRefresh ? '#22c55e' : '#cbd5e1',
-                padding: 0,
-              }}
+              className="dashboard-toggle-btn"
+              style={{ background: autoRefresh ? '#22c55e' : '#cbd5e1' }}
               title={autoRefresh ? 'Disable Auto Refresh' : 'Enable Auto Refresh'}
             >
-              <div style={{
-                position: 'absolute', top: '2px',
-                left: autoRefresh ? '22px' : '2px',
-                width: '20px', height: '20px', borderRadius: '50%',
-                background: '#fff', transition: 'left 0.3s ease',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
+              <div className="dashboard-toggle-knob" style={{ left: autoRefresh ? '22px' : '2px' }}>
                 <RefreshCw size={11} color={autoRefresh ? '#22c55e' : '#94a3b8'} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
               </div>
             </button>
           </div>
         </div>
 
-        {/* Edit Info Bar — marquee shows for all roles with canEditInfo or Business, Edit button hidden for Business */}
+        {/* Edit Info Bar */}
         {(canEditInfo || user?.role === 'Business') && (
-          <div style={{
-            background: '#dbeafe', marginTop: '8px', marginLeft: '24px', marginRight: '24px',
-            padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px'
-          }}>
+          <div className="dashboard-info-bar" style={{ background: '#dbeafe' }}>
             {user?.role !== 'Business' && (
-              <button
-                onClick={() => setShowEditModal(true)}
-                style={{
-                  padding: '6px 14px', background: '#1e40af', color: 'white', border: 'none',
-                  borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', whiteSpace: 'nowrap'
-                }}
-              >
+              <button onClick={() => setShowEditModal(true)} className="dashboard-info-btn" style={{ background: '#1e40af' }}>
                 Edit Info
               </button>
             )}
-            <div style={{ color: '#1e40af', fontWeight: '600', fontSize: '14px', flex: 1 }}>{infoText}</div>
+            <div style={{ color: '#1e40af', fontWeight: '600', fontSize: '13px', flex: 1 }}>{infoText}</div>
           </div>
         )}
 
         {/* View Failed Bar */}
         {failedRecords.length > 0 && (
-          <div style={{
-            background: '#fee2e2', padding: '12px 24px',
-            marginTop: canEditInfo ? '8px' : '16px', marginBottom: '0',
-            marginLeft: '24px', marginRight: '24px',
-            display: 'flex', alignItems: 'center', gap: '12px',
-            position: 'relative', borderRadius: '12px'
-          }}>
+          <div className="dashboard-info-bar" style={{ background: '#fee2e2', marginTop: canEditInfo ? '6px' : '10px', position: 'relative' }}>
             <button
               onClick={() => setShowFailedDropdown(!showFailedDropdown)}
-              style={{
-                padding: '6px 14px', background: '#991b1b', color: 'white', border: 'none',
-                borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', whiteSpace: 'nowrap'
-              }}
+              className="dashboard-info-btn"
+              style={{ background: '#991b1b' }}
             >
               View Failed
             </button>
             {showFailedDropdown && (
-              <div style={{
-                position: 'absolute', top: '100%', left: '16px',
-                background: 'white', border: '1px solid #fca5a5', borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '300px',
-                overflowY: 'auto', zIndex: 100, minWidth: '400px'
-              }}>
+              <div className="dashboard-failed-dropdown">
                 {failedRecords.map((record, index) => (
                   <div key={index} style={{
-                    padding: '12px 16px',
+                    padding: '10px 14px',
                     borderBottom: index < failedRecords.length - 1 ? '1px solid #fee2e2' : 'none',
-                    fontSize: '13px', color: '#991b1b'
+                    fontSize: '12px', color: '#991b1b'
                   }}>
                     ⚠️ {record.flow} - {record.fileId} ({record.startDate})
                   </div>
                 ))}
               </div>
             )}
-            <div style={{ color: '#991b1b', fontWeight: '600', fontSize: '14px', flex: 1 }}>{marqueeText}</div>
+            <div style={{ color: '#991b1b', fontWeight: '600', fontSize: '13px', flex: 1 }}>{marqueeText}</div>
           </div>
         )}
 
-        {/* Navigation Cards */}
-        <div style={{ padding: '0 24px', marginTop: '12px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-            {NAV_CARDS.map((item) => (
-              <motion.div
-                key={item.path}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
-                onClick={() => navigate(item.path)}
-                style={{
-                  background: '#ffffff', border: '2px solid #e2e8f0', borderRadius: '14px',
-                  padding: '14px 18px', cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', gap: '16px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
-                }}
-                whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(102,126,234,0.18)', borderColor: '#667eea', scale: 1.02, transition: { duration: 0.15 } }}
-                whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
-              >
-                <div style={{
-                  width: '44px', height: '44px', borderRadius: '10px', background: 'white',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
-                }}>
-                  <img src={`${process.env.PUBLIC_URL}/${item.icon}`} alt={item.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#1f2937', marginBottom: '3px' }}>{item.label}</div>
-                  <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.desc}</div>
-                </div>
-                <ChevronRight size={18} color="#475569" />
-              </motion.div>
-            ))}
-          </div>
+        {/* Navigation Cards — 3 equal-width on one row */}
+        <div className="dashboard-nav-cards">
+          {NAV_CARDS.map((item) => (
+            <motion.div
+              key={item.path}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
+              onClick={() => navigate(item.path)}
+              className="dashboard-nav-card"
+              whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(102,126,234,0.18)', borderColor: '#667eea', scale: 1.02, transition: { duration: 0.15 } }}
+              whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
+            >
+              <div className="dashboard-nav-card-icon">
+                <img src={`${process.env.PUBLIC_URL}/${item.icon}`} alt={item.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="dashboard-nav-card-label">{item.label}</div>
+                <div className="dashboard-nav-card-desc">{item.desc}</div>
+              </div>
+              <ChevronRight size={16} color="#475569" />
+            </motion.div>
+          ))}
         </div>
 
-        {/* Dashboard Sections */}
-        <FileStatusSection
-          auditDataLength={auditData.length}
-          dashboardUpdatedAt={dashboardUpdatedAt}
-          onShowDetails={showDetails}
-        />
-
-        <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
-
-        <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} />
+        {/* Two-column layout: File Status + App Status (left) | Performance (right) */}
+        <div className="dashboard-layout">
+          <div className="dashboard-col-left">
+            <FileStatusSection
+              auditDataLength={auditData.length}
+              dashboardUpdatedAt={dashboardUpdatedAt}
+              onShowDetails={showDetails}
+            />
+            <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
+          </div>
+          <div className="dashboard-col-right">
+            <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} />
+          </div>
+        </div>
       </div>
 
       {/* Edit Modal */}

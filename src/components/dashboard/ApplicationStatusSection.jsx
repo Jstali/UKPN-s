@@ -5,73 +5,43 @@ import { APP_STATUS_ITEMS } from '../../data/dashboardConfig';
 
 const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
   return (
-    <div style={{ padding: '0 24px', marginTop: '10px' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        style={{
-          background: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)'
-        }}
-      >
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 24px', borderBottom: '1px solid #f1f5f9', position: 'relative'
-        }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Activity size={18} color="#667eea" />
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>Application Status</h3>
-          </div>
-          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#cbd5e1' }} />
-            Updated: {dashboardUpdatedAt}
-          </div>
-          <span style={{
-            fontSize: '12px', fontWeight: 600, color: '#10b981',
-            background: '#ecfdf5', padding: '4px 12px', borderRadius: '20px',
-            border: '1px solid #a7f3d0', flexShrink: 0
-          }}>Live Monitoring</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="dashboard-section-card"
+    >
+      {/* Header */}
+      <div className="dashboard-section-header">
+        <div className="dashboard-section-header-left">
+          <Activity size={16} color="#667eea" />
+          <h3 className="dashboard-section-title">Application Status</h3>
         </div>
+        <span className="dashboard-section-meta">
+          Updated: {dashboardUpdatedAt} &middot; <span style={{ color: '#10b981', fontWeight: 600 }}>Live — Last 24 hours</span>
+        </span>
+      </div>
 
-        {/* Overall Status */}
-        <div style={{ padding: '12px 20px' }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '12px 18px', borderRadius: '10px',
-              border: '1.5px solid #d1fae5', background: '#f0fdf4'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{
-                width: '16px', height: '16px', borderRadius: '50%',
-                background: '#22c55e',
-                boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.2), 0 0 8px rgba(34, 197, 94, 0.3)',
-                flexShrink: 0,
-                animation: 'pulse-dot 2s ease-in-out infinite'
-              }} />
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>All Systems Operational</div>
-                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{APP_STATUS_ITEMS.length} applications monitored</div>
-              </div>
+      {/* Compact overall status */}
+      <div style={{ padding: '12px 16px 14px' }}>
+        <div className="app-status-summary">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="dashboard-pulse-dot" style={{
+              width: '12px', height: '12px', background: '#22c55e',
+              boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.2), 0 0 8px rgba(34, 197, 94, 0.3)',
+            }} />
+            <div>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>All Systems Operational</span>
+              <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '10px' }}>{APP_STATUS_ITEMS.length} apps monitored</span>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#16a34a' }}>Healthy</div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>99.7% avg uptime</div>
-            </div>
-          </motion.div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a' }}>Healthy</span>
+            <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '8px' }}>99.7% avg uptime</span>
+          </div>
         </div>
-
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 
