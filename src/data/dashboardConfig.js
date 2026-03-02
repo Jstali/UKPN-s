@@ -57,9 +57,9 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
     label: 'Pending Delivery',
     value: 27,
     iconSrc: 'Pending delivery.png',
-    color: '#f59e0b',
-    bgColor: '#fffbeb',
-    borderColor: '#fcd34d',
+    color: 27 === 0 ? '#16a34a' : '#f59e0b',
+    bgColor: 27 === 0 ? '#f0fdf4' : '#fffbeb',
+    borderColor: 27 === 0 ? '#bbf7d0' : '#fcd34d',
     trend: '-3%',
   },
 ];
