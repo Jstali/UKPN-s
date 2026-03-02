@@ -1,92 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import auditData from '../data/Audit_Data_Dumy';
+import { nonDtcAuditData } from '../data/mockData';
 
 const ALL_COLUMNS = [
-  { key: 'id', label: 'Unique ID' },
+  { key: 'uniqueId', label: 'Unique ID' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'sourceFile', label: 'Source File' },
   { key: 'fileId', label: 'File ID' },
-  { key: 'fileName', label: 'File Name' },
   { key: 'sourcePath', label: 'Source Path' },
-  { key: 'headerString', label: 'Header String' },
-  { key: 'flowVersion', label: 'Flow Version' },
-  { key: 'fromRole', label: 'From Role' },
-  { key: 'fromMPID', label: 'From MPID' },
-  { key: 'toRole', label: 'To Role' },
-  { key: 'toMPID', label: 'To MPID' },
-  { key: 'recApp', label: 'Receiving App' },
-  { key: 'application', label: 'Dest Application' },
   { key: 'eventType', label: 'Event Type' },
+  { key: 'startDate', label: 'Start Date' },
+  { key: 'endDate', label: 'End Date' },
   { key: 'status', label: 'Status' },
-  { key: 'timestamp', label: 'Timestamp' },
-  { key: 'eventId', label: 'Event ID' },
-  { key: 'destinationPath', label: 'Destination Path' },
-  { key: 'destinationFileName', label: 'Destination File' },
-  { key: 'checksum', label: 'Checksum' },
-  { key: 'processed', label: 'Processed' },
 ];
 
-const parseHeader = (headerStr) => {
-  if (!headerStr || headerStr === 'UNKNOWN') {
-    return { flowVersion: '', fromRole: '', fromMPID: '', toRole: '', toMPID: '', recApp: '' };
-  }
-  const parts = headerStr.split('|');
-  return {
-    flowVersion: parts[1] || '',
-    fromRole: parts[2] || '',
-    fromMPID: parts[5] || '',
-    toRole: parts[4] || '',
-    toMPID: parts[3] || '',
-    recApp: parts[6] || '',
-  };
-};
-
-const EVENT_TYPE_LABELS = {
-  '0': 'Zero',
-  '1': 'One',
-  '2': 'Two',
-  '3': 'Three',
-  '4': 'Four',
-  '5': 'Five',
-  '6': 'Six',
-  '7': 'Seven',
-  '8': 'Eight',
-  '9': 'Nine',
-  '10': 'Ten',
-};
-
-const formatEventType = (value) => {
-  const str = String(value);
-  return EVENT_TYPE_LABELS[str] || str;
-};
-
-const DtcAuditFilter = () => {
+const NonDtcAuditDetail = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const incomingFilters = location.state?.filters;
 
   const defaultFilters = {
-    application: 'All',
-    eventType: 'All',
     flow: 'All',
-    version: 'All',
-    fromRole: 'All',
-    fromMPID: 'All',
-    toRole: 'All',
-    toMPID: 'All',
-    receivingApp: 'All',
-    eventTimestampFrom: '',
-    eventTimestampTo: '',
-    fileCreationDate: '',
+    eventType: 'All',
+    status: 'All',
     fileId: '',
-    msgId: '',
   };
 
-  const [filters, setFilters] = useState(incomingFilters || defaultFilters);
-  const [hasQueried, setHasQueried] = useState(false);
-  const [filteredResults, setFilteredResults] = useState([]);
-  const [exceptionCount, setExceptionCount] = useState(0);
+  const [filters, setFilters] = useState({ ...defaultFilters });
+  const [hasQueried, setHasQueried] = useState(true);
+  const [filteredResults, setFilteredResults] = useState(nonDtcAuditData);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,87 +39,26 @@ const DtcAuditFilter = () => {
 
   const handleReset = () => {
     setFilters({ ...defaultFilters });
-    setHasQueried(false);
-    setFilteredResults([]);
+    setFilteredResults(nonDtcAuditData);
     setSearchTerm('');
-  };
-
-  const handleQuery = () => {
-    let results = [];
-    auditData.forEach(item => {
-      const parsed = parseHeader(item.Header_String);
-      if (item.events && item.events.length > 0) {
-        item.events.forEach(event => {
-          const ts = event.timestamp ? new Date(event.timestamp) : null;
-          const formatDate = (d) => d ? d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
-          results.push({
-            id: item.id,
-            fileId: item.File_ID || '',
-            fileName: item.Source_FileName,
-            sourcePath: item.Source_Path,
-            headerString: item.Header_String,
-            flowVersion: parsed.flowVersion || 'UNKNOWN',
-            fromRole: parsed.fromRole,
-            fromMPID: parsed.fromMPID,
-            toRole: parsed.toRole,
-            toMPID: parsed.toMPID,
-            recApp: parsed.recApp,
-            application: event.applicationName || event.Destination_Application || 'Unknown',
-            eventType: event.Event_Type || 'Unknown',
-            status: event.Status || 'Unknown',
-            processed: event.processed || 'false',
-            timestamp: formatDate(ts),
-            eventId: event.id || '',
-            destinationPath: event.Destination_Path || '',
-            destinationFileName: event.Destination_fileName || '',
-            checksum: item.Checksum_From_User || '',
-            _rid: item._rid,
-            _ts: item._ts,
-          });
-        });
-      }
-    });
-
-    // Apply filters
-    if (filters.application !== 'All') results = results.filter(r => r.application === filters.application);
-    if (filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
-    if (filters.flow !== 'All') results = results.filter(r => r.flowVersion === filters.flow);
-    if (filters.fromRole !== 'All') results = results.filter(r => r.fromRole === filters.fromRole);
-    if (filters.fromMPID !== 'All') results = results.filter(r => r.fromMPID === filters.fromMPID);
-    if (filters.toRole !== 'All') results = results.filter(r => r.toRole === filters.toRole);
-    if (filters.toMPID !== 'All') results = results.filter(r => r.toMPID === filters.toMPID);
-    if (filters.receivingApp !== 'All') results = results.filter(r => r.recApp === filters.receivingApp);
-    if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
-    if (filters.msgId) results = results.filter(r => r.msgId && r.msgId.includes(filters.msgId));
-
-    setFilteredResults(results);
-    setExceptionCount(0);
-    setHasQueried(true);
     setCurrentPage(1);
   };
 
-  // Auto-query if navigated from DTC Audit page
-  useEffect(() => {
-    if (incomingFilters) {
-      handleQuery();
-      window.history.replaceState({}, document.title);
-    }
-  }, []);
+  const handleQuery = () => {
+    let results = [...nonDtcAuditData];
+    if (filters.flow !== 'All') results = results.filter(r => r.flow === filters.flow);
+    if (filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
+    if (filters.status !== 'All') results = results.filter(r => r.status === filters.status);
+    if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
+    setFilteredResults(results);
+    setCurrentPage(1);
+    setHasQueried(true);
+  };
 
   // Build dropdown options
-  const flatData = [];
-  auditData.forEach(item => {
-    if (item.events && item.events.length > 0) {
-      item.events.forEach(event => {
-        flatData.push({
-          application: event.applicationName || event.Destination_Application || 'Unknown',
-          eventType: event.Event_Type || 'Unknown',
-        });
-      });
-    }
-  });
-  const applicationOptions = ['All', ...new Set(flatData.map(i => i.application).filter(Boolean))];
-  const eventTypeOptions = ['All', ...new Set(flatData.map(i => i.eventType).filter(Boolean))].sort();
+  const flowOptions = ['All', ...new Set(nonDtcAuditData.map(r => r.flow).filter(Boolean))].sort();
+  const eventTypeOptions = ['All', ...new Set(nonDtcAuditData.map(r => r.eventType).filter(Boolean))].sort();
+  const statusOptions = ['All', ...new Set(nonDtcAuditData.map(r => r.status).filter(Boolean))].sort();
 
   // Search + paginate
   const searchedResults = filteredResults.filter(row =>
@@ -191,22 +72,9 @@ const DtcAuditFilter = () => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const dropdownFields = [
-    { label: 'Application', field: 'application', options: applicationOptions },
-    { label: 'Event Type', field: 'eventType', options: eventTypeOptions },
-    { label: 'Flow', field: 'flow', options: ['All'] },
-    { label: 'Version', field: 'version', options: ['All'] },
-    { label: 'From Role', field: 'fromRole', options: ['All'] },
-    { label: 'From MPID', field: 'fromMPID', options: ['All'] },
-    { label: 'To Role', field: 'toRole', options: ['All'] },
-    { label: 'To MPID', field: 'toMPID', options: ['All'] },
-    { label: 'Receiving App', field: 'receivingApp', options: ['All'] },
-  ];
-
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
   const selectStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#1e293b', background: '#fff', cursor: 'pointer', outline: 'none' };
   const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
-  const smallInputStyle = { flex: 1, padding: '8px 8px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', outline: 'none' };
 
   return (
     <motion.div
@@ -224,13 +92,13 @@ const DtcAuditFilter = () => {
           <div style={{ fontSize: '14px', color: '#94a3b8' }}>
             <Link to="/" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>Home</Link>
             {' > '}
-            <Link to="/dtc-audit" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>DTC Audit</Link>
+            <Link to="/non-dtc-audit" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>Non DTC Audit</Link>
             {' > '}
             <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Detail View</span>
           </div>
         </div>
         <button
-          onClick={() => navigate('/dtc-audit')}
+          onClick={() => navigate('/non-dtc-audit')}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', background: '#667eea', color: 'white',
@@ -250,52 +118,27 @@ const DtcAuditFilter = () => {
       }}>
         <div style={{ padding: '16px 20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            {dropdownFields.map(({ label, field, options }) => (
-              <div key={field}>
-                <label style={labelStyle}>{label}</label>
-                <select value={filters[field]} onChange={(e) => handleFilterChange(field, e.target.value)} style={selectStyle}>
-                  {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              </div>
-            ))}
-
             <div>
-              <label style={labelStyle}>Event Timestamp From</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input type="date" value={filters.eventTimestampFrom.split('T')[0] || ''}
-                  onChange={(e) => { const time = filters.eventTimestampFrom.split('T')[1] || '00:00'; handleFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : ''); }}
-                  style={smallInputStyle} />
-                <input type="time" value={filters.eventTimestampFrom.split('T')[1] || ''}
-                  onChange={(e) => { const date = filters.eventTimestampFrom.split('T')[0] || new Date().toISOString().split('T')[0]; handleFilterChange('eventTimestampFrom', `${date}T${e.target.value}`); }}
-                  style={smallInputStyle} />
-              </div>
+              <label style={labelStyle}>Flow</label>
+              <select value={filters.flow} onChange={(e) => handleFilterChange('flow', e.target.value)} style={selectStyle}>
+                {flowOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
             </div>
-
             <div>
-              <label style={labelStyle}>Event Timestamp To</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <input type="date" value={filters.eventTimestampTo.split('T')[0] || ''}
-                  onChange={(e) => { const time = filters.eventTimestampTo.split('T')[1] || '23:59'; handleFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : ''); }}
-                  style={smallInputStyle} />
-                <input type="time" value={filters.eventTimestampTo.split('T')[1] || ''}
-                  onChange={(e) => { const date = filters.eventTimestampTo.split('T')[0] || new Date().toISOString().split('T')[0]; handleFilterChange('eventTimestampTo', `${date}T${e.target.value}`); }}
-                  style={smallInputStyle} />
-              </div>
+              <label style={labelStyle}>Event Type</label>
+              <select value={filters.eventType} onChange={(e) => handleFilterChange('eventType', e.target.value)} style={selectStyle}>
+                {eventTypeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
             </div>
-
             <div>
-              <label style={labelStyle}>File Creation Date</label>
-              <input type="date" value={filters.fileCreationDate} onChange={(e) => handleFilterChange('fileCreationDate', e.target.value)} style={inputStyle} />
+              <label style={labelStyle}>Status</label>
+              <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)} style={selectStyle}>
+                {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
             </div>
-
             <div>
               <label style={labelStyle}>File ID</label>
               <input type="text" value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} placeholder="Enter File ID" style={inputStyle} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Msg ID</label>
-              <input type="text" value={filters.msgId} onChange={(e) => handleFilterChange('msgId', e.target.value)} placeholder="Enter Msg ID" style={inputStyle} />
             </div>
           </div>
         </div>
@@ -409,8 +252,6 @@ const DtcAuditFilter = () => {
                             }}>
                               {row[col.key] || ''}
                             </span>
-                          ) : col.key === 'eventType' ? (
-                            formatEventType(row[col.key])
                           ) : (
                             row[col.key] || ''
                           )}
@@ -449,4 +290,4 @@ const DtcAuditFilter = () => {
   );
 };
 
-export default DtcAuditFilter;
+export default NonDtcAuditDetail;

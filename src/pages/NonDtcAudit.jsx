@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronDown, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
@@ -8,6 +8,7 @@ import { nonDtcAuditData } from '../data/mockData';
 import { exportToCSV } from '../utils/exportUtils';
 
 const NonDtcAudit = () => {
+  const navigate = useNavigate();
   const [showBars, setShowBars] = useState(false);
 
   const uniqueFlows = [...new Set(nonDtcAuditData.map(item => item.flow))].length;
@@ -122,6 +123,7 @@ const NonDtcAudit = () => {
         ]}
         onDownload={(row) => exportToCSV([row], columns, `non_dtc_audit_${row.uniqueId}`)}
         exportConfig={{ filename: 'non_dtc_audit_report' }}
+        onViewDetail={() => navigate('/non-dtc-audit-detail')}
       />
     </motion.div>
   );

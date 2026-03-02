@@ -20,7 +20,7 @@ const Home = ({ user }) => {
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section');
   const [dashboardUpdatedAt, setDashboardUpdatedAt] = React.useState(() => new Date().toLocaleTimeString());
-  const [autoRefresh, setAutoRefresh] = React.useState(false);
+  const [autoRefresh, setAutoRefresh] = React.useState(true);
 
   React.useEffect(() => {
     if (!autoRefresh) return;
@@ -32,11 +32,7 @@ const Home = ({ user }) => {
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 
-  // Calculate subscription stats
   const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
-  const validSubscriptions = allSubscriptions.filter(app => app.status === 'active');
-  const validCount = auditData.filter(item => item.events?.some(e => e.Event_Type === '2')).length;
-  const deliveredCount = auditData.filter(item => item.events?.some(e => e.Event_Type === '4')).length;
 
   const showDetails = (type) => {
     const detailsMap = {
@@ -45,12 +41,6 @@ const Home = ({ user }) => {
         items: auditData.map(item => item.Source_FileName),
         value: auditData.length,
         chartData: { labels: ['Valid', 'Invalid', 'Pending'], values: [78, 27, 27], colors: ['#10b981', '#ef4444', '#f59e0b'] }
-      },
-      valid: {
-        title: 'Valid Subscriptions',
-        items: validSubscriptions.map(app => app.Application),
-        value: 78,
-        chartData: { labels: ['ADMS', 'Electralink', 'MPRS', 'MSBI'], values: [25, 20, 18, 15], colors: ['#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'] }
       },
       subscriptions: {
         title: 'Total Files Subscribed',

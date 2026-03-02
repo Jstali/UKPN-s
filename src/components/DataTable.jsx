@@ -158,7 +158,7 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
   );
 };
 
-const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig }) => {
+const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, onViewDetail }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -335,7 +335,7 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig }) 
             <option value={200}>200 per page</option>
           </select>
           <span
-            onClick={() => setViewAll(!viewAll)}
+            onClick={() => onViewDetail ? onViewDetail() : setViewAll(!viewAll)}
             style={{
               color: viewAll ? '#dc2626' : '#4f46e5',
               fontSize: '13px',

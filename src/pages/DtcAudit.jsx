@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
@@ -30,6 +30,14 @@ const parseHeader = (headerStr) => {
   };
 };
 
+const EVENT_TYPE_LABELS = {
+  '0': 'Zero',
+  '1': 'One',
+  '2': 'Two',
+  '3': 'Three',
+  '4': 'Four',
+};
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -48,7 +56,7 @@ const flattenAuditEvents = (data) => {
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
           application: event.applicationName || event.Destination_Application || 'Unknown',
-          eventType: event.Event_Type || 'Unknown',
+          eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
           status: event.Status || 'Unknown',
           processed: event.processed || 'false',
           timestamp: event.timestamp || '',
@@ -81,7 +89,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           created: formatDate(ts),
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
-          eventType: event.Event_Type || 'Unknown',
+          eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
           timestamp: formatDate(ts),
           status: event.Status || 'Unknown',
@@ -145,6 +153,7 @@ const CRITERIA_FIELDS = [
 
 const DtcAudit = ({ user }) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -271,9 +280,6 @@ const DtcAudit = ({ user }) => {
 
         {/* Action buttons */}
         <div className="dtc-header-actions">
-          {isBusiness && (
-            <span className="dtc-business-badge">Business View</span>
-          )}
           <button
             className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
             onClick={() => setShowApps(!showApps)}
@@ -378,13 +384,14 @@ const DtcAudit = ({ user }) => {
         compactColumns={[
           { key: 'recApp', label: 'Source App' },
           { key: 'fileName', label: 'File Name' },
-          { key: 'eventType', label: 'Event Type' },
+          { key: 'timestamp', label: 'Event Timestamp' },
           { key: 'status', label: 'Status' },
           { key: 'application', label: 'Dest App' },
           { key: 'flowVersion', label: 'Flows' },
         ]}
         onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
         exportConfig={{ filename: 'dtc_audit_report' }}
+        onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
       />
     </motion.div>
   );

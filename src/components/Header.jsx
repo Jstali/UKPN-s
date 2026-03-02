@@ -50,7 +50,7 @@ const Header = ({ user, onLogout }) => {
             marginLeft: 'auto'
           }}>
             <div style={{ fontSize: '15px', fontWeight: '600', color: '#1f2937' }}>
-              {greeting}, {user.username}
+              {greeting}, {user.role === 'Business' ? 'User' : user.username.charAt(0).toUpperCase() + user.username.slice(1)}
             </div>
             <div style={{ position: 'relative' }}>
               <button

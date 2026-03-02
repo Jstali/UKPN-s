@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import DtcAudit from './pages/DtcAudit';
 import DtcAuditFilter from './pages/DtcAuditFilter';
 import NonDtcAudit from './pages/NonDtcAudit';
+import NonDtcAuditDetail from './pages/NonDtcAuditDetail';
 import Subscriptions from './pages/Subscriptions';
 import AuditDetails from './pages/AuditDetails';
 import FileView from './pages/FileView';
@@ -63,6 +64,7 @@ function App() {
               <Route path="/dtc-audit" element={<DtcAudit user={user} />} />
               <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />
               <Route path="/non-dtc-audit" element={<NonDtcAudit />} />
+              <Route path="/non-dtc-audit-detail" element={<NonDtcAuditDetail />} />
               <Route path="/subscriptions" element={<Subscriptions user={user} />} />
               <Route path="/audit-details" element={<AuditDetails />} />
               <Route path="/file-view/:fileId" element={<FileView />} />
