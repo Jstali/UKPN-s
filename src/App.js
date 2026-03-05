@@ -26,6 +26,8 @@ function App() {
     }
   }, []);
 
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
   const handleLogin = (userData) => {
     setUser(userData);
     sessionStorage.setItem('user', JSON.stringify(userData));
@@ -56,10 +58,10 @@ function App() {
         duration={400}
       >
         <div className="app-container">
-          <Header user={user} onLogout={handleLogout} />
+          <Header user={user} onLogout={handleLogout} autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh} />
           <main className="app-main">
             <Routes>
-              <Route path="/" element={<Home user={user} />} />
+              <Route path="/" element={<Home user={user} autoRefresh={autoRefresh} setAutoRefresh={setAutoRefresh} />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/dtc-audit" element={<DtcAudit user={user} />} />
               <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />

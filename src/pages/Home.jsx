@@ -14,19 +14,26 @@ import ApplicationStatusSection from '../components/dashboard/ApplicationStatusS
 import PerformanceSection from '../components/dashboard/PerformanceSection';
 import EditModal from '../components/dashboard/EditModal';
 
-const Home = ({ user }) => {
+const Home = ({ user, autoRefresh, setAutoRefresh }) => {
   const navigate = useNavigate();
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section');
-  const [dashboardUpdatedAt, setDashboardUpdatedAt] = React.useState(() => new Date().toLocaleTimeString());
-  const [autoRefresh, setAutoRefresh] = React.useState(true);
+  const [dashboardUpdatedAt, setDashboardUpdatedAt] = React.useState(() => {
+    const saved = sessionStorage.getItem('dashboardUpdatedAt');
+    if (saved) return saved;
+    const now = new Date().toLocaleTimeString();
+    sessionStorage.setItem('dashboardUpdatedAt', now);
+    return now;
+  });
 
   React.useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      setDashboardUpdatedAt(new Date().toLocaleTimeString());
-    }, 30000);
+      const newTime = new Date().toLocaleTimeString();
+      setDashboardUpdatedAt(newTime);
+      sessionStorage.setItem('dashboardUpdatedAt', newTime);
+    }, 60000);
     return () => clearInterval(interval);
   }, [autoRefresh]);
 

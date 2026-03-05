@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, RefreshCw } from 'lucide-react';
 
-const Header = ({ user, onLogout }) => {
+const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
   const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [greeting, setGreeting] = useState('Good morning');
@@ -52,6 +52,27 @@ const Header = ({ user, onLogout }) => {
             <div style={{ fontSize: '15px', fontWeight: '600', color: '#1f2937' }}>
               {greeting}, {user.role === 'Business' ? 'User' : user.username.charAt(0).toUpperCase() + user.username.slice(1)}
             </div>
+            <button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              title={autoRefresh ? 'Auto-refresh ON (1 min)' : 'Auto-refresh OFF'}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 12px',
+                background: autoRefresh ? '#16a34a' : '#e5e7eb',
+                border: 'none',
+                borderRadius: '7px',
+                color: autoRefresh ? 'white' : '#6b7280',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <RefreshCw size={14} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
+              {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
+            </button>
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}

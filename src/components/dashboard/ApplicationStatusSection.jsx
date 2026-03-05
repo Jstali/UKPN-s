@@ -37,7 +37,6 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
           </div>
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a' }}>Healthy</span>
-            <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '8px' }}>99.7% avg uptime</span>
           </div>
         </div>
       </div>

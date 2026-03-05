@@ -34,7 +34,7 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
   },
   {
     key: 'subscriptions',
-    label: 'Total Files Subscribed',
+    label: 'Total Files to be Delivered',
     value: 105,
     iconSrc: 'Subscription.png',
     color: '#16a34a',
@@ -65,12 +65,12 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
 ];
 
 export const APP_STATUS_ITEMS = [
-  { name: 'ADMS', env: 'DEV_V1', healthy: true, uptime: '99.9%' },
-  { name: 'Electralink', env: 'DEV_V1', healthy: true, uptime: '99.7%' },
-  { name: 'MPRS', env: 'DEV_V1', healthy: true, uptime: '99.8%' },
-  { name: 'MSBI', env: 'DEV_V1', healthy: false, uptime: '87.2%' },
-  { name: 'SAP PI', env: 'PROD', healthy: true, uptime: '99.9%' },
-  { name: 'File Connect', env: 'PROD', healthy: true, uptime: '100%' },
+  { name: 'ADMS', env: 'DEV_V1', healthy: true },
+  { name: 'Electralink', env: 'DEV_V1', healthy: true },
+  { name: 'MPRS', env: 'DEV_V1', healthy: true },
+  { name: 'MSBI', env: 'DEV_V1', healthy: false },
+  { name: 'SAP PI', env: 'PROD', healthy: true },
+  { name: 'File Connect', env: 'PROD', healthy: true },
 ];
 
 export const PERFORMANCE_ITEMS = [
