@@ -1,14 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 const DtcAuditTable = ({ data }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = sessionStorage.getItem('dtcAuditTablePage');
+    if (saved) {
+      sessionStorage.removeItem('dtcAuditTablePage');
+      return Number(saved) || 1;
+    }
+    return 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const saved = sessionStorage.getItem('dtcAuditTablePageSize');
+    if (saved) {
+      sessionStorage.removeItem('dtcAuditTablePageSize');
+      return Number(saved) || 10;
+    }
+    return 10;
+  });
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Reset to page 1 when data changes
+  // Reset to page 1 when data changes (skip on first mount if restoring page)
+  const isFirstMount = React.useRef(true);
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
     setCurrentPage(1);
   }, [data]);
 
@@ -93,7 +113,15 @@ const DtcAuditTable = ({ data }) => {
             paginatedData.map((result, index) => (
               <tr key={index}>
                 <td>
-                  <Link to={`/audit-details`} state={{ record: result }} className="file-link">{result.id}</Link>
+                  <span
+                    className="file-link"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      sessionStorage.setItem('dtcAuditTablePage', String(currentPage));
+                      sessionStorage.setItem('dtcAuditTablePageSize', String(pageSize));
+                      navigate('/audit-details', { state: { record: result } });
+                    }}
+                  >{result.id}</span>
                 </td>
                 <td>{result.flowVersion?.replace(/\d+$/, '') || ''}</td>
                 <td>{result.flowVersion?.match(/\d+$/)?.[0] || ''}</td>

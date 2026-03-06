@@ -15,7 +15,7 @@ const AuditDetails = () => {
   }, []);
 
   const handleBack = () => {
-    navigate('/dtc-audit');
+    navigate(-1);
   };
 
   const handleDownload = () => {

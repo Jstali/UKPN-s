@@ -161,8 +161,22 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
 const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, onViewDetail }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = sessionStorage.getItem('dataTablePage');
+    if (saved) {
+      sessionStorage.removeItem('dataTablePage');
+      return Number(saved) || 1;
+    }
+    return 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const saved = sessionStorage.getItem('dataTablePageSize');
+    if (saved) {
+      sessionStorage.removeItem('dataTablePageSize');
+      return Number(saved) || 10;
+    }
+    return 10;
+  });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [columnFilters, setColumnFilters] = useState({});
@@ -461,7 +475,11 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
                       ) : col.key === 'application' ? (
                         <span
                           style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
-                          onClick={() => navigate(`/audit-details`, { state: { record: row } })}
+                          onClick={() => {
+                            sessionStorage.setItem('dataTablePage', String(currentPage));
+                            sessionStorage.setItem('dataTablePageSize', String(pageSize));
+                            navigate(`/audit-details`, { state: { record: row } });
+                          }}
                         >
                           {row[col.key]}
                         </span>
