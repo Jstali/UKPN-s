@@ -23,6 +23,13 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
         </div>
         <span className="dashboard-section-meta">
           Updated: {dashboardUpdatedAt} &middot; <span style={{ color: '#8b5cf6', fontWeight: 600 }}>Last 24 hours</span>
+          &nbsp;&middot;&nbsp;
+          <span
+            onClick={() => navigate('/performance-detail')}
+            style={{ color: '#7c3aed', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            View Detail
+          </span>
         </span>
       </div>
 
@@ -33,7 +40,9 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
             <Clock size={15} color="#64748b" />
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Overall Average</span>
           </div>
-          <div style={{ fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>2.4s</div>
+          <div style={{ fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>
+            {(PERFORMANCE_ITEMS.reduce((sum, app) => sum + app.actual, 0) / PERFORMANCE_ITEMS.length).toFixed(1)}s
+          </div>
         </div>
 
         {/* Performance Table */}
@@ -47,7 +56,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
             </tr>
           </thead>
           <tbody>
-            {PERFORMANCE_ITEMS.map((app) => (
+            {[...PERFORMANCE_ITEMS].sort((a, b) => b.actual - a.actual).slice(0, 5).map((app) => (
               <tr
                 key={app.name}
                 onClick={() => navigate('/performance-graph', { state: { app } })}

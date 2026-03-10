@@ -111,13 +111,13 @@ const Home = ({ user, autoRefresh, setAutoRefresh }) => {
 
         {/* Edit Info Bar */}
         {(canEditInfo || user?.role === 'Business') && (
-          <div className="dashboard-info-bar" style={{ background: '#dbeafe' }}>
+          <div className="dashboard-info-bar" style={{ background: '#fef3c7' }}>
             {user?.role !== 'Business' && (
-              <button onClick={() => setShowEditModal(true)} className="dashboard-info-btn" style={{ background: '#1e40af' }}>
+              <button onClick={() => setShowEditModal(true)} className="dashboard-info-btn" style={{ background: '#d97706' }}>
                 Edit Info
               </button>
             )}
-            <div style={{ color: '#1e40af', fontWeight: '600', fontSize: '13px', flex: 1 }}>{infoText}</div>
+            <div style={{ color: '#92400e', fontWeight: '600', fontSize: '13px', flex: 1 }}>{infoText}</div>
           </div>
         )}
 

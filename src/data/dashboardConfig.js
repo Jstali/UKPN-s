@@ -70,7 +70,6 @@ export const APP_STATUS_ITEMS = [
   { name: 'MPRS', env: 'DEV_V1', healthy: true },
   { name: 'MSBI', env: 'DEV_V1', healthy: false },
   { name: 'SAP PI', env: 'PROD', healthy: true },
-  { name: 'File Connect', env: 'PROD', healthy: true },
 ];
 
 export const PERFORMANCE_ITEMS = [

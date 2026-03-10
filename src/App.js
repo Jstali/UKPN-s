@@ -12,6 +12,7 @@ import AuditDetails from './pages/AuditDetails';
 import FileView from './pages/FileView';
 import Analytics from './pages/Analytics';
 import PerformanceGraphPage from './pages/PerformanceGraphPage';
+import PerformanceDetail from './pages/PerformanceDetail';
 import Login from './pages/Login';
 import ClickSpark from './components/ClickSpark';
 import './index.css';
@@ -71,6 +72,7 @@ function App() {
               <Route path="/audit-details" element={<AuditDetails />} />
               <Route path="/file-view/:fileId" element={<FileView />} />
               <Route path="/performance-graph" element={<PerformanceGraphPage />} />
+              <Route path="/performance-detail" element={<PerformanceDetail />} />
             </Routes>
           </main>
           <Footer />
