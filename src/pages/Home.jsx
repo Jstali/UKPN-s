@@ -18,7 +18,10 @@ const Home = ({ user, autoRefresh, setAutoRefresh }) => {
   const navigate = useNavigate();
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
-  const [infoText, setInfoText] = React.useState('ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section');
+  const [infoText, setInfoText] = React.useState(() => {
+    const saved = localStorage.getItem('dashboardInfoText');
+    return saved || 'ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section';
+  });
   const [dashboardUpdatedAt, setDashboardUpdatedAt] = React.useState(() => {
     const saved = sessionStorage.getItem('dashboardUpdatedAt');
     if (saved) return saved;
@@ -193,7 +196,7 @@ const Home = ({ user, autoRefresh, setAutoRefresh }) => {
       {showEditModal && (
         <EditModal
           infoText={infoText}
-          onInfoTextChange={setInfoText}
+          onInfoTextChange={(text) => { setInfoText(text); localStorage.setItem('dashboardInfoText', text); }}
           onClose={() => setShowEditModal(false)}
         />
       )}
