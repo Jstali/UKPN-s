@@ -26,7 +26,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
           &nbsp;&middot;&nbsp;
           <span
             onClick={() => navigate('/performance-detail')}
-            style={{ color: '#7c3aed', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+            style={{ color: '#2563eb', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
           >
             View Detail
           </span>
