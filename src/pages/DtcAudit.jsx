@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
-import auditData from '../data/Audit_Data_Dumy';
+import auditData from '../data/Audit_Data_Dummy';
 import { exportToCSV } from '../utils/exportUtils';
 import ColorBar, { FLOW_COLORS, APP_COLORS } from '../components/ColorBar';
 import {
@@ -14,6 +14,7 @@ import {
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
 import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+import { useApp } from '../context/AppContext';
 
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
@@ -128,7 +129,8 @@ const CRITERIA_FIELDS = [
   { label: 'Msg ID', key: 'msgId' },
 ];
 
-const DtcAudit = ({ user }) => {
+const DtcAudit = () => {
+  const { user } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 

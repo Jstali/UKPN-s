@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { User, LogOut, RefreshCw } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
-const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
-  const location = useLocation();
+const Header = () => {
+  const { user, logout, autoRefresh, setAutoRefresh } = useApp();
   const [showDropdown, setShowDropdown] = useState(false);
   const [greeting, setGreeting] = useState('Good morning');
 
@@ -27,20 +28,20 @@ const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
   }, []);
 
   return (
-    <header className="header">
+    <header className="header" role="banner">
       <div className="header-content">
-        <Link to="/" className="logo">
-          <img 
+        <Link to="/" className="logo" aria-label="Go to home page">
+          <img
             src={`${process.env.PUBLIC_URL}/ukpn-logo.svg`}
-            alt="UKPN"
+            alt="UK Power Networks logo"
             style={{ height: '36px', width: 'auto' }}
           />
         </Link>
         {user && (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '20px', 
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px',
             marginLeft: 'auto'
           }}>
             <div style={{ fontSize: '15px', fontWeight: '600', color: '#1f2937' }}>
@@ -49,6 +50,7 @@ const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               title={autoRefresh ? 'Auto-refresh ON (1 min)' : 'Auto-refresh OFF'}
+              aria-label={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -70,6 +72,8 @@ const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
+                aria-label="User menu"
+                aria-expanded={showDropdown}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -88,21 +92,25 @@ const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
                 <span>{user.role}</span>
               </button>
               {showDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  bottom: 'auto',
-                  right: 0,
-                  marginTop: '8px',
-                  background: 'white',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  minWidth: '150px',
-                  overflow: 'hidden',
-                  zIndex: 1000
-                }}>
+                <div
+                  role="menu"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    bottom: 'auto',
+                    right: 0,
+                    marginTop: '8px',
+                    background: 'white',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    minWidth: '150px',
+                    overflow: 'hidden',
+                    zIndex: 1000
+                  }}
+                >
                   <button
-                    onClick={onLogout}
+                    onClick={logout}
+                    role="menuitem"
                     style={{
                       width: '100%',
                       display: 'flex',

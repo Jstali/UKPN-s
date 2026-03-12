@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, RefreshCw } from 'lucide-react';
 import { dtcAuditData, nonDtcAuditData } from '../data/mockData';
-import auditData from '../data/Audit_Data_Dumy';
+import auditData from '../data/Audit_Data_Dummy';
 import admsData from '../data/ADMS_DEV_V1.js';
 import electralinkData from '../data/Electralink_DEV_V1.js';
 import mprsData from '../data/MPRS_DEV_V1.js';
@@ -14,7 +14,10 @@ import ApplicationStatusSection from '../components/dashboard/ApplicationStatusS
 import PerformanceSection from '../components/dashboard/PerformanceSection';
 import EditModal from '../components/dashboard/EditModal';
 
-const Home = ({ user, autoRefresh, setAutoRefresh }) => {
+import { useApp } from '../context/AppContext';
+
+const Home = () => {
+  const { user, autoRefresh, setAutoRefresh } = useApp();
   const navigate = useNavigate();
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);

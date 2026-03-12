@@ -2,7 +2,7 @@
 // Toggle USE_API to switch between mock data and live backend
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
-const USE_API = false; // Set to true when backend is running
+const USE_API = process.env.REACT_APP_USE_API === 'true';
 
 const getToken = () => sessionStorage.getItem('authToken');
 

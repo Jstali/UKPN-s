@@ -10,6 +10,7 @@ import admsData from '../data/ADMS_DEV_V1.js';
 import electralinkData from '../data/Electralink_DEV_V1.js';
 import mprsData from '../data/MPRS_DEV_V1.js';
 import msbiData from '../data/application subscription.js';
+import { useApp } from '../context/AppContext';
 
 const APP_COLORS = {
   ADMS: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
@@ -23,7 +24,8 @@ const getAppColor = (appName) => {
   return APP_COLORS[key] || { accent: '#6b7280', light: '#f9fafb', border: '#d1d5db' };
 };
 
-const Subscriptions = ({ user }) => {
+const Subscriptions = () => {
+  const { user } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [showJson, setShowJson] = useState(false);

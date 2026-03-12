@@ -10,12 +10,13 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const users = [
+  // In production, replace with API-based authentication
+  const users = JSON.parse(process.env.REACT_APP_USERS || JSON.stringify([
     { username: 'business', password: 'business123', role: 'Business' },
     { username: 'monitoring', password: 'monitoring123', role: 'Monitoring Team' },
     { username: 'support', password: 'support123', role: 'Core Support' },
     { username: 'admin', password: 'admin123', role: 'Admin' }
-  ];
+  ]));
 
   const handleSubmit = (e) => {
     e.preventDefault();

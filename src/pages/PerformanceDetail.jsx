@@ -247,17 +247,9 @@ const PerformanceDetail = () => {
                 }}
                 whileHover={{ backgroundColor: '#f8fafc' }}
               >
-                {/* System Name + Status */}
+                {/* System Name */}
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '3px' }}>{app.name}</div>
-                  <span style={{
-                    fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px',
-                    background: app.actual <= app.threshold ? '#f0fdf4' : '#fef2f2',
-                    color: app.actual <= app.threshold ? '#16a34a' : '#dc2626',
-                    border: app.actual <= app.threshold ? '1px solid #bbf7d0' : '1px solid #fecaca',
-                  }}>
-                    {app.actual <= app.threshold ? 'Healthy' : 'Exceeded'}
-                  </span>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{app.name}</div>
                 </div>
 
                 {/* Sparkline Graph */}

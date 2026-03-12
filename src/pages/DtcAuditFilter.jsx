@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calendar, ArrowUp, ArrowDown, X } from 'lucide-react';
 import ExportDropdown from '../components/ExportDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
-import auditData from '../data/Audit_Data_Dumy';
+import auditData from '../data/Audit_Data_Dummy';
 import { parseHeader, wildcardMatch, formatEventType } from '../utils/auditUtils';
 
 const ALL_COLUMNS = [

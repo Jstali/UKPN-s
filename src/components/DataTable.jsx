@@ -5,13 +5,18 @@ import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { wildcardMatch } from '../utils/auditUtils';
+import useDebounce from '../hooks/useDebounce';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
+const MAX_FILTER_SUGGESTIONS = 50;
+const MAX_EXPORT_ROWS = 5000;
 
 const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
   const ref = useRef(null);
   const isDateCol = DATE_COLUMNS.includes(col.key);
   const filterVal = columnFilters[col.key] || '';
+  const [localVal, setLocalVal] = useState(filterVal);
+  const debouncedVal = useDebounce(localVal, 300);
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
@@ -29,28 +34,47 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
     return () => document.removeEventListener('mousedown', handle);
   }, [onClose]);
 
+  // Sync debounced value to actual filter
+  useEffect(() => {
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      if (debouncedVal) next[col.key] = debouncedVal;
+      else delete next[col.key];
+      return next;
+    });
+  }, [debouncedVal, col.key, setColumnFilters]);
+
   const handleChange = (val) => {
+    setLocalVal(val);
+  };
+
+  const handleSelect = (val) => {
+    setLocalVal(val);
     setColumnFilters(prev => {
       const next = { ...prev };
       if (val) next[col.key] = val;
       else delete next[col.key];
       return next;
     });
-  };
-
-  const handleSelect = (val) => {
-    handleChange(val);
     onClose();
   };
 
-  // Get unique values for this column and filter by wildcard pattern
-  const matchingValues = useMemo(() => {
-    if (isDateCol || !filterVal) return [];
-    const unique = [...new Set(allData.map(row => String(row[col.key] || '')).filter(Boolean))];
-    return unique.filter(v => wildcardMatch(v, filterVal)).sort();
-  }, [allData, col.key, filterVal, isDateCol]);
+  // Pre-compute unique values once, then filter — capped at MAX_FILTER_SUGGESTIONS
+  const uniqueValues = useMemo(() => {
+    return [...new Set(allData.map(row => String(row[col.key] || '')).filter(Boolean))].sort();
+  }, [allData, col.key]);
 
-  const showDropdown = !isDateCol && filterVal && matchingValues.length > 0;
+  const matchingValues = useMemo(() => {
+    if (isDateCol || !localVal) return [];
+    return uniqueValues.filter(v => wildcardMatch(v, localVal)).slice(0, MAX_FILTER_SUGGESTIONS);
+  }, [uniqueValues, localVal, isDateCol]);
+
+  const totalMatches = useMemo(() => {
+    if (isDateCol || !localVal) return 0;
+    return uniqueValues.filter(v => wildcardMatch(v, localVal)).length;
+  }, [uniqueValues, localVal, isDateCol]);
+
+  const showDropdown = !isDateCol && localVal && matchingValues.length > 0;
 
   return (
     <div
@@ -74,7 +98,7 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
       {isDateCol ? (
         <input
           type="date"
-          value={filterVal}
+          value={localVal}
           onChange={(e) => handleChange(e.target.value)}
           style={{
             width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
@@ -87,7 +111,7 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
       ) : (
         <input
           type="text"
-          value={filterVal}
+          value={localVal}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={`Search ${col.label}...`}
           style={{
@@ -105,7 +129,10 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
           border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff',
         }}>
           <div style={{ padding: '4px 10px', fontSize: '10px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>
-            {matchingValues.length} match{matchingValues.length !== 1 ? 'es' : ''} found
+            {totalMatches > MAX_FILTER_SUGGESTIONS
+              ? `Showing ${MAX_FILTER_SUGGESTIONS} of ${totalMatches} matches`
+              : `${totalMatches} match${totalMatches !== 1 ? 'es' : ''} found`
+            }
           </div>
           {matchingValues.map((val) => (
             <div
@@ -124,14 +151,14 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
           ))}
         </div>
       )}
-      {!isDateCol && filterVal && matchingValues.length === 0 && (
+      {!isDateCol && localVal && matchingValues.length === 0 && (
         <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', textAlign: 'center', padding: '6px 0' }}>
           No matches found
         </div>
       )}
-      {filterVal && (
+      {localVal && (
         <button
-          onClick={() => handleChange('')}
+          onClick={() => { handleChange(''); handleSelect(''); }}
           style={{
             marginTop: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: 600,
             background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0',
@@ -148,6 +175,7 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
 const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, onViewDetail }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [currentPage, setCurrentPage] = useState(() => {
     const saved = sessionStorage.getItem('dataTablePage');
     if (saved) {
@@ -199,42 +227,52 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
     document.addEventListener('mouseup', onMouseUp);
   }, []);
 
-  // Global search
-  const globalFiltered = data.filter(item =>
-    Object.values(item).some(val =>
-      String(val).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  // Memoized: Global search using debounced term
+  const globalFiltered = useMemo(() => {
+    if (!debouncedSearch) return data;
+    const term = debouncedSearch.toLowerCase();
+    return data.filter(item =>
+      Object.values(item).some(val =>
+        String(val).toLowerCase().includes(term)
+      )
+    );
+  }, [data, debouncedSearch]);
 
-  // Per-column filters (supports wildcard: cos*, *cos, *cos*)
-  const filteredData = globalFiltered.filter(item => {
-    return Object.entries(columnFilters).every(([key, val]) => {
-      if (!val) return true;
-      const cellVal = String(item[key] || '');
-      if (DATE_COLUMNS.includes(key)) {
-        const parts = cellVal.split(' ')[0]?.split('/');
-        if (parts && parts.length === 3) {
-          const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-          return cellDate === val;
+  // Memoized: Per-column filters
+  const filteredData = useMemo(() => {
+    const activeFilters = Object.entries(columnFilters).filter(([, val]) => val);
+    if (activeFilters.length === 0) return globalFiltered;
+
+    return globalFiltered.filter(item => {
+      return activeFilters.every(([key, val]) => {
+        const cellVal = String(item[key] || '');
+        if (DATE_COLUMNS.includes(key)) {
+          const parts = cellVal.split(' ')[0]?.split('/');
+          if (parts && parts.length === 3) {
+            const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return cellDate === val;
+          }
+          return cellVal.includes(val);
         }
-        return cellVal.includes(val);
-      }
-      // If filter has no wildcard and matches an exact value (user picked from dropdown), do exact match
-      if (!val.includes('*')) {
-        return cellVal.toLowerCase() === val.toLowerCase() || cellVal.toLowerCase().includes(val.toLowerCase());
-      }
-      return wildcardMatch(cellVal, val);
+        if (!val.includes('*')) {
+          return cellVal.toLowerCase() === val.toLowerCase() || cellVal.toLowerCase().includes(val.toLowerCase());
+        }
+        return wildcardMatch(cellVal, val);
+      });
     });
-  });
+  }, [globalFiltered, columnFilters]);
 
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortConfig.key) return 0;
-    const aVal = a[sortConfig.key];
-    const bVal = b[sortConfig.key];
-    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
+  // Memoized: Sorting
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return filteredData;
+    return [...filteredData].sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredData, sortConfig]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
 
@@ -243,6 +281,11 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, columnFilters]);
 
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = sortedData.slice(startIndex, startIndex + pageSize);
@@ -268,6 +311,16 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
     return '';
   };
 
+  const handleExport = useCallback((exportFn) => {
+    if (sortedData.length > MAX_EXPORT_ROWS) {
+      const proceed = window.confirm(
+        `You are about to export ${sortedData.length.toLocaleString()} rows. This may take a while and could slow down your browser.\n\nContinue?`
+      );
+      if (!proceed) return;
+    }
+    exportFn();
+  }, [sortedData.length]);
+
   return (
     <div className="table-container">
       <div className="table-controls">
@@ -279,18 +332,12 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
               className="modern-search-input"
               placeholder="Search records..."
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
               <button
                 className="search-clear-btn"
-                onClick={() => {
-                  setSearchTerm('');
-                  setCurrentPage(1);
-                }}
+                onClick={() => setSearchTerm('')}
                 aria-label="Clear search"
               >
                 ×
@@ -299,9 +346,9 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
           </div>
           {exportConfig && (
             <ExportDropdown
-              onExportPDF={() => exportToPDF(sortedData, columns, exportConfig.filename)}
-              onExportExcel={() => exportToExcel(sortedData, columns, exportConfig.filename)}
-              onExportCSV={() => exportToCSV(sortedData, columns, exportConfig.filename)}
+              onExportPDF={() => handleExport(() => exportToPDF(sortedData, columns, exportConfig.filename))}
+              onExportExcel={() => handleExport(() => exportToExcel(sortedData, columns, exportConfig.filename))}
+              onExportCSV={() => handleExport(() => exportToCSV(sortedData, columns, exportConfig.filename))}
               onSendEmail={() => setShowEmailModal(true)}
             />
           )}
