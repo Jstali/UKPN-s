@@ -18,7 +18,7 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
           <h3 className="dashboard-section-title">Application Status</h3>
         </div>
         <span className="dashboard-section-meta">
-          Updated: {dashboardUpdatedAt} &middot; <span style={{ color: '#10b981', fontWeight: 600 }}>Live — Last 24 hours</span>
+          Updated: {dashboardUpdatedAt}
         </span>
       </div>
 
@@ -32,7 +32,6 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
             }} />
             <div>
               <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>All Systems Operational</span>
-              <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '10px' }}>{APP_STATUS_ITEMS.length} apps monitored</span>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>

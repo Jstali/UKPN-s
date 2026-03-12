@@ -462,8 +462,7 @@ const SubscriptionForm = ({ onBack }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const json = generateJSON();
-    console.log('Subscription JSON:', JSON.stringify(json, null, 2));
-    alert('Subscription created! Check console for JSON output.');
+    alert('Subscription created successfully!');
   };
 
   const handleReset = () => {

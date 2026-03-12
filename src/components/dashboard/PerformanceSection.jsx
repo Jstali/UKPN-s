@@ -52,7 +52,6 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
               <th>System</th>
               <th>Avg Time</th>
               <th>Files</th>
-              <th>Threshold</th>
             </tr>
           </thead>
           <tbody>
@@ -65,7 +64,6 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
                 <td style={{ fontWeight: 600, color: '#1e293b' }}>{app.name}</td>
                 <td style={{ fontWeight: 700, color: '#16a34a' }}>{app.avgTime}</td>
                 <td>{app.files}</td>
-                <td>{app.threshold}s</td>
               </tr>
             ))}
           </tbody>

@@ -44,7 +44,7 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
   },
   {
     key: 'deliveries',
-    label: 'Total Deliveries',
+    label: 'Total Files Delivered',
     value: 78,
     iconSrc: 'Total deliveries.png',
     color: 78 < 105 ? '#f59e0b' : '#16a34a',
@@ -54,7 +54,7 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
   },
   {
     key: 'pending',
-    label: 'Pending Delivery',
+    label: 'Total Files Pending Delivery',
     value: 27,
     iconSrc: 'Pending delivery.png',
     color: 27 === 0 ? '#16a34a' : '#f59e0b',

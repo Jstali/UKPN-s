@@ -13,30 +13,7 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-
-// Parse header string: ZHV|D0132001|X|%|R|EELC|%|TR01
-const parseHeader = (headerStr) => {
-  if (!headerStr || headerStr === 'UNKNOWN') {
-    return { flowVersion: '', fileId: '', fromRole: '', fromMPID: '', toRole: '', toMPID: '', recApp: '' };
-  }
-  const parts = headerStr.split('|');
-  return {
-    flowVersion: parts[1] || '',
-    fromRole: parts[2] || '',
-    fromMPID: parts[5] || '',
-    toRole: parts[4] || '',
-    toMPID: parts[3] || '',
-    recApp: parts[6] || '',
-  };
-};
-
-const EVENT_TYPE_LABELS = {
-  '0': 'Zero',
-  '1': 'One',
-  '2': 'Two',
-  '3': 'Three',
-  '4': 'Four',
-};
+import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {

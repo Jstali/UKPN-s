@@ -1,8 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gauge, Filter, X, CheckSquare, Square, TrendingUp, Activity, ArrowRight } from 'lucide-react';
+import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight } from 'lucide-react';
 import { PERFORMANCE_ITEMS } from '../data/dashboardConfig';
+
+// Generate mini sparkline data for each app
+const generateSparkData = (appName) => {
+  const baseTime = { ADMS: 1.8, Electralink: 2.1, MPRS: 1.5, MSBI: 2.4, 'SAP PI': 2.8 };
+  const base = baseTime[appName] || 2.0;
+  const points = [];
+  for (let i = 0; i < 12; i++) {
+    points.push(+(base + (Math.sin(i * 0.8) * 0.3) + (Math.random() - 0.5) * 0.4).toFixed(2));
+  }
+  return points;
+};
+
+// SVG Sparkline component
+const Sparkline = ({ data, color, width = 120, height = 36 }) => {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const padding = 2;
+
+  const points = data.map((val, i) => {
+    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
+    const y = padding + (1 - (val - min) / range) * (height - padding * 2);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const areaPoints = `${padding},${height - padding} ${points} ${width - padding},${height - padding}`;
+
+  return (
+    <svg width={width} height={height} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id={`grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
+      <polygon points={areaPoints} fill={`url(#grad-${color.replace('#', '')})`} />
+      <polyline points={points} fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+};
 
 const PerformanceDetail = () => {
   const navigate = useNavigate();
@@ -10,6 +50,12 @@ const PerformanceDetail = () => {
   const [selectedApps, setSelectedApps] = useState(
     PERFORMANCE_ITEMS.map(app => app.name)
   );
+
+  const sparkData = useMemo(() => {
+    const map = {};
+    PERFORMANCE_ITEMS.forEach(app => { map[app.name] = generateSparkData(app.name); });
+    return map;
+  }, []);
 
   const toggleApp = (name) => {
     setSelectedApps(prev =>
@@ -30,14 +76,9 @@ const PerformanceDetail = () => {
     ? (filteredItems.reduce((sum, app) => sum + app.actual, 0) / filteredItems.length).toFixed(1)
     : '0.0';
 
-  const maxThreshold = Math.max(...PERFORMANCE_ITEMS.map(a => a.threshold));
-  const withinCount = filteredItems.filter(a => a.actual <= a.threshold).length;
-
-  const getBarColor = (actual, threshold) => {
-    const ratio = actual / threshold;
-    if (ratio <= 0.6) return { bar: '#22c55e', bg: '#dcfce7' };
-    if (ratio <= 0.85) return { bar: '#f59e0b', bg: '#fef3c7' };
-    return { bar: '#ef4444', bg: '#fee2e2' };
+  const getColor = (actual, threshold) => {
+    if (actual <= threshold) return '#22c55e';
+    return '#ef4444';
   };
 
   return (
@@ -133,11 +174,10 @@ const PerformanceDetail = () => {
       </AnimatePresence>
 
       {/* Summary Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '18px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '18px' }}>
         {[
           { icon: <Gauge size={18} />, label: 'Overall Avg', value: `${overallAvg}s`, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
           { icon: <Activity size={18} />, label: 'Applications', value: filteredItems.length, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-          { icon: <TrendingUp size={18} />, label: 'Within Threshold', value: `${withinCount}/${filteredItems.length}`, color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -164,7 +204,7 @@ const PerformanceDetail = () => {
         ))}
       </div>
 
-      {/* Application Rows — List View with Progress Bars */}
+      {/* Application Rows — List View with Sparkline Graphs */}
       <div style={{
         background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
         overflow: 'hidden',
@@ -172,15 +212,14 @@ const PerformanceDetail = () => {
       }}>
         {/* Table Header */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 2fr 100px 100px 100px 40px',
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 40px',
           padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb',
           fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px',
           alignItems: 'center'
         }}>
           <span>System</span>
-          <span>Performance</span>
+          <span style={{ textAlign: 'center' }}>Trend</span>
           <span style={{ textAlign: 'center' }}>Avg Time</span>
-          <span style={{ textAlign: 'center' }}>Threshold</span>
           <span style={{ textAlign: 'center' }}>Files</span>
           <span></span>
         </div>
@@ -191,9 +230,7 @@ const PerformanceDetail = () => {
           </div>
         ) : (
           filteredItems.map((app, i) => {
-            const barPercent = Math.min((app.actual / maxThreshold) * 100, 100);
-            const thresholdPercent = (app.threshold / maxThreshold) * 100;
-            const colors = getBarColor(app.actual, app.threshold);
+            const color = getColor(app.actual, app.threshold);
 
             return (
               <motion.div
@@ -203,8 +240,8 @@ const PerformanceDetail = () => {
                 transition={{ delay: i * 0.06 }}
                 onClick={() => navigate('/performance-graph', { state: { app } })}
                 style={{
-                  display: 'grid', gridTemplateColumns: '1fr 2fr 100px 100px 100px 40px',
-                  padding: '16px 20px', alignItems: 'center',
+                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 40px',
+                  padding: '14px 20px', alignItems: 'center',
                   borderBottom: i < filteredItems.length - 1 ? '1px solid #f1f5f9' : 'none',
                   cursor: 'pointer', transition: 'background 0.15s ease',
                 }}
@@ -223,44 +260,14 @@ const PerformanceDetail = () => {
                   </span>
                 </div>
 
-                {/* Progress Bar */}
-                <div style={{ padding: '0 16px' }}>
-                  <div style={{
-                    position: 'relative', width: '100%', height: '22px',
-                    background: '#f1f5f9', borderRadius: '11px', overflow: 'hidden'
-                  }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${barPercent}%` }}
-                      transition={{ duration: 0.8, delay: i * 0.08, ease: 'easeOut' }}
-                      style={{
-                        height: '100%', borderRadius: '11px',
-                        background: `linear-gradient(90deg, ${colors.bar}cc, ${colors.bar})`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                        paddingRight: '8px',
-                      }}
-                    >
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#fff' }}>{app.avgTime}</span>
-                    </motion.div>
-                    {/* Threshold marker */}
-                    <div style={{
-                      position: 'absolute', top: 0, bottom: 0, left: `${thresholdPercent}%`,
-                      width: '2px', background: '#475569', opacity: 0.4,
-                    }} />
-                  </div>
+                {/* Sparkline Graph */}
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <Sparkline data={sparkData[app.name]} color={color} />
                 </div>
 
                 {/* Avg Time */}
                 <div style={{ textAlign: 'center' }}>
-                  <span style={{
-                    fontSize: '15px', fontWeight: 800,
-                    color: colors.bar,
-                  }}>{app.avgTime}</span>
-                </div>
-
-                {/* Threshold */}
-                <div style={{ textAlign: 'center' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>{app.threshold}s</span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color }}>{app.avgTime}</span>
                 </div>
 
                 {/* Files */}

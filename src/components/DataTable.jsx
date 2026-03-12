@@ -4,22 +4,9 @@ import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter
 import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
+import { wildcardMatch } from '../utils/auditUtils';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
-
-// Wildcard matching: cos* = startsWith, *cos = endsWith, *cos* = contains, plain = contains
-const wildcardMatch = (value, pattern) => {
-  const val = value.toLowerCase();
-  const pat = pattern.toLowerCase();
-  const startsWithStar = pat.startsWith('*');
-  const endsWithStar = pat.endsWith('*');
-  const core = pat.replace(/^\*|\*$/g, '');
-  if (!core) return true;
-  if (startsWithStar && endsWithStar) return val.includes(core);
-  if (startsWithStar) return val.endsWith(core);
-  if (endsWithStar) return val.startsWith(core);
-  return val.includes(core);
-};
 
 const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
   const ref = useRef(null);

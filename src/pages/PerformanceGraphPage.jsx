@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Gauge, Clock } from 'lucide-react';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
-const generateGraphData = (appName, range) => {
+const generateGraphData = (appName, range, customFrom, customTo) => {
   const data = [];
   const baseTime = { ADMS: 1.8, Electralink: 2.1, MPRS: 1.5, MSBI: 2.4, 'SAP PI': 2.8 };
   const base = baseTime[appName] || 2.0;
@@ -17,6 +17,16 @@ const generateGraphData = (appName, range) => {
     for (let i = 1; i <= 30; i++) data.push({ label: `Day ${i}`, time: +(base + (Math.random() - 0.4) * 1.0).toFixed(2) });
   } else if (range === '1y') {
     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].forEach(m => data.push({ label: m, time: +(base + (Math.random() - 0.4) * 0.8).toFixed(2) }));
+  } else if (range === 'custom' && customFrom && customTo) {
+    const from = new Date(customFrom);
+    const to = new Date(customTo);
+    const diffDays = Math.max(1, Math.round((to - from) / (1000 * 60 * 60 * 24)) + 1);
+    for (let i = 0; i < diffDays; i++) {
+      const d = new Date(from);
+      d.setDate(d.getDate() + i);
+      const label = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      data.push({ label, time: +(base + (Math.random() - 0.4) * 1.0).toFixed(2) });
+    }
   }
   return data;
 };
@@ -25,7 +35,7 @@ const RANGE_OPTIONS = [
   { key: '24h', label: '24 Hours' },
   { key: '7d', label: '7 Days' },
   { key: '30d', label: '30 Days' },
-  { key: '1y', label: '1 Year' },
+  { key: 'custom', label: 'Custom' },
 ];
 
 const PerformanceGraphPage = () => {
@@ -33,7 +43,9 @@ const PerformanceGraphPage = () => {
   const navigate = useNavigate();
   const app = location.state?.app;
   const [range, setRange] = useState('24h');
-  const graphData = useMemo(() => app ? generateGraphData(app.name, range) : [], [app, range]);
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const graphData = useMemo(() => app ? generateGraphData(app.name, range, customFrom, customTo) : [], [app, range, customFrom, customTo]);
 
   if (!app) {
     navigate('/');
@@ -81,7 +93,7 @@ const PerformanceGraphPage = () => {
             fontSize: '12px', fontWeight: 600, color: '#8b5cf6',
             background: '#f5f3ff', padding: '4px 12px', borderRadius: '20px',
             border: '1px solid #c4b5fd'
-          }}>{range === '24h' ? 'Live — Last 24 hours' : range === '7d' ? 'Last 7 Days' : range === '30d' ? 'Last 30 Days' : 'Last 1 Year'}</span>
+          }}>{range === '24h' ? 'Last 24 hours' : range === '7d' ? 'Last 7 Days' : range === '30d' ? 'Last 30 Days' : range === 'custom' && customFrom && customTo ? `${customFrom} to ${customTo}` : 'Custom Range'}</span>
         </div>
 
         <div style={{ padding: '20px 24px' }}>
@@ -113,7 +125,7 @@ const PerformanceGraphPage = () => {
           </div>
 
           {/* Range Selector */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
             {RANGE_OPTIONS.map(opt => (
               <button key={opt.key} onClick={() => setRange(opt.key)} style={{
                 padding: '7px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
@@ -123,6 +135,41 @@ const PerformanceGraphPage = () => {
                 color: range === opt.key ? '#7c3aed' : '#64748b',
               }}>{opt.label}</button>
             ))}
+            {range === 'custom' && (() => {
+              const today = new Date();
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(today.getDate() - 30);
+              const maxDate = today.toISOString().split('T')[0];
+              const minDate = thirtyDaysAgo.toISOString().split('T')[0];
+              return (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '8px' }}>
+                  <label style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>From:</label>
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={e => setCustomFrom(e.target.value)}
+                    min={minDate}
+                    max={customTo || maxDate}
+                    style={{
+                      padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
+                      border: '1.5px solid #e2e8f0', color: '#1e293b', outline: 'none',
+                    }}
+                  />
+                  <label style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>To:</label>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={e => setCustomTo(e.target.value)}
+                    min={customFrom || minDate}
+                    max={maxDate}
+                    style={{
+                      padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 500,
+                      border: '1.5px solid #e2e8f0', color: '#1e293b', outline: 'none',
+                    }}
+                  />
+                </div>
+              );
+            })()}
           </div>
 
           {/* Chart */}
@@ -136,7 +183,7 @@ const PerformanceGraphPage = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} interval={range === '24h' ? 2 : range === '30d' ? 4 : 0} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} interval={range === '24h' ? 2 : range === '30d' ? 4 : range === 'custom' ? Math.max(0, Math.floor(graphData.length / 15)) : 0} />
                 <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} unit="s" domain={[0, 'auto']} />
                 <Tooltip
                   contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '8px', fontSize: '12px', color: '#f8fafc', padding: '8px 12px' }}

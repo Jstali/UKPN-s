@@ -7,8 +7,6 @@ const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [greeting, setGreeting] = useState('Good morning');
 
-  console.log('Header user:', user);
-
   useEffect(() => {
     const updateGreeting = () => {
       const ukTime = new Date().toLocaleString('en-US', { timeZone: 'Europe/London' });
@@ -27,10 +25,6 @@ const Header = ({ user, onLogout, autoRefresh, setAutoRefresh }) => {
     const interval = setInterval(updateGreeting, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
 
   return (
     <header className="header">

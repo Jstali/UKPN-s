@@ -20,7 +20,7 @@ const FileStatusSection = ({ auditDataLength, dashboardUpdatedAt, onShowDetails 
           <h3 className="dashboard-section-title">File Status</h3>
         </div>
         <span className="dashboard-section-meta">
-          Updated: {dashboardUpdatedAt} &middot; <span style={{ color: '#10b981', fontWeight: 600 }}>Live — Last 24 hours</span>
+          Updated: {dashboardUpdatedAt}
         </span>
       </div>
 

@@ -5,6 +5,7 @@ import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calend
 import ExportDropdown from '../components/ExportDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import auditData from '../data/Audit_Data_Dumy';
+import { parseHeader, wildcardMatch, formatEventType } from '../utils/auditUtils';
 
 const ALL_COLUMNS = [
   { key: 'id', label: 'Unique ID' },
@@ -29,54 +30,7 @@ const ALL_COLUMNS = [
   { key: 'processed', label: 'Processed' },
 ];
 
-const parseHeader = (headerStr) => {
-  if (!headerStr || headerStr === 'UNKNOWN') {
-    return { flowVersion: '', fromRole: '', fromMPID: '', toRole: '', toMPID: '', recApp: '' };
-  }
-  const parts = headerStr.split('|');
-  return {
-    flowVersion: parts[1] || '',
-    fromRole: parts[2] || '',
-    fromMPID: parts[5] || '',
-    toRole: parts[4] || '',
-    toMPID: parts[3] || '',
-    recApp: parts[6] || '',
-  };
-};
-
-const EVENT_TYPE_LABELS = {
-  '0': 'Zero',
-  '1': 'One',
-  '2': 'Two',
-  '3': 'Three',
-  '4': 'Four',
-  '5': 'Five',
-  '6': 'Six',
-  '7': 'Seven',
-  '8': 'Eight',
-  '9': 'Nine',
-  '10': 'Ten',
-};
-
-const formatEventType = (value) => {
-  const str = String(value);
-  return EVENT_TYPE_LABELS[str] || str;
-};
-
 const DATE_COLUMNS = ['timestamp'];
-
-const wildcardMatch = (value, pattern) => {
-  const val = value.toLowerCase();
-  const pat = pattern.toLowerCase();
-  const startsWithStar = pat.startsWith('*');
-  const endsWithStar = pat.endsWith('*');
-  const core = pat.replace(/^\*|\*$/g, '');
-  if (!core) return true;
-  if (startsWithStar && endsWithStar) return val.includes(core);
-  if (startsWithStar) return val.endsWith(core);
-  if (endsWithStar) return val.startsWith(core);
-  return val.includes(core);
-};
 
 const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
   const ref = useRef(null);
