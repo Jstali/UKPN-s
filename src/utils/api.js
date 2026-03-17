@@ -1,5 +1,5 @@
 // API service for connecting to the Express + Redis backend
-// Toggle USE_API to switch between mock data and live backend
+// Toggle USE_API to switch between mock data and live backend123 stat
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
@@ -79,12 +79,12 @@ const api = {
     return handleResponse(res);
   },
 
-  // Fetch real audit data from Azure Function App (via local proxy)
+  // Fetch real audit data from Azure Function App
   async fetchDtcAuditData() {
     try {
-      const apiUrl = process.env.REACT_APP_DTC_AUDIT_API || 'http://localhost:5000/api/proxy/dtcAudit';
+      const apiUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcAuditApi?code=REDACTED_KEY_2=';
       
-      console.log('Fetching DTC Audit from:', apiUrl);
+      console.log('🔄 Fetching DTC Audit from Azure:', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'GET',
@@ -93,21 +93,28 @@ const api = {
         },
       });
 
+      console.log('📊 Response status:', res.status, res.statusText);
+
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText} - ${errorText}`);
+        console.error('❌ API Error:', res.status, errorText);
+        throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText}`);
       }
 
       const data = await res.json();
-      console.log('Fetched DTC Audit data:', data);
+      console.log('✅ Raw API response:', data);
 
       // The API returns data in the format: { data: [...] }
       const auditRecords = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
-      console.log('Parsed audit records:', auditRecords.length);
+      console.log('✅ Parsed audit records count:', auditRecords.length);
+
+      if (auditRecords.length === 0) {
+        console.warn('⚠️ No records found in API response');
+      }
 
       return auditRecords;
     } catch (error) {
-      console.error('Error fetching audit data:', error);
+      console.error('❌ Error fetching audit data:', error.message);
       return [];
     }
   },
