@@ -11,7 +11,7 @@ import electralinkData from '../data/Electralink_DEV_V1.js';
 import mprsData from '../data/MPRS_DEV_V1.js';
 import msbiData from '../data/application subscription.js';
 import { useApp } from '../context/AppContext';
-import api from '../utils/api';
+import { fetchDtcSubscriptions } from '../utils/api';
 
 const APP_COLORS = {
   ADMS: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
@@ -84,7 +84,7 @@ const Subscriptions = () => {
       setLoading(true);
       setLoadError('');
       try {
-        const apiData = await api.fetchDtcSubscriptions();
+        const apiData = await fetchDtcSubscriptions();
         const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
         if (isMounted) {
           setExistingSubscriptions(normalized.length ? normalized : buildSubscriptionsFromLocal());
