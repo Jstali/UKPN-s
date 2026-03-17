@@ -82,6 +82,7 @@ export const PERFORMANCE_ITEMS = [
 
 export const DEFAULT_FILTERS = {
   application: 'All',
+  sourceApplication: 'All',
   eventType: 'All',
   flow: 'All',
   version: 'All',
@@ -108,6 +109,7 @@ export const FILTERED_COLUMNS = [
   { key: 'created', label: 'Created' },
   { key: 'recApp', label: 'Rec App' },
   { key: 'fileName', label: 'File Name' },
+  { key: 'sourceApplication', label: 'Source App' },
   { key: 'eventType', label: 'Event Type' },
   { key: 'application', label: 'Application Name' },
   { key: 'timestamp', label: 'Time Stamp' },
@@ -117,6 +119,7 @@ export const DEFAULT_COLUMNS_BUSINESS = [
   { key: 'id', label: 'ID' },
   { key: 'Source_FileName', label: 'File Name' },
   { key: 'Header_String', label: 'Header String' },
+  { key: 'sourceApplication', label: 'Source App' },
   { key: 'eventType', label: 'Event Type' },
   { key: 'status', label: 'Status' },
   { key: 'application', label: 'Application' },
@@ -125,6 +128,7 @@ export const DEFAULT_COLUMNS_BUSINESS = [
 export const DEFAULT_COLUMNS_FULL = [
   { key: 'id', label: 'ID' },
   { key: 'Source_FileName', label: 'File Name' },
+  { key: 'sourceApplication', label: 'Source App' },
   { key: 'eventType', label: 'Event Type' },
   { key: 'status', label: 'Status' },
   { key: 'application', label: 'Application' },

@@ -4,6 +4,7 @@ import { Search, RotateCcw } from 'lucide-react';
 
 const DtcFilterDropdown = ({ filters, onFilterChange, onReset, onApply }) => {
   const dropdownFields = [
+    { label: 'Source Application', field: 'sourceApplication' },
     { label: 'Application', field: 'application' },
     { label: 'Event Type', field: 'eventType' },
     { label: 'Flow', field: 'flow' },
