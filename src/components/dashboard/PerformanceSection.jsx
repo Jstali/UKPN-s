@@ -2,10 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Clock } from 'lucide-react';
-import { PERFORMANCE_ITEMS } from '../../data/dashboardConfig';
 
-const PerformanceSection = ({ dashboardUpdatedAt }) => {
+const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
+  const overallAverage =
+    performanceItems.length > 0
+      ? (performanceItems.reduce((sum, app) => sum + app.actual, 0) / performanceItems.length).toFixed(1)
+      : '0.0';
 
   return (
     <motion.div
@@ -41,7 +44,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Overall Average</span>
           </div>
           <div style={{ fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>
-            {(PERFORMANCE_ITEMS.reduce((sum, app) => sum + app.actual, 0) / PERFORMANCE_ITEMS.length).toFixed(1)}s
+            {overallAverage}s
           </div>
         </div>
 
@@ -55,7 +58,7 @@ const PerformanceSection = ({ dashboardUpdatedAt }) => {
             </tr>
           </thead>
           <tbody>
-            {[...PERFORMANCE_ITEMS].sort((a, b) => b.actual - a.actual).slice(0, 5).map((app) => (
+            {[...performanceItems].sort((a, b) => b.actual - a.actual).slice(0, 5).map((app) => (
               <tr
                 key={app.name}
                 onClick={() => navigate('/performance-graph', { state: { app } })}
