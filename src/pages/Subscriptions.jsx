@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -11,6 +11,7 @@ import electralinkData from '../data/Electralink_DEV_V1.js';
 import mprsData from '../data/MPRS_DEV_V1.js';
 import msbiData from '../data/application subscription.js';
 import { useApp } from '../context/AppContext';
+import api from '../utils/api';
 
 const APP_COLORS = {
   ADMS: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
@@ -24,20 +25,9 @@ const getAppColor = (appName) => {
   return APP_COLORS[key] || { accent: '#6b7280', light: '#f9fafb', border: '#d1d5db' };
 };
 
-const Subscriptions = () => {
-  const { user } = useApp();
-  const [showForm, setShowForm] = useState(false);
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [showJson, setShowJson] = useState(false);
-  const [copiedRule, setCopiedRule] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedRules, setExpandedRules] = useState({});
-
-  const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
-
+const buildSubscriptionsFromLocal = () => {
   const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
-
-  const existingSubscriptions = allSubscriptions.map(app => {
+  return allSubscriptions.map(app => {
     const allHeaderStrings = app.rules.flatMap(rule => rule.Header_String.value);
     const allDestinations = app.rules.map(rule => rule.destination);
 
@@ -51,6 +41,67 @@ const Subscriptions = () => {
       rules: app.rules
     };
   });
+};
+
+const normalizeSubscription = (app) => {
+  const rules = Array.isArray(app?.rules) ? app.rules.map(rule => ({
+    ...rule,
+    destination: rule.destination || rule.destinations || rule.Destination
+  })) : [];
+
+  const headerStrings = rules.flatMap(rule => rule?.Header_String?.value || []);
+  const destinations = rules.map(rule => rule.destination).filter(Boolean);
+
+  return {
+    application: app?.Application || app?.application || app?.id || app?.filterId || 'Unknown',
+    filterId: app?.filterId || app?.FilterId || app?.id || 'Unknown',
+    headerStrings,
+    destinations,
+    id: app?.id || app?.ID || app?.filterId || `${app?.Application || 'app'}_${Math.random().toString(36).slice(2, 8)}`,
+    status: app?.status || 'active',
+    rules
+  };
+};
+
+const Subscriptions = () => {
+  const { user } = useApp();
+  const [showForm, setShowForm] = useState(false);
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [showJson, setShowJson] = useState(false);
+  const [copiedRule, setCopiedRule] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedRules, setExpandedRules] = useState({});
+  const [existingSubscriptions, setExistingSubscriptions] = useState(buildSubscriptionsFromLocal);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSubscriptions = async () => {
+      setLoading(true);
+      setLoadError('');
+      try {
+        const apiData = await api.fetchDtcSubscriptions();
+        const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
+        if (isMounted) {
+          setExistingSubscriptions(normalized.length ? normalized : buildSubscriptionsFromLocal());
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || 'Failed to load subscriptions.');
+          setExistingSubscriptions(buildSubscriptionsFromLocal());
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadSubscriptions();
+    return () => { isMounted = false; };
+  }, []);
 
   const filteredSubscriptions = existingSubscriptions.filter(app =>
     app.application.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -282,6 +333,16 @@ const Subscriptions = () => {
       </div>
 
       {/* Overview KPIs */}
+      {loading && (
+        <div style={{ marginBottom: '12px', fontSize: '13px', color: '#6b7280' }}>
+          Loading subscriptions from API...
+        </div>
+      )}
+      {loadError && (
+        <div style={{ marginBottom: '12px', fontSize: '13px', color: '#b91c1c' }}>
+          {loadError} Showing local fallback data.
+        </div>
+      )}
       <div className="sp-kpi-row sp-kpi-row-overview">
         <div className="sp-kpi">
           <div className="sp-kpi-icon" style={{ background: '#eef2ff' }}><Globe size={18} color="#6366f1" /></div>
