@@ -82,16 +82,25 @@ const api = {
   // Fetch real audit data from Azure Function App
   async fetchDtcAuditData() {
     try {
-      const apiUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcAuditApi?code=REDACTED_API_CODE=';
+      const apiUrl = process.env.REACT_APP_AZURE_DTC_AUDIT_API;
+      if (!apiUrl) {
+        throw new Error('Azure Function API URL not configured');
+      }
       const res = await fetch(apiUrl, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       if (!res.ok) {
         throw new Error(`Failed to fetch audit data: ${res.statusText}`);
       }
       const data = await res.json();
-      return data.data || [];
+      console.log('Fetched DTC Audit data:', data);
+      // The API returns data in the format: { data: [...] }
+      const auditRecords = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+      console.log('Parsed audit records:', auditRecords.length);
+      return auditRecords;
     } catch (error) {
       console.error('Error fetching audit data:', error);
       return [];
