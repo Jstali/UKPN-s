@@ -79,27 +79,32 @@ const api = {
     return handleResponse(res);
   },
 
-  // Fetch real audit data from Azure Function App
+  // Fetch real audit data from Azure Function App (via local proxy)
   async fetchDtcAuditData() {
     try {
-      const apiUrl = process.env.REACT_APP_AZURE_DTC_AUDIT_API;
-      if (!apiUrl) {
-        throw new Error('Azure Function API URL not configured');
-      }
+      const apiUrl = process.env.REACT_APP_DTC_AUDIT_API || 'http://localhost:5000/api/proxy/dtcAudit';
+      
+      console.log('Fetching DTC Audit from:', apiUrl);
+      
       const res = await fetch(apiUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+
       if (!res.ok) {
-        throw new Error(`Failed to fetch audit data: ${res.statusText}`);
+        const errorText = await res.text();
+        throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText} - ${errorText}`);
       }
+
       const data = await res.json();
       console.log('Fetched DTC Audit data:', data);
+
       // The API returns data in the format: { data: [...] }
       const auditRecords = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
       console.log('Parsed audit records:', auditRecords.length);
+
       return auditRecords;
     } catch (error) {
       console.error('Error fetching audit data:', error);
