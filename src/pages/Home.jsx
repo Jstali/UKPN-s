@@ -40,8 +40,10 @@ const Home = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await api.fetchDtcAuditData();
-        setAuditData(data || []);
+        const response = await api.fetchDtcAuditData();
+        // Extract data array from response object
+        const auditArray = response.data || response || [];
+        setAuditData(Array.isArray(auditArray) ? auditArray : []);
       } catch (error) {
         console.error('Failed to fetch audit data:', error);
         setAuditData([]);
