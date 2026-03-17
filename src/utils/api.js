@@ -79,6 +79,25 @@ const api = {
     return handleResponse(res);
   },
 
+  // Fetch real audit data from Azure Function App
+  async fetchDtcAuditData() {
+    try {
+      const apiUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcAuditApi?code=REDACTED_API_CODE=';
+      const res = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch audit data: ${res.statusText}`);
+      }
+      const data = await res.json();
+      return data.data || [];
+    } catch (error) {
+      console.error('Error fetching audit data:', error);
+      return [];
+    }
+  },
+
   // App status (cached in Redis)
   async getAppStatus() {
     if (!USE_API) return null;

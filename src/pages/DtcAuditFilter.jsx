@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calendar, ArrowUp, ArrowDown, X } from 'lucide-react';
 import ExportDropdown from '../components/ExportDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
-import auditData from '../data/Audit_Data_Dummy';
+import api from '../utils/api';
 import { parseHeader, wildcardMatch, formatEventType } from '../utils/auditUtils';
 
 const ALL_COLUMNS = [
@@ -154,6 +154,8 @@ const DtcAuditFilter = () => {
     msgId: '',
   };
 
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(incomingFilters || defaultFilters);
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -165,6 +167,23 @@ const DtcAuditFilter = () => {
   const [activeFilter, setActiveFilter] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const filterBtnRefs = useRef({});
+
+  // Fetch audit data from API on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await api.fetchDtcAuditData();
+        setAuditData(data || []);
+      } catch (error) {
+        console.error('Failed to fetch audit data:', error);
+        setAuditData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));

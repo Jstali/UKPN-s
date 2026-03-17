@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
-import auditData from '../data/Audit_Data_Dummy';
+import api from '../utils/api';
 import { exportToCSV } from '../utils/exportUtils';
 import ColorBar, { FLOW_COLORS, APP_COLORS } from '../components/ColorBar';
 import {
@@ -134,12 +134,31 @@ const DtcAudit = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
   const [filters, setFilters] = useState(location.state?.filters || { ...DEFAULT_FILTERS });
   const [exceptionCount, setExceptionCount] = useState(0);
+
+  // Fetch audit data from API on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await api.fetchDtcAuditData();
+        setAuditData(data || []);
+      } catch (error) {
+        console.error('Failed to fetch audit data:', error);
+        setAuditData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
