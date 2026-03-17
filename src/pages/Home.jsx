@@ -20,6 +20,7 @@ const Home = () => {
   const { user, autoRefresh, setAutoRefresh } = useApp();
   const navigate = useNavigate();
   const [auditData, setAuditData] = React.useState([]);
+  const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
@@ -43,6 +44,7 @@ const Home = () => {
         const response = await api.fetchDtcAuditData();
         // Extract data array from response object
         const auditArray = response.data || response || [];
+        setTotalCount(response.totalCount || (Array.isArray(auditArray) ? auditArray.length : 0));
         setAuditData(Array.isArray(auditArray) ? auditArray : []);
       } catch (error) {
         console.error('Failed to fetch audit data:', error);
@@ -68,31 +70,47 @@ const Home = () => {
 
   const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
 
+  const deliveredFiles = React.useMemo(() => {
+    const delivered = auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '4'));
+    return delivered;
+  }, [auditData]);
+
+  const pendingFiles = React.useMemo(() => {
+    return auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '2') && !item.events?.some(e => String(e.Event_Type) === '4'));
+  }, [auditData]);
+
+  const fileStats = React.useMemo(() => ({
+    filesReceived: totalCount,
+    totalToBeDelivered: totalCount,
+    totalDelivered: deliveredFiles.length,
+    pendingDelivery: Math.max(totalCount - deliveredFiles.length, 0),
+  }), [totalCount, deliveredFiles.length]);
+
   const showDetails = (type) => {
     const detailsMap = {
       files: {
         title: 'Files Received',
         items: auditData.map(item => item.Source_FileName),
-        value: auditData.length,
+        value: fileStats.filesReceived,
         chartData: { labels: ['Valid', 'Invalid', 'Pending'], values: [78, 27, 27], colors: ['#10b981', '#ef4444', '#f59e0b'] }
       },
       subscriptions: {
         title: 'Total Files Subscribed',
         items: allSubscriptions.map(app => app.Application),
-        value: 105,
+        value: fileStats.totalToBeDelivered,
         chartData: { labels: ['Valid', 'Invalid'], values: [78, 27], colors: ['#10b981', '#ef4444'] }
       },
       deliveries: {
         title: 'Total Deliveries',
         items: auditData.filter(item => item.events?.some(e => e.Event_Type === '4')).map(item => item.Source_FileName),
-        value: 78,
-        chartData: { labels: ['Delivered', 'Pending'], values: [78, 27], colors: ['#10b981', '#f59e0b'] }
+        value: fileStats.totalDelivered,
+        chartData: { labels: ['Delivered', 'Pending'], values: [fileStats.totalDelivered, fileStats.pendingDelivery], colors: ['#10b981', '#f59e0b'] }
       },
       pending: {
         title: 'Pending Delivery',
-        items: auditData.filter(item => item.events?.some(e => e.Event_Type === '2') && !item.events?.some(e => e.Event_Type === '4')).map(item => item.Source_FileName),
-        value: 27,
-        chartData: { labels: ['Pending', 'Delivered'], values: [27, 78], colors: ['#f59e0b', '#10b981'] }
+        items: pendingFiles.map(item => item.Source_FileName),
+        value: fileStats.pendingDelivery,
+        chartData: { labels: ['Pending', 'Delivered'], values: [fileStats.pendingDelivery, fileStats.totalDelivered], colors: ['#f59e0b', '#10b981'] }
       }
     };
     const detail = detailsMap[type];
@@ -235,7 +253,7 @@ const Home = () => {
         <div className="dashboard-layout">
           <div className="dashboard-col-left">
             <FileStatusSection
-              auditDataLength={auditData.length}
+              fileStats={fileStats}
               dashboardUpdatedAt={dashboardUpdatedAt}
               onShowDetails={showDetails}
             />

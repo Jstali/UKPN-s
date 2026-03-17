@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import AnimatedCounter from '../AnimatedCounter';
 import { FILE_STATUS_ITEMS } from '../../data/dashboardConfig';
 
-const FileStatusSection = ({ auditDataLength, dashboardUpdatedAt, onShowDetails }) => {
-  const items = FILE_STATUS_ITEMS(auditDataLength);
+const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails }) => {
+  const items = FILE_STATUS_ITEMS(fileStats || {});
 
   return (
     <motion.div
