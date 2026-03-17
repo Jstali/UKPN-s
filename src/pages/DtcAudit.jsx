@@ -22,6 +22,9 @@ const flattenAuditEvents = (data) => {
   data.forEach(item => {
     const parsed = parseHeader(item.Header_String);
     if (item.events && item.events.length > 0) {
+      // Get source application from first event
+      const sourceApplication = item.events[0]?.applicationName || 'Unknown';
+      
       item.events.forEach(event => {
         flatData.push({
           ...item,
@@ -33,6 +36,7 @@ const flattenAuditEvents = (data) => {
           toMPID: parsed.toMPID,
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
+          sourceApplication: sourceApplication,
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
           status: event.Status || 'Unknown',
@@ -54,6 +58,9 @@ const buildFilteredResults = (data, filtersToUse) => {
   data.forEach(item => {
     const parsed = parseHeader(item.Header_String);
     if (item.events && item.events.length > 0) {
+      // Get source application from first event
+      const sourceApplication = item.events[0]?.applicationName || 'Unknown';
+      
       item.events.forEach(event => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         const formatDate = (d) => d ? d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
@@ -67,6 +74,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           created: formatDate(ts),
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
+          sourceApplication: sourceApplication,
           eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
           timestamp: formatDate(ts),
@@ -85,6 +93,7 @@ const buildFilteredResults = (data, filtersToUse) => {
 
   const filterMap = {
     application: 'application',
+    sourceApplication: 'sourceApplication',
     eventType: 'eventType',
     flow: 'flowVersion',
     version: 'flowVersion',
@@ -380,7 +389,7 @@ const DtcAudit = () => {
         data={hasQueried ? filteredResults : flattenedAuditData}
         columns={columns}
         compactColumns={[
-          { key: 'recApp', label: 'Source App' },
+          { key: 'sourceApplication', label: 'Source App' },
           { key: 'fileName', label: 'File Name' },
           { key: 'timestamp', label: 'Event Timestamp' },
           { key: 'status', label: 'Status' },
