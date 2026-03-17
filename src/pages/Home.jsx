@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, RefreshCw } from 'lucide-react';
 import { dtcAuditData, nonDtcAuditData } from '../data/mockData';
-import auditData from '../data/Audit_Data_Dummy';
+import api from '../utils/api';
 import admsData from '../data/ADMS_DEV_V1.js';
 import electralinkData from '../data/Electralink_DEV_V1.js';
 import mprsData from '../data/MPRS_DEV_V1.js';
@@ -19,6 +19,8 @@ import { useApp } from '../context/AppContext';
 const Home = () => {
   const { user, autoRefresh, setAutoRefresh } = useApp();
   const navigate = useNavigate();
+  const [auditData, setAuditData] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [infoText, setInfoText] = React.useState(() => {
@@ -32,6 +34,23 @@ const Home = () => {
     sessionStorage.setItem('dashboardUpdatedAt', now);
     return now;
   });
+
+  // Fetch audit data from API on mount
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await api.fetchDtcAuditData();
+        setAuditData(data || []);
+      } catch (error) {
+        console.error('Failed to fetch audit data:', error);
+        setAuditData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   React.useEffect(() => {
     if (!autoRefresh) return;
