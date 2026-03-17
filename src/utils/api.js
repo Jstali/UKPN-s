@@ -79,10 +79,16 @@ const api = {
     return handleResponse(res);
   },
 
-  // Fetch real audit data from Azure Function App
-  async fetchDtcAuditData() {
+  // Fetch real audit data from Azure Function App with pagination
+  async fetchDtcAuditData(continuationToken = null, pageSize = 100) {
     try {
-      const apiUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcAuditApi?code=REDACTED_KEY_2=';
+      const baseUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcAuditApi';
+      const code = 'code=REDACTED_KEY_2=';
+      
+      let apiUrl = `${baseUrl}?${code}&pageSize=${pageSize}`;
+      if (continuationToken) {
+        apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
+      }
       
       console.log('🔄 Fetching DTC Audit from Azure:', apiUrl);
       
@@ -104,18 +110,23 @@ const api = {
       const data = await res.json();
       console.log('✅ Raw API response:', data);
 
-      // The API returns data in the format: { data: [...] }
-      const auditRecords = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
-      console.log('✅ Parsed audit records count:', auditRecords.length);
-
-      if (auditRecords.length === 0) {
-        console.warn('⚠️ No records found in API response');
-      }
-
-      return auditRecords;
+      // Return full response with pagination info
+      return {
+        data: Array.isArray(data.data) ? data.data : [],
+        continuationToken: data.continuationToken || null,
+        totalCount: data.totalCount || 0,
+        pageSize: data.pageSize || pageSize,
+        resultCount: data.resultCount || data.data?.length || 0,
+      };
     } catch (error) {
       console.error('❌ Error fetching audit data:', error.message);
-      return [];
+      return {
+        data: [],
+        continuationToken: null,
+        totalCount: 0,
+        pageSize: 0,
+        resultCount: 0,
+      };
     }
   },
 
