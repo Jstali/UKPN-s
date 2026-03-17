@@ -130,6 +130,31 @@ const api = {
     }
   },
 
+  // Fetch subscription data from Azure Function App
+  async fetchDtcSubscriptions() {
+    try {
+      const baseUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcSubscriptionApi';
+      const code = 'code=REDACTED_SUBSCRIPTION_CODE=';
+      const apiUrl = `${baseUrl}?${code}`;
+
+      const res = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to fetch subscriptions: ${res.status} ${res.statusText} ${errorText}`);
+      }
+
+      const data = await res.json();
+      return Array.isArray(data?.data) ? data.data : [];
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error.message);
+      throw error;
+    }
+  },
+
   // App status (cached in Redis)
   async getAppStatus() {
     if (!USE_API) return null;
