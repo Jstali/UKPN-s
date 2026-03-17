@@ -21,11 +21,11 @@ export const NAV_CARDS = [
   },
 ];
 
-export const FILE_STATUS_ITEMS = (auditDataLength) => [
+export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0 }) => [
   {
     key: 'files',
     label: 'Files Received',
-    value: auditDataLength,
+    value: filesReceived,
     iconSrc: 'File recieved.png',
     color: '#7c3aed',
     bgColor: '#f5f3ff',
@@ -35,7 +35,7 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
   {
     key: 'subscriptions',
     label: 'Total Files to be Delivered',
-    value: 105,
+    value: totalToBeDelivered,
     iconSrc: 'Subscription.png',
     color: '#16a34a',
     bgColor: '#f0fdf4',
@@ -45,21 +45,21 @@ export const FILE_STATUS_ITEMS = (auditDataLength) => [
   {
     key: 'deliveries',
     label: 'Total Files Delivered',
-    value: 78,
+    value: totalDelivered,
     iconSrc: 'Total deliveries.png',
-    color: 78 < 105 ? '#f59e0b' : '#16a34a',
-    bgColor: 78 < 105 ? '#fffbeb' : '#f0fdf4',
-    borderColor: 78 < 105 ? '#fcd34d' : '#bbf7d0',
+    color: totalDelivered < totalToBeDelivered ? '#f59e0b' : '#16a34a',
+    bgColor: totalDelivered < totalToBeDelivered ? '#fffbeb' : '#f0fdf4',
+    borderColor: totalDelivered < totalToBeDelivered ? '#fcd34d' : '#bbf7d0',
     trend: '+8%',
   },
   {
     key: 'pending',
     label: 'Total Files Pending Delivery',
-    value: 27,
+    value: pendingDelivery,
     iconSrc: 'Pending delivery.png',
-    color: 27 === 0 ? '#16a34a' : '#f59e0b',
-    bgColor: 27 === 0 ? '#f0fdf4' : '#fffbeb',
-    borderColor: 27 === 0 ? '#bbf7d0' : '#fcd34d',
+    color: pendingDelivery === 0 ? '#16a34a' : '#f59e0b',
+    bgColor: pendingDelivery === 0 ? '#f0fdf4' : '#fffbeb',
+    borderColor: pendingDelivery === 0 ? '#bbf7d0' : '#fcd34d',
     trend: '-3%',
   },
 ];
