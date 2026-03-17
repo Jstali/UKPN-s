@@ -110,11 +110,9 @@ const PerformanceGraphPage = () => {
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#16a34a' }}>{app.avgTime}</div>
             </div>
             <div style={{
-              flex: 1, minWidth: '150px', padding: '14px 18px', background: '#f8fafc',
-              borderRadius: '10px', border: '1px solid #e2e8f0'
+              
             }}>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Threshold</div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: '#1e293b' }}>{app.threshold}s</div>
+             
             </div>
             <div style={{
               flex: 1, minWidth: '150px', padding: '14px 18px', background: '#f8fafc',
