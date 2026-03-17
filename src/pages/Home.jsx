@@ -79,6 +79,43 @@ const Home = () => {
     return auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '2') && !item.events?.some(e => String(e.Event_Type) === '4'));
   }, [auditData]);
 
+  const performanceItems = React.useMemo(() => {
+    const appStats = new Map();
+
+    auditData.forEach((item) => {
+      const events = Array.isArray(item.events) ? item.events : [];
+      const event1 = events.find((e) => String(e.Event_Type) === '1' && e.timestamp);
+      const event4 = events.find((e) => String(e.Event_Type) === '4' && e.timestamp);
+
+      if (!event1 || !event4) return;
+
+      const start = new Date(event1.timestamp).getTime();
+      const end = new Date(event4.timestamp).getTime();
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
+
+      const durationSec = (end - start) / 1000;
+      const appName = event1.applicationName || 'Unknown';
+
+      if (!appStats.has(appName)) {
+        appStats.set(appName, { totalDuration: 0, files: 0 });
+      }
+
+      const current = appStats.get(appName);
+      current.totalDuration += durationSec;
+      current.files += 1;
+    });
+
+    return Array.from(appStats.entries()).map(([name, stats]) => {
+      const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
+      return {
+        name,
+        avgTime: `${actual.toFixed(1)}s`,
+        actual,
+        files: stats.files,
+      };
+    });
+  }, [auditData]);
+
   const fileStats = React.useMemo(() => ({
     filesReceived: totalCount,
     totalToBeDelivered: totalCount,
@@ -260,7 +297,7 @@ const Home = () => {
             <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
           </div>
           <div className="dashboard-col-right">
-            <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} />
+            <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} />
           </div>
         </div>
       </div>
