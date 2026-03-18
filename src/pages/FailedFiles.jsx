@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { AlertTriangle, Filter, X } from 'lucide-react';
-import { dtcAuditData, nonDtcAuditData } from '../data/mockData';
+import { nonDtcAuditData } from '../data/mockData';
+import api from '../utils/api';
+import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
 const FailedFiles = () => {
   const location = useLocation();
@@ -11,7 +13,55 @@ const FailedFiles = () => {
   const isDtc = type === 'dtc';
   const title = isDtc ? 'DTC Failed Files' : 'Non DTC Failed Files';
 
-  const dtcFailed = dtcAuditData.filter(item => item.status === 'Failed');
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch DTC audit data
+  useEffect(() => {
+    if (isDtc) {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const response = await api.fetchDtcAuditData(null, 200);
+          setAuditData(response.data || []);
+        } catch (error) {
+          console.error('Failed to fetch audit data:', error);
+          setAuditData([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    } else {
+      setLoading(false);
+    }
+  }, [isDtc]);
+
+  // Extract failed records from audit data
+  const dtcFailed = useMemo(() => {
+    const failed = [];
+    auditData.forEach(item => {
+      const parsed = parseHeader(item.Header_String);
+      const sourceApp = item.events?.[0]?.applicationName || 'Unknown';
+      
+      item.events?.forEach(event => {
+        if (event.Status === 'Failed' || event.Status === 'Invalid Subscription') {
+          failed.push({
+            flowVersion: parsed.flowVersion || 'UNKNOWN',
+            fileId: item.File_ID || '',
+            fromMPID: parsed.fromMPID || '',
+            toMPID: parsed.toMPID || '',
+            eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
+            status: event.Status,
+            fileName: item.Source_FileName,
+            sourceApplication: sourceApp,
+          });
+        }
+      });
+    });
+    return failed;
+  }, [auditData]);
+
   const nonDtcFailed = nonDtcAuditData.filter(item => item.status === 'Failed');
   const allFailedRecords = isDtc ? dtcFailed : nonDtcFailed;
 
@@ -73,6 +123,18 @@ const FailedFiles = () => {
           Filters
         </button>
       </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
+          <div style={{
+            width: '40px', height: '40px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 16px'
+          }} />
+          Loading failed files...
+        </div>
+      ) : (
+        <>
 
       {/* Filter Panel */}
       {showFilters && (
@@ -243,6 +305,7 @@ const FailedFiles = () => {
           ))
         )}
       </div>
+      )}
     </motion.div>
   );
 };
