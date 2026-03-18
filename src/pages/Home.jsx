@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, RefreshCw } from 'lucide-react';
-import { dtcAuditData, nonDtcAuditData } from '../data/mockData';
 import api from '../utils/api';
 import admsData from '../data/ADMS_DEV_V1.js';
 import electralinkData from '../data/Electralink_DEV_V1.js';
@@ -22,7 +21,6 @@ const Home = () => {
   const [auditData, setAuditData] = React.useState([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
-  const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [infoText, setInfoText] = React.useState(() => {
     const saved = localStorage.getItem('dashboardInfoText');
@@ -194,20 +192,6 @@ const Home = () => {
     if (!autoRefresh) setDashboardUpdatedAt(new Date().toLocaleTimeString());
   };
 
-  // Calculate failed files from real audit data
-  const dtcFailedRecords = useMemo(() => {
-    return auditData.filter(item => 
-      item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription')
-    );
-  }, [auditData]);
-
-  const nonDtcFailedRecords = nonDtcAuditData.filter(item => item.status === 'Failed');
-  const hasFailedFiles = dtcFailedRecords.length > 0 || nonDtcFailedRecords.length > 0;
-
-  const marqueeText = hasFailedFiles
-    ? '⚠️ Failed files are there, please check it'
-    : '';
-
   return (
     <div className="dashboard-root">
       <div className="dashboard-body">
@@ -244,61 +228,6 @@ const Home = () => {
               </button>
             )}
             <div style={{ color: '#92400e', fontWeight: '600', fontSize: '13px', flex: 1 }}>{infoText}</div>
-          </div>
-        )}
-
-        {/* View Failed Bar */}
-        {hasFailedFiles && (
-          <div className="dashboard-info-bar" style={{ background: '#fee2e2', marginTop: canEditInfo ? '6px' : '10px', position: 'relative' }}>
-            <button
-              onClick={() => setShowFailedDropdown(!showFailedDropdown)}
-              className="dashboard-info-btn"
-              style={{ background: '#991b1b' }}
-            >
-              View Failed
-            </button>
-            {showFailedDropdown && (
-              <div className="dashboard-failed-dropdown">
-                {dtcFailedRecords.length > 0 && (
-                  <div
-                    onClick={() => { setShowFailedDropdown(false); navigate('/failed-files', { state: { type: 'dtc' } }); }}
-                    style={{
-                      padding: '12px 16px', cursor: 'pointer', transition: 'background 0.15s',
-                      borderBottom: nonDtcFailedRecords.length > 0 ? '1px solid #fee2e2' : 'none',
-                      fontSize: '13px', fontWeight: 600, color: '#991b1b',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
-                    onMouseLeave={e => e.currentTarget.style.background = ''}
-                  >
-                    <span>⚠️ DTC Failed Files</span>
-                    <span style={{
-                      background: '#dc2626', color: '#fff', fontSize: '11px', fontWeight: 700,
-                      padding: '2px 8px', borderRadius: '10px', minWidth: '20px', textAlign: 'center'
-                    }}>{dtcFailedRecords.length}</span>
-                  </div>
-                )}
-                {nonDtcFailedRecords.length > 0 && (
-                  <div
-                    onClick={() => { setShowFailedDropdown(false); navigate('/failed-files', { state: { type: 'nondtc' } }); }}
-                    style={{
-                      padding: '12px 16px', cursor: 'pointer', transition: 'background 0.15s',
-                      fontSize: '13px', fontWeight: 600, color: '#991b1b',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
-                    onMouseLeave={e => e.currentTarget.style.background = ''}
-                  >
-                    <span>⚠️ Non DTC Failed Files</span>
-                    <span style={{
-                      background: '#dc2626', color: '#fff', fontSize: '11px', fontWeight: 700,
-                      padding: '2px 8px', borderRadius: '10px', minWidth: '20px', textAlign: 'center'
-                    }}>{nonDtcFailedRecords.length}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            <div style={{ color: '#991b1b', fontWeight: '600', fontSize: '13px', flex: 1 }}>{marqueeText}</div>
           </div>
         )}
 
