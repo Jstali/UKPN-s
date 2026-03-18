@@ -13,7 +13,7 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+import { parseHeader, EVENT_TYPE_LABELS, formatDateTime } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 
 // Flatten audit data to create one row per event
@@ -63,7 +63,6 @@ const buildFilteredResults = (data, filtersToUse) => {
       
       item.events.forEach(event => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
-        const formatDate = (d) => d ? d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
         results.push({
           flowVersion: parsed.flowVersion,
           fileId: item.File_ID,
@@ -71,13 +70,13 @@ const buildFilteredResults = (data, filtersToUse) => {
           fromMPID: parsed.fromMPID,
           toRole: parsed.toRole,
           toMPID: parsed.toMPID,
-          created: formatDate(ts),
+          created: formatDateTime(event.timestamp),
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
           eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
-          timestamp: formatDate(ts),
+          timestamp: formatDateTime(event.timestamp),
           status: event.Status || 'Unknown',
           id: item.id,
           sourcePath: item.Source_Path,
