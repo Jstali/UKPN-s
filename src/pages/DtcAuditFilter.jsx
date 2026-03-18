@@ -5,7 +5,7 @@ import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calend
 import ExportDropdown from '../components/ExportDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import api from '../utils/api';
-import { parseHeader, wildcardMatch, formatEventType } from '../utils/auditUtils';
+import { parseHeader, wildcardMatch, formatEventType, formatDateTime } from '../utils/auditUtils';
 
 const ALL_COLUMNS = [
   { key: 'id', label: 'Unique ID' },
@@ -206,8 +206,6 @@ const DtcAuditFilter = () => {
       const parsed = parseHeader(item.Header_String);
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {
-          const ts = event.timestamp ? new Date(event.timestamp) : null;
-          const formatDate = (d) => d ? d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
           results.push({
             id: item.id,
             fileId: item.File_ID || '',
@@ -224,7 +222,7 @@ const DtcAuditFilter = () => {
             eventType: event.Event_Type || 'Unknown',
             status: event.Status || 'Unknown',
             processed: event.processed || 'false',
-            timestamp: formatDate(ts),
+            timestamp: formatDateTime(event.timestamp),
             eventId: event.id || '',
             destinationPath: event.Destination_Path || '',
             destinationFileName: event.Destination_fileName || '',

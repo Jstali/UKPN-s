@@ -49,3 +49,28 @@ export const formatEventType = (value) => {
   const str = String(value);
   return EVENT_TYPE_LABELS[str] || str;
 };
+
+// Format timestamp to show only HH:MM:SS (no milliseconds or timezone)
+export const formatTimestamp = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return timestamp; // Return original if invalid
+  
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+// Format date with time (DD/MM/YYYY HH:MM:SS)
+export const formatDateTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return timestamp;
+  
+  const dateStr = date.toLocaleDateString('en-GB');
+  const timeStr = formatTimestamp(timestamp);
+  
+  return `${dateStr} ${timeStr}`;
+};
