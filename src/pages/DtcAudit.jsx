@@ -25,7 +25,10 @@ const flattenAuditEvents = (data) => {
       // Get source application from first event
       const sourceApplication = item.events[0]?.applicationName || 'Unknown';
       
-      item.events.forEach(event => {
+      // Reverse events array to show Event Type 4 → 1 (descending order)
+      const reversedEvents = [...item.events].reverse();
+      
+      reversedEvents.forEach(event => {
         flatData.push({
           ...item,
           flowVersion: parsed.flowVersion || 'UNKNOWN',
@@ -61,7 +64,10 @@ const buildFilteredResults = (data, filtersToUse) => {
       // Get source application from first event
       const sourceApplication = item.events[0]?.applicationName || 'Unknown';
       
-      item.events.forEach(event => {
+      // Reverse events array to show Event Type 4 → 1 (descending order)
+      const reversedEvents = [...item.events].reverse();
+      
+      reversedEvents.forEach(event => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
