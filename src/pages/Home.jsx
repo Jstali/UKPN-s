@@ -194,7 +194,13 @@ const Home = () => {
     if (!autoRefresh) setDashboardUpdatedAt(new Date().toLocaleTimeString());
   };
 
-  const dtcFailedRecords = dtcAuditData.filter(item => item.status === 'Failed');
+  // Calculate failed files from real audit data
+  const dtcFailedRecords = useMemo(() => {
+    return auditData.filter(item => 
+      item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription')
+    );
+  }, [auditData]);
+
   const nonDtcFailedRecords = nonDtcAuditData.filter(item => item.status === 'Failed');
   const hasFailedFiles = dtcFailedRecords.length > 0 || nonDtcFailedRecords.length > 0;
 
