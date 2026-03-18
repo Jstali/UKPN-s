@@ -6,6 +6,21 @@ import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, onApply }) => {
   // Extract unique values from audit data
   const uniqueValues = useMemo(() => {
+    if (!auditData || auditData.length === 0) {
+      return {
+        sourceApplication: [],
+        application: [],
+        eventType: [],
+        flow: [],
+        version: [],
+        fromRole: [],
+        fromMPID: [],
+        toRole: [],
+        toMPID: [],
+        receivingApp: [],
+      };
+    }
+
     const values = {
       sourceApplication: new Set(),
       application: new Set(),
@@ -21,20 +36,25 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
     auditData.forEach(item => {
       const parsed = parseHeader(item.Header_String);
-      const sourceApp = item.events?.[0]?.applicationName || 'Unknown';
+      const sourceApp = item.events?.[0]?.applicationName;
       
-      values.sourceApplication.add(sourceApp);
-      values.flow.add(parsed.flowVersion || 'UNKNOWN');
-      values.version.add(parsed.flowVersion || 'UNKNOWN');
-      values.fromRole.add(parsed.fromRole || 'Unknown');
-      values.fromMPID.add(parsed.fromMPID || 'Unknown');
-      values.toRole.add(parsed.toRole || 'Unknown');
-      values.toMPID.add(parsed.toMPID || 'Unknown');
-      values.receivingApp.add(parsed.recApp || 'Unknown');
+      if (sourceApp) values.sourceApplication.add(sourceApp);
+      if (parsed.flowVersion) {
+        values.flow.add(parsed.flowVersion);
+        values.version.add(parsed.flowVersion);
+      }
+      if (parsed.fromRole) values.fromRole.add(parsed.fromRole);
+      if (parsed.fromMPID) values.fromMPID.add(parsed.fromMPID);
+      if (parsed.toRole) values.toRole.add(parsed.toRole);
+      if (parsed.toMPID) values.toMPID.add(parsed.toMPID);
+      if (parsed.recApp) values.receivingApp.add(parsed.recApp);
 
       item.events?.forEach(event => {
-        values.application.add(event.applicationName || event.Destination_Application || 'Unknown');
-        values.eventType.add(EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown');
+        const app = event.applicationName || event.Destination_Application;
+        if (app) values.application.add(app);
+        
+        const eventType = EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type;
+        if (eventType) values.eventType.add(eventType);
       });
     });
 
