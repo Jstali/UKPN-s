@@ -99,10 +99,8 @@ const PerformanceDetail = () => {
     ? (filteredItems.reduce((sum, app) => sum + app.actual, 0) / filteredItems.length).toFixed(1)
     : '0.0';
 
-  const getColor = (actual, threshold) => {
-    if (actual <= threshold) return '#22c55e';
-    return '#ef4444';
-  };
+  // Always show green for successful operations
+  const getColor = () => '#22c55e';
 
   return (
     <motion.div
@@ -269,7 +267,7 @@ const PerformanceDetail = () => {
           </div>
         ) : (
           filteredItems.map((app, i) => {
-            const color = getColor(app.actual, app.threshold);
+            const color = getColor();
 
             return (
               <motion.div
