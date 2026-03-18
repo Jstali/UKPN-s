@@ -305,6 +305,7 @@ const FailedFiles = () => {
           ))
         )}
       </div>
+      </>
       )}
     </motion.div>
   );
