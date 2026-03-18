@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight } from 'lucide-react';
 import { PERFORMANCE_ITEMS } from '../data/dashboardConfig';
+import api from '../utils/api';
 
 // Generate mini sparkline data for each app
-const generateSparkData = (appName) => {
-  const baseTime = { ADMS: 1.8, Electralink: 2.1, MPRS: 1.5, MSBI: 2.4, 'SAP PI': 2.8 };
-  const base = baseTime[appName] || 2.0;
+const generateSparkData = (appName, actualTime) => {
+  const base = actualTime || 2.0;
   const points = [];
   for (let i = 0; i < 12; i++) {
     points.push(+(base + (Math.sin(i * 0.8) * 0.3) + (Math.random() - 0.5) * 0.4).toFixed(2));
@@ -47,15 +47,45 @@ const Sparkline = ({ data, color, width = 120, height = 36 }) => {
 const PerformanceDetail = () => {
   const navigate = useNavigate();
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedApps, setSelectedApps] = useState(
-    PERFORMANCE_ITEMS.map(app => app.name)
-  );
+  const [performanceData, setPerformanceData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedApps, setSelectedApps] = useState([]);
+
+  // Fetch real performance data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await api.fetchPerformanceData();
+        
+        if (data && data.length > 0) {
+          setPerformanceData(data);
+          setSelectedApps(data.map(app => app.name));
+        } else {
+          // Fallback to dummy data if no real data
+          setPerformanceData(PERFORMANCE_ITEMS);
+          setSelectedApps(PERFORMANCE_ITEMS.map(app => app.name));
+        }
+      } catch (error) {
+        console.error('Failed to fetch performance data:', error);
+        // Fallback to dummy data on error
+        setPerformanceData(PERFORMANCE_ITEMS);
+        setSelectedApps(PERFORMANCE_ITEMS.map(app => app.name));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const sparkData = useMemo(() => {
     const map = {};
-    PERFORMANCE_ITEMS.forEach(app => { map[app.name] = generateSparkData(app.name); });
+    performanceData.forEach(app => { 
+      map[app.name] = generateSparkData(app.name, app.actual); 
+    });
     return map;
-  }, []);
+  }, [performanceData]);
 
   const toggleApp = (name) => {
     setSelectedApps(prev =>
@@ -65,10 +95,10 @@ const PerformanceDetail = () => {
     );
   };
 
-  const selectAll = () => setSelectedApps(PERFORMANCE_ITEMS.map(app => app.name));
+  const selectAll = () => setSelectedApps(performanceData.map(app => app.name));
   const clearAll = () => setSelectedApps([]);
 
-  const filteredItems = [...PERFORMANCE_ITEMS]
+  const filteredItems = [...performanceData]
     .filter(app => selectedApps.includes(app.name))
     .sort((a, b) => b.actual - a.actual);
 
@@ -92,25 +122,36 @@ const PerformanceDetail = () => {
         <Link to="/">Home</Link> → Performance Detail
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-        <h1 className="page-title" style={{ margin: 0, fontSize: '1.6rem' }}>
-          Performance Detail
-        </h1>
-        <button
-          onClick={() => setShowFilter(!showFilter)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
-            cursor: 'pointer', transition: 'all 0.2s ease',
-            border: showFilter ? '1.5px solid #c4b5fd' : '1.5px solid #e2e8f0',
-            background: showFilter ? '#f5f3ff' : '#ffffff',
-            color: showFilter ? '#7c3aed' : '#475569',
-          }}
-        >
-          <Filter size={14} />
-          Filter {selectedApps.length < PERFORMANCE_ITEMS.length && `(${selectedApps.length})`}
-        </button>
-      </div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
+          <div style={{
+            width: '40px', height: '40px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 16px'
+          }} />
+          Loading performance data...
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+            <h1 className="page-title" style={{ margin: 0, fontSize: '1.6rem' }}>
+              Performance Detail
+            </h1>
+            <button
+              onClick={() => setShowFilter(!showFilter)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.2s ease',
+                border: showFilter ? '1.5px solid #c4b5fd' : '1.5px solid #e2e8f0',
+                background: showFilter ? '#f5f3ff' : '#ffffff',
+                color: showFilter ? '#7c3aed' : '#475569',
+              }}
+            >
+              <Filter size={14} />
+              Filter {selectedApps.length < performanceData.length && `(${selectedApps.length})`}
+            </button>
+          </div>
 
       {/* Filter Box */}
       <AnimatePresence>
@@ -146,7 +187,7 @@ const PerformanceDetail = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                {PERFORMANCE_ITEMS.map(app => (
+                {performanceData.map(app => (
                   <div
                     key={app.name}
                     onClick={() => toggleApp(app.name)}
@@ -172,6 +213,8 @@ const PerformanceDetail = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Summary Stats Row */}
 
       {/* Summary Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '18px' }}>
@@ -279,6 +322,8 @@ const PerformanceDetail = () => {
           })
         )}
       </div>
+        </>
+      )}
     </motion.div>
   );
 };
