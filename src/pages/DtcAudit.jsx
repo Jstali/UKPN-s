@@ -235,7 +235,7 @@ const DtcAudit = () => {
     }
   }, []);
 
-  const flattenedAuditData = useMemo(() => flattenAuditEvents(auditData), []);
+  const flattenedAuditData = useMemo(() => flattenAuditEvents(auditData), [auditData]);
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
   const columns = hasQueried ? FILTERED_COLUMNS : defaultColumns;
