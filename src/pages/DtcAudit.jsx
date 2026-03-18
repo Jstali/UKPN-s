@@ -64,6 +64,7 @@ const buildFilteredResults = (data, filtersToUse) => {
       item.events.forEach(event => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
+          ...item, // Include all original fields
           flowVersion: parsed.flowVersion,
           fileId: item.File_ID,
           fromRole: parsed.fromRole,
@@ -76,15 +77,11 @@ const buildFilteredResults = (data, filtersToUse) => {
           sourceApplication: sourceApplication,
           eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
-          timestamp: formatDateTime(event.timestamp),
+          timestamp: event.timestamp || '',
           status: event.Status || 'Unknown',
-          id: item.id,
-          sourcePath: item.Source_Path,
-          headerString: item.Header_String,
+          eventId: event.id || '',
           destinationPath: event.Destination_Path || '',
           destinationFileName: event.Destination_fileName || '',
-          _rid: item._rid,
-          _ts: item._ts,
         });
       });
     }
@@ -104,7 +101,7 @@ const buildFilteredResults = (data, filtersToUse) => {
   };
 
   Object.entries(filterMap).forEach(([filterKey, dataKey]) => {
-    if (filtersToUse[filterKey] !== 'All') {
+    if (filtersToUse[filterKey] && filtersToUse[filterKey] !== 'All') {
       results = results.filter(item => item[dataKey] === filtersToUse[filterKey]);
     }
   });
