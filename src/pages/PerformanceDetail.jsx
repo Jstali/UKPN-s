@@ -58,19 +58,12 @@ const PerformanceDetail = () => {
         setLoading(true);
         const data = await api.fetchPerformanceData();
         
-        if (data && data.length > 0) {
-          setPerformanceData(data);
-          setSelectedApps(data.map(app => app.name));
-        } else {
-          // Fallback to dummy data if no real data
-          setPerformanceData(PERFORMANCE_ITEMS);
-          setSelectedApps(PERFORMANCE_ITEMS.map(app => app.name));
-        }
+        setPerformanceData(data || []);
+        setSelectedApps((data || []).map(app => app.name));
       } catch (error) {
         console.error('Failed to fetch performance data:', error);
-        // Fallback to dummy data on error
-        setPerformanceData(PERFORMANCE_ITEMS);
-        setSelectedApps(PERFORMANCE_ITEMS.map(app => app.name));
+        setPerformanceData([]);
+        setSelectedApps([]);
       } finally {
         setLoading(false);
       }
@@ -269,7 +262,10 @@ const PerformanceDetail = () => {
 
         {filteredItems.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '14px' }}>
-            No applications selected. Use the filter to select applications.
+            {performanceData.length === 0 
+              ? 'No performance data available. Please ensure audit data is being fetched from Azure API.'
+              : 'No applications selected. Use the filter to select applications.'
+            }
           </div>
         ) : (
           filteredItems.map((app, i) => {
