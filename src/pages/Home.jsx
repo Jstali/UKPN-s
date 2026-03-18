@@ -127,8 +127,8 @@ const Home = () => {
     // Calculate actual status distribution from audit data
     const statusCounts = auditData.reduce((acc, item) => {
       const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
-      const hasPending = item.events?.some(e => String(e.Event_Type) === '2');
       const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription');
+      const hasPending = item.events?.some(e => String(e.Event_Type) === '2');
       
       if (hasDelivered) {
         acc.valid = (acc.valid || 0) + 1;
@@ -136,9 +136,12 @@ const Home = () => {
         acc.invalid = (acc.invalid || 0) + 1;
       } else if (hasPending) {
         acc.pending = (acc.pending || 0) + 1;
+      } else {
+        // Count files that don't match any category as pending
+        acc.pending = (acc.pending || 0) + 1;
       }
       return acc;
-    }, {});
+    }, { valid: 0, invalid: 0, pending: 0 });
 
     const detailsMap = {
       files: {
@@ -147,7 +150,7 @@ const Home = () => {
         value: fileStats.filesReceived,
         chartData: { 
           labels: ['Valid', 'Invalid', 'Pending'], 
-          values: [statusCounts.valid || 0, statusCounts.invalid || 0, statusCounts.pending || 0], 
+          values: [statusCounts.valid, statusCounts.invalid, statusCounts.pending], 
           colors: ['#10b981', '#ef4444', '#f59e0b'] 
         }
       },
