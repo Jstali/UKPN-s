@@ -155,7 +155,7 @@ const DtcAudit = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [continuationToken, setContinuationToken] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [pageSize] = useState(100);
+  const [pageSize] = useState(50); // Reduced from 100 for better initial performance
 
   // Fetch audit data from API on mount
   useEffect(() => {
@@ -204,16 +204,22 @@ const DtcAudit = () => {
     setExceptionCount(0);
   };
 
-  const handleQuery = (filterData) => {
+  const handleQuery = useCallback((filterData) => {
     const filtersToUse = filterData || filters;
     if (!filtersToUse) return;
-    const results = buildFilteredResults(auditData, filtersToUse);
-    setFilteredResults(results);
-    setAppliedFilters({ ...filtersToUse });
-    setExceptionCount(0);
-    setHasQueried(true);
-    setShowFilters(false);
-  };
+    
+    // Use setTimeout to avoid blocking UI
+    setLoading(true);
+    setTimeout(() => {
+      const results = buildFilteredResults(auditData, filtersToUse);
+      setFilteredResults(results);
+      setAppliedFilters({ ...filtersToUse });
+      setExceptionCount(0);
+      setHasQueried(true);
+      setShowFilters(false);
+      setLoading(false);
+    }, 0);
+  }, [auditData, filters]);
 
   // Handle incoming filters from filter page
   useEffect(() => {
@@ -235,7 +241,11 @@ const DtcAudit = () => {
     }
   }, []);
 
-  const flattenedAuditData = useMemo(() => flattenAuditEvents(auditData), [auditData]);
+  const flattenedAuditData = useMemo(() => {
+    if (auditData.length === 0) return [];
+    return flattenAuditEvents(auditData);
+  }, [auditData]);
+  
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
   const columns = hasQueried ? FILTERED_COLUMNS : defaultColumns;
@@ -243,6 +253,7 @@ const DtcAudit = () => {
   const tableData = hasQueried ? filteredResults : flattenedAuditData;
 
   const flowCounts = useMemo(() => {
+    if (tableData.length === 0) return [];
     const counts = {};
     tableData.forEach(row => {
       const flow = row.flowVersion || 'UNKNOWN';
@@ -254,6 +265,7 @@ const DtcAudit = () => {
   }, [tableData]);
 
   const appCounts = useMemo(() => {
+    if (tableData.length === 0) return [];
     const counts = {};
     tableData.forEach(row => {
       const app = row.application || 'Unknown';
@@ -267,6 +279,7 @@ const DtcAudit = () => {
   const [showApps, setShowApps] = useState(false);
 
   const uniqueFlowCount = useMemo(() => {
+    if (tableData.length === 0) return 0;
     const flows = new Set(tableData.map(r => r.flowVersion).filter(Boolean));
     return flows.size;
   }, [tableData]);

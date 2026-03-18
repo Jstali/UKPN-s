@@ -216,4 +216,4 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
   );
 };
 
-export default DtcFilterDropdown;
+export default React.memo(DtcFilterDropdown);
