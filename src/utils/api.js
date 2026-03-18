@@ -99,7 +99,6 @@ const api = {
   // Fetch performance data from Azure or calculate from audit data
   async fetchPerformanceData() {
     try {
-      // Fetch audit data to calculate performance metrics
       const auditResponse = await this.fetchDtcAuditData(null, 500);
       const auditData = auditResponse.data || [];
 
@@ -107,44 +106,41 @@ const api = {
         return [];
       }
 
-      // Group by application and calculate average processing time
-      const appMetrics = {};
-      
-      auditData.forEach(record => {
-        const app = record.application || record.receivingApp || 'Unknown';
-        if (!appMetrics[app]) {
-          appMetrics[app] = {
-            name: app,
-            totalTime: 0,
-            count: 0,
-            files: 0,
-          };
+      const appStats = new Map();
+
+      auditData.forEach((item) => {
+        const events = Array.isArray(item.events) ? item.events : [];
+        const event1 = events.find((e) => String(e.Event_Type) === '1' && e.timestamp);
+        const event4 = events.find((e) => String(e.Event_Type) === '4' && e.timestamp);
+
+        if (!event1 || !event4) return;
+
+        const start = new Date(event1.timestamp).getTime();
+        const end = new Date(event4.timestamp).getTime();
+        if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
+
+        const durationSec = (end - start) / 1000;
+        const appName = event1.applicationName || 'Unknown';
+
+        if (!appStats.has(appName)) {
+          appStats.set(appName, { totalDuration: 0, files: 0 });
         }
-        
-        // Calculate processing time if timestamps are available
-        if (record.timestamp && record.created) {
-          const processTime = new Date(record.timestamp) - new Date(record.created);
-          if (processTime > 0) {
-            appMetrics[app].totalTime += processTime / 1000; // Convert to seconds
-            appMetrics[app].count++;
-          }
-        }
-        appMetrics[app].files++;
+
+        const current = appStats.get(appName);
+        current.totalDuration += durationSec;
+        current.files += 1;
       });
 
-      // Convert to array and calculate averages
-      const performanceItems = Object.values(appMetrics)
-        .filter(app => app.count > 0)
-        .map(app => ({
-          name: app.name,
-          avgTime: `${(app.totalTime / app.count).toFixed(1)}s`,
-          actual: parseFloat((app.totalTime / app.count).toFixed(1)),
-          threshold: 3, // Default threshold
-          files: app.files,
-        }))
-        .sort((a, b) => b.actual - a.actual);
-
-      return performanceItems;
+      return Array.from(appStats.entries()).map(([name, stats]) => {
+        const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
+        return {
+          name,
+          avgTime: `${actual.toFixed(1)}s`,
+          actual,
+          threshold: 3,
+          files: stats.files,
+        };
+      }).sort((a, b) => b.actual - a.actual);
     } catch (error) {
       console.error('❌ Error fetching performance data:', error.message);
       return [];
