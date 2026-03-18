@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Filter, X } from 'lucide-react';
 import { dtcAuditData, nonDtcAuditData } from '../data/mockData';
 
 const FailedFiles = () => {
@@ -13,7 +13,35 @@ const FailedFiles = () => {
 
   const dtcFailed = dtcAuditData.filter(item => item.status === 'Failed');
   const nonDtcFailed = nonDtcAuditData.filter(item => item.status === 'Failed');
-  const failedRecords = isDtc ? dtcFailed : nonDtcFailed;
+  const allFailedRecords = isDtc ? dtcFailed : nonDtcFailed;
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [eventTypeFilter, setEventTypeFilter] = useState('All');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Get unique event types
+  const eventTypes = useMemo(() => {
+    const types = [...new Set(allFailedRecords.map(r => r.eventType))].filter(Boolean);
+    return ['All', ...types];
+  }, [allFailedRecords]);
+
+  // Apply filters
+  const failedRecords = useMemo(() => {
+    return allFailedRecords.filter(record => {
+      const matchesSearch = searchTerm === '' || 
+        Object.values(record).some(val => 
+          String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      const matchesEventType = eventTypeFilter === 'All' || record.eventType === eventTypeFilter;
+      return matchesSearch && matchesEventType;
+    });
+  }, [allFailedRecords, searchTerm, eventTypeFilter]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setEventTypeFilter('All');
+  };
 
   return (
     <motion.div
@@ -26,9 +54,97 @@ const FailedFiles = () => {
         <Link to="/">Home</Link> → {title}
       </div>
 
-      <h1 className="page-title" style={{ fontSize: '1.6rem', marginBottom: '18px' }}>
-        {title}
-      </h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+        <h1 className="page-title" style={{ fontSize: '1.6rem', margin: 0 }}>
+          {title}
+        </h1>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 18px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+            cursor: 'pointer', transition: 'all 0.2s ease',
+            border: showFilters ? '1.5px solid #c4b5fd' : '1.5px solid #e2e8f0',
+            background: showFilters ? '#f5f3ff' : '#ffffff',
+            color: showFilters ? '#7c3aed' : '#475569',
+          }}
+        >
+          <Filter size={14} />
+          Filters
+        </button>
+      </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          style={{
+            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px',
+            padding: '16px 20px', marginBottom: '16px',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)'
+          }}
+        >
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            {/* Search */}
+            <div style={{ flex: '1 1 300px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '6px' }}>
+                Search
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search all fields..."
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: '8px',
+                  border: '1px solid #e2e8f0', fontSize: '13px',
+                  outline: 'none', transition: 'border 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              />
+            </div>
+
+            {/* Event Type Filter */}
+            <div style={{ flex: '0 1 200px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '6px' }}>
+                Event Type
+              </label>
+              <select
+                value={eventTypeFilter}
+                onChange={(e) => setEventTypeFilter(e.target.value)}
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: '8px',
+                  border: '1px solid #e2e8f0', fontSize: '13px',
+                  outline: 'none', cursor: 'pointer', background: '#fff'
+                }}
+              >
+                {eventTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear Button */}
+            <button
+              onClick={clearFilters}
+              style={{
+                padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+                border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.target.style.background = '#f1f5f9'; }}
+              onMouseLeave={(e) => { e.target.style.background = '#f8fafc'; }}
+            >
+              <X size={14} />
+              Clear
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px',
@@ -38,6 +154,7 @@ const FailedFiles = () => {
         <AlertTriangle size={16} color="#dc2626" />
         <span style={{ fontSize: '13px', fontWeight: 600, color: '#991b1b' }}>
           {failedRecords.length} failed file{failedRecords.length !== 1 ? 's' : ''} found
+          {failedRecords.length !== allFailedRecords.length && ` (filtered from ${allFailedRecords.length})`}
         </span>
       </div>
 
