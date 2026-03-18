@@ -124,30 +124,62 @@ const Home = () => {
   }), [totalCount, deliveredFiles.length]);
 
   const showDetails = (type) => {
+    // Calculate actual status distribution from audit data
+    const statusCounts = auditData.reduce((acc, item) => {
+      const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
+      const hasPending = item.events?.some(e => String(e.Event_Type) === '2');
+      const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription');
+      
+      if (hasDelivered) {
+        acc.valid = (acc.valid || 0) + 1;
+      } else if (hasFailed) {
+        acc.invalid = (acc.invalid || 0) + 1;
+      } else if (hasPending) {
+        acc.pending = (acc.pending || 0) + 1;
+      }
+      return acc;
+    }, {});
+
     const detailsMap = {
       files: {
         title: 'Files Received',
         items: auditData.map(item => item.Source_FileName),
         value: fileStats.filesReceived,
-        chartData: { labels: ['Valid', 'Invalid', 'Pending'], values: [78, 27, 27], colors: ['#10b981', '#ef4444', '#f59e0b'] }
+        chartData: { 
+          labels: ['Valid', 'Invalid', 'Pending'], 
+          values: [statusCounts.valid || 0, statusCounts.invalid || 0, statusCounts.pending || 0], 
+          colors: ['#10b981', '#ef4444', '#f59e0b'] 
+        }
       },
       subscriptions: {
         title: 'Total Files Subscribed',
         items: allSubscriptions.map(app => app.Application),
         value: fileStats.totalToBeDelivered,
-        chartData: { labels: ['Valid', 'Invalid'], values: [78, 27], colors: ['#10b981', '#ef4444'] }
+        chartData: { 
+          labels: ['Delivered', 'Pending'], 
+          values: [fileStats.totalDelivered, fileStats.pendingDelivery], 
+          colors: ['#10b981', '#f59e0b'] 
+        }
       },
       deliveries: {
         title: 'Total Deliveries',
-        items: auditData.filter(item => item.events?.some(e => e.Event_Type === '4')).map(item => item.Source_FileName),
+        items: deliveredFiles.map(item => item.Source_FileName),
         value: fileStats.totalDelivered,
-        chartData: { labels: ['Delivered', 'Pending'], values: [fileStats.totalDelivered, fileStats.pendingDelivery], colors: ['#10b981', '#f59e0b'] }
+        chartData: { 
+          labels: ['Delivered', 'Pending'], 
+          values: [fileStats.totalDelivered, fileStats.pendingDelivery], 
+          colors: ['#10b981', '#f59e0b'] 
+        }
       },
       pending: {
         title: 'Pending Delivery',
         items: pendingFiles.map(item => item.Source_FileName),
         value: fileStats.pendingDelivery,
-        chartData: { labels: ['Pending', 'Delivered'], values: [fileStats.pendingDelivery, fileStats.totalDelivered], colors: ['#f59e0b', '#10b981'] }
+        chartData: { 
+          labels: ['Pending', 'Delivered'], 
+          values: [fileStats.pendingDelivery, fileStats.totalDelivered], 
+          colors: ['#f59e0b', '#10b981'] 
+        }
       }
     };
     const detail = detailsMap[type];
