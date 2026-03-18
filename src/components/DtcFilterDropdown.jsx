@@ -40,11 +40,14 @@ const DtcFilterDropdown = ({ filters, onFilterChange, onReset, onApply }) => {
       style={{
         background: 'white', borderRadius: '12px',
         border: '1px solid #e5e7eb', overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)'
+        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)',
+        maxHeight: '70vh',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       {/* Filter Fields */}
-      <div style={{ padding: '18px 20px' }}>
+      <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
           {dropdownFields.map(({ label, field }) => (
             <div key={field}>
@@ -143,7 +146,8 @@ const DtcFilterDropdown = ({ filters, onFilterChange, onReset, onApply }) => {
       {/* Actions */}
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: '10px',
-        padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc'
+        padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
+        flexShrink: 0
       }}>
         <button onClick={onReset} style={{
           display: 'flex', alignItems: 'center', gap: '6px',

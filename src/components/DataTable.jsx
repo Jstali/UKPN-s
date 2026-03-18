@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter
 import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
-import { wildcardMatch } from '../utils/auditUtils';
+import { wildcardMatch, formatDateTime } from '../utils/auditUtils';
 import useDebounce from '../hooks/useDebounce';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
@@ -517,6 +517,8 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
                         >
                           {row[col.key]}
                         </span>
+                      ) : (col.key === 'timestamp' || col.key === 'created') ? (
+                        formatDateTime(row[col.key])
                       ) : (
                         row[col.key]
                       )}
