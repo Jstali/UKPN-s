@@ -1,8 +1,49 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, RotateCcw } from 'lucide-react';
+import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
-const DtcFilterDropdown = ({ filters, onFilterChange, onReset, onApply }) => {
+const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, onApply }) => {
+  // Extract unique values from audit data
+  const uniqueValues = useMemo(() => {
+    const values = {
+      sourceApplication: new Set(),
+      application: new Set(),
+      eventType: new Set(),
+      flow: new Set(),
+      version: new Set(),
+      fromRole: new Set(),
+      fromMPID: new Set(),
+      toRole: new Set(),
+      toMPID: new Set(),
+      receivingApp: new Set(),
+    };
+
+    auditData.forEach(item => {
+      const parsed = parseHeader(item.Header_String);
+      const sourceApp = item.events?.[0]?.applicationName || 'Unknown';
+      
+      values.sourceApplication.add(sourceApp);
+      values.flow.add(parsed.flowVersion || 'UNKNOWN');
+      values.version.add(parsed.flowVersion || 'UNKNOWN');
+      values.fromRole.add(parsed.fromRole || 'Unknown');
+      values.fromMPID.add(parsed.fromMPID || 'Unknown');
+      values.toRole.add(parsed.toRole || 'Unknown');
+      values.toMPID.add(parsed.toMPID || 'Unknown');
+      values.receivingApp.add(parsed.recApp || 'Unknown');
+
+      item.events?.forEach(event => {
+        values.application.add(event.applicationName || event.Destination_Application || 'Unknown');
+        values.eventType.add(EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown');
+      });
+    });
+
+    // Convert sets to sorted arrays
+    return Object.fromEntries(
+      Object.entries(values).map(([key, set]) => [key, Array.from(set).sort()])
+    );
+  }, [auditData]);
+
   const dropdownFields = [
     { label: 'Source Application', field: 'sourceApplication' },
     { label: 'Application', field: 'application' },
@@ -58,6 +99,9 @@ const DtcFilterDropdown = ({ filters, onFilterChange, onReset, onApply }) => {
                 style={selectStyle}
               >
                 <option value="All">All</option>
+                {uniqueValues[field]?.map(value => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
               </select>
             </div>
           ))}
