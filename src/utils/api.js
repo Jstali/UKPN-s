@@ -96,6 +96,61 @@ const api = {
     return handleResponse(res);
   },
 
+  // Fetch performance data from Azure or calculate from audit data
+  async fetchPerformanceData() {
+    try {
+      // Fetch audit data to calculate performance metrics
+      const auditResponse = await this.fetchDtcAuditData(null, 500);
+      const auditData = auditResponse.data || [];
+
+      if (auditData.length === 0) {
+        return [];
+      }
+
+      // Group by application and calculate average processing time
+      const appMetrics = {};
+      
+      auditData.forEach(record => {
+        const app = record.application || record.receivingApp || 'Unknown';
+        if (!appMetrics[app]) {
+          appMetrics[app] = {
+            name: app,
+            totalTime: 0,
+            count: 0,
+            files: 0,
+          };
+        }
+        
+        // Calculate processing time if timestamps are available
+        if (record.timestamp && record.created) {
+          const processTime = new Date(record.timestamp) - new Date(record.created);
+          if (processTime > 0) {
+            appMetrics[app].totalTime += processTime / 1000; // Convert to seconds
+            appMetrics[app].count++;
+          }
+        }
+        appMetrics[app].files++;
+      });
+
+      // Convert to array and calculate averages
+      const performanceItems = Object.values(appMetrics)
+        .filter(app => app.count > 0)
+        .map(app => ({
+          name: app.name,
+          avgTime: `${(app.totalTime / app.count).toFixed(1)}s`,
+          actual: parseFloat((app.totalTime / app.count).toFixed(1)),
+          threshold: 3, // Default threshold
+          files: app.files,
+        }))
+        .sort((a, b) => b.actual - a.actual);
+
+      return performanceItems;
+    } catch (error) {
+      console.error('❌ Error fetching performance data:', error.message);
+      return [];
+    }
+  },
+
   // Audit data (cached in Redis with pagination)
   async getDtcAudit(page = 1, limit = 50) {
     if (!USE_API) return null;
