@@ -172,7 +172,17 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
   );
 };
 
-const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, onViewDetail }) => {
+const DataTable = ({ 
+  data, 
+  columns, 
+  compactColumns, 
+  onDownload, 
+  exportConfig, 
+  onViewDetail,
+  defaultSort = null,
+  defaultPageSize = 50,
+  groupByKey = null
+}) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
@@ -188,11 +198,11 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
     const saved = sessionStorage.getItem('dataTablePageSize');
     if (saved) {
       sessionStorage.removeItem('dataTablePageSize');
-      return Number(saved) || 10;
+      return Number(saved) || defaultPageSize;
     }
-    return 10;
+    return defaultPageSize;
   });
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState(defaultSort || { key: null, direction: 'asc' });
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
@@ -424,6 +434,9 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
                     position: 'sticky', top: 0, zIndex: 20, userSelect: 'none',
                     width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined,
                     minWidth: '60px',
+                    padding: '8px 10px',
+                    fontSize: '11px',
+                    background: sortConfig.key === col.key ? '#eef2ff' : undefined,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -493,50 +506,74 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={activeColumns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                <td colSpan={activeColumns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '13px' }}>
                   No records found
                 </td>
               </tr>
             ) : (
-              paginatedData.map((row, idx) => (
-                <tr key={idx}>
-                  {activeColumns.map((col) => (
-                    <td key={col.key}>
-                      {col.key === 'status' ? (
-                        <span className={`status-badge ${getStatusClass(row[col.key])}`}>
-                          {row[col.key]}
-                        </span>
-                      ) : col.key === 'id' ? (
-                        <span
-                          style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
-                          onClick={() => {
-                            sessionStorage.setItem('dataTablePage', String(currentPage));
-                            sessionStorage.setItem('dataTablePageSize', String(pageSize));
-                            navigate(`/audit-details`, { state: { record: row } });
-                          }}
+              paginatedData.map((row, idx) => {
+                // Determine group background color
+                let groupBg = '#fff';
+                if (groupByKey && row[groupByKey]) {
+                  const prevRow = idx > 0 ? paginatedData[idx - 1] : null;
+                  const currentGroup = row[groupByKey];
+                  const prevGroup = prevRow ? prevRow[groupByKey] : null;
+                  
+                  // Track group index
+                  let groupIndex = 0;
+                  for (let i = 0; i <= idx; i++) {
+                    if (i === 0 || paginatedData[i][groupByKey] !== paginatedData[i - 1][groupByKey]) {
+                      if (i < idx) groupIndex++;
+                    }
+                  }
+                  groupBg = groupIndex % 2 === 0 ? '#fff' : '#f9fafb';
+                }
+                
+                return (
+                  <tr key={idx} style={{ background: groupBg }}>
+                    {activeColumns.map((col) => (
+                      <td key={col.key} style={{ padding: '6px 10px', fontSize: '12px' }}>
+                        {col.key === 'status' ? (
+                          <span className={`status-badge ${getStatusClass(row[col.key])}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {row[col.key]}
+                          </span>
+                        ) : col.key === 'id' ? (
+                          <span
+                            style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}
+                            onClick={() => {
+                              sessionStorage.setItem('dataTablePage', String(currentPage));
+                              sessionStorage.setItem('dataTablePageSize', String(pageSize));
+                              navigate(`/audit-details`, { state: { record: row } });
+                            }}
+                          >
+                            {row[col.key]}
+                          </span>
+                        ) : (col.key === 'timestamp' || col.key === 'created') ? (
+                          <span style={{ fontSize: '12px' }}>{formatDateTime(row[col.key])}</span>
+                        ) : col.key === 'fileName' ? (
+                          <span style={{ fontSize: '12px', maxWidth: '200px', display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row[col.key]}>
+                            {row[col.key]}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '12px' }}>{row[col.key]}</span>
+                        )}
+                      </td>
+                    ))}
+                    {onDownload && (
+                      <td style={{ padding: '6px 10px' }}>
+                        <button
+                          className="table-download-btn"
+                          onClick={() => onDownload(row)}
+                          title="Download"
+                          style={{ padding: '4px 8px' }}
                         >
-                          {row[col.key]}
-                        </span>
-                      ) : (col.key === 'timestamp' || col.key === 'created') ? (
-                        formatDateTime(row[col.key])
-                      ) : (
-                        row[col.key]
-                      )}
-                    </td>
-                  ))}
-                  {onDownload && (
-                    <td>
-                      <button
-                        className="table-download-btn"
-                        onClick={() => onDownload(row)}
-                        title="Download"
-                      >
-                        <Download size={16} />
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))
+                          <Download size={14} />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
