@@ -252,7 +252,6 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
 const DtcAuditFilter = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const incomingFilters = location.state?.filters;
 
   const defaultFilters = {
     sourceApp: 'All',
@@ -274,7 +273,7 @@ const DtcAuditFilter = () => {
 
   const [auditData, setAuditData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState(incomingFilters || defaultFilters);
+  const [filters, setFilters] = useState(defaultFilters);
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
@@ -376,14 +375,7 @@ const DtcAuditFilter = () => {
     setCurrentPage(1);
   };
 
-  // Auto-query if navigated from DTC Audit page
-  useEffect(() => {
-    if (incomingFilters && auditData.length > 0 && !hasQueried) {
-      handleQuery();
-      window.history.replaceState({}, document.title);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auditData.length, hasQueried]);
+
 
   // Build dropdown options
   const flatData = [];
