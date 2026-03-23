@@ -7,7 +7,9 @@ import { NAV_CARDS } from '../data/dashboardConfig';
 import FileStatusSection from '../components/dashboard/FileStatusSection';
 import ApplicationStatusSection from '../components/dashboard/ApplicationStatusSection';
 import PerformanceSection from '../components/dashboard/PerformanceSection';
+import FailedFilesSection from '../components/dashboard/FailedFilesSection';
 import EditModal from '../components/dashboard/EditModal';
+import { parseHeader } from '../utils/auditUtils';
 
 import { useApp } from '../context/AppContext';
 
@@ -30,35 +32,38 @@ const Home = () => {
     return now;
   });
 
-  // Fetch audit data from API on mount
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.fetchDtcAuditData();
-        // Extract data array from response object
-        const auditArray = response.data || response || [];
-        setTotalCount(response.totalCount || (Array.isArray(auditArray) ? auditArray.length : 0));
-        setAuditData(Array.isArray(auditArray) ? auditArray : []);
-      } catch (error) {
-        console.error('Failed to fetch audit data:', error);
-        setAuditData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  // Fetch audit data from API on mount and with auto-refresh
+  const fetchData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.fetchDtcAuditData();
+      const auditArray = response.data || response || [];
+      setTotalCount(response.totalCount || (Array.isArray(auditArray) ? auditArray.length : 0));
+      setAuditData(Array.isArray(auditArray) ? auditArray : []);
+      
+      // Update timestamp
+      const newTime = new Date().toLocaleTimeString();
+      setDashboardUpdatedAt(newTime);
+      sessionStorage.setItem('dashboardUpdatedAt', newTime);
+    } catch (error) {
+      console.error('Failed to fetch audit data:', error);
+      setAuditData([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   React.useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      const newTime = new Date().toLocaleTimeString();
-      setDashboardUpdatedAt(newTime);
-      sessionStorage.setItem('dashboardUpdatedAt', newTime);
-    }, 60000);
+      fetchData();
+    }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchData]);
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 
@@ -69,6 +74,26 @@ const Home = () => {
 
   const pendingFiles = React.useMemo(() => {
     return auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '2') && !item.events?.some(e => String(e.Event_Type) === '4'));
+  }, [auditData]);
+
+  const failedFiles = React.useMemo(() => {
+    const dtcFailed = [];
+    const nonDtcFailed = [];
+    
+    auditData.forEach(item => {
+      const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription');
+      if (hasFailed) {
+        // Check if it's DTC or Non-DTC based on header string or other criteria
+        const parsed = parseHeader(item.Header_String);
+        if (parsed.flowVersion && parsed.flowVersion !== 'UNKNOWN') {
+          dtcFailed.push(item);
+        } else {
+          nonDtcFailed.push(item);
+        }
+      }
+    });
+    
+    return { dtcFailed, nonDtcFailed };
   }, [auditData]);
 
   const performanceItems = React.useMemo(() => {
@@ -259,6 +284,11 @@ const Home = () => {
               onShowDetails={showDetails}
             />
             <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
+            <FailedFilesSection
+              dtcFailed={failedFiles.dtcFailed}
+              nonDtcFailed={failedFiles.nonDtcFailed}
+              dashboardUpdatedAt={dashboardUpdatedAt}
+            />
           </div>
           <div className="dashboard-col-right">
             <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} />
