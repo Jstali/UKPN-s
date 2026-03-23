@@ -3,10 +3,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, RefreshCw } from 'lucide-react';
 import api from '../utils/api';
-import admsData from '../data/ADMS_DEV_V1.js';
-import electralinkData from '../data/Electralink_DEV_V1.js';
-import mprsData from '../data/MPRS_DEV_V1.js';
-import msbiData from '../data/application subscription.js';
 import { NAV_CARDS } from '../data/dashboardConfig';
 import FileStatusSection from '../components/dashboard/FileStatusSection';
 import ApplicationStatusSection from '../components/dashboard/ApplicationStatusSection';
@@ -65,8 +61,6 @@ const Home = () => {
   }, [autoRefresh]);
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
-
-  const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
 
   const deliveredFiles = React.useMemo(() => {
     const delivered = auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '4'));
@@ -154,7 +148,7 @@ const Home = () => {
       },
       subscriptions: {
         title: 'Total Files Subscribed',
-        items: allSubscriptions.map(app => app.Application),
+        items: [],
         value: fileStats.totalToBeDelivered,
         chartData: { 
           labels: ['Delivered', 'Pending'], 
