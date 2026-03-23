@@ -21,48 +21,42 @@ export const NAV_CARDS = [
   },
 ];
 
-export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0 }) => [
-  {
-    key: 'files',
-    label: 'Files Received',
-    value: filesReceived,
-    iconSrc: 'File recieved.png',
-    color: '#7c3aed',
-    bgColor: '#f5f3ff',
-    borderColor: '#c4b5fd',
-    trend: '+12%',
-  },
-  {
-    key: 'subscriptions',
-    label: 'Total Files to be Delivered',
-    value: totalToBeDelivered,
-    iconSrc: 'Subscription.png',
-    color: '#16a34a',
-    bgColor: '#f0fdf4',
-    borderColor: '#bbf7d0',
-    trend: null,
-  },
-  {
-    key: 'deliveries',
-    label: 'Total Files Delivered',
-    value: totalDelivered,
-    iconSrc: 'Total deliveries.png',
-    color: totalDelivered < totalToBeDelivered ? '#f59e0b' : '#16a34a',
-    bgColor: totalDelivered < totalToBeDelivered ? '#fffbeb' : '#f0fdf4',
-    borderColor: totalDelivered < totalToBeDelivered ? '#fcd34d' : '#bbf7d0',
-    trend: '+8%',
-  },
-  {
-    key: 'pending',
-    label: 'Total Files Pending Delivery',
-    value: pendingDelivery,
-    iconSrc: 'Pending delivery.png',
-    color: pendingDelivery === 0 ? '#16a34a' : '#f59e0b',
-    bgColor: pendingDelivery === 0 ? '#f0fdf4' : '#fffbeb',
-    borderColor: pendingDelivery === 0 ? '#bbf7d0' : '#fcd34d',
-    trend: '-3%',
-  },
-];
+export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0 }) => {
+  const hasPending = pendingDelivery > 0;
+  
+  return [
+    {
+      key: 'subscriptions',
+      label: 'Total Files to be Delivered',
+      value: totalToBeDelivered,
+      iconSrc: 'Subscription.png',
+      color: hasPending ? '#f59e0b' : '#16a34a',
+      bgColor: hasPending ? '#fffbeb' : '#f0fdf4',
+      borderColor: hasPending ? '#fcd34d' : '#bbf7d0',
+      trend: null,
+    },
+    {
+      key: 'deliveries',
+      label: 'Total Files Delivered',
+      value: totalDelivered,
+      iconSrc: 'Total deliveries.png',
+      color: '#16a34a',
+      bgColor: '#f0fdf4',
+      borderColor: '#bbf7d0',
+      trend: '+8%',
+    },
+    {
+      key: 'pending',
+      label: 'Total Files Pending for Delivery',
+      value: pendingDelivery,
+      iconSrc: 'Pending delivery.png',
+      color: hasPending ? '#f59e0b' : '#16a34a',
+      bgColor: hasPending ? '#fffbeb' : '#f0fdf4',
+      borderColor: hasPending ? '#fcd34d' : '#bbf7d0',
+      trend: '-3%',
+    },
+  ];
+};
 
 export const APP_STATUS_ITEMS = [
   { name: 'ADMS', env: 'DEV_V1', healthy: true },
