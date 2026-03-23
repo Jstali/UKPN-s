@@ -2,10 +2,18 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+// Generate filename with timestamp
+const generateFilename = (baseFilename) => {
+  const now = new Date();
+  const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const time = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-mm-ss
+  return `${baseFilename}_${date}_${time}`;
+};
+
 export const exportToCSV = (data, columns, filename) => {
   try {
     if (!data || data.length === 0) {
-      alert('No data to export.');
+      alert('No data available to export.');
       return;
     }
     const headers = columns.map(col => col.label).join(',');
@@ -17,7 +25,7 @@ export const exportToCSV = (data, columns, filename) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${generateFilename(filename)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
@@ -29,7 +37,7 @@ export const exportToCSV = (data, columns, filename) => {
 export const exportToPDF = (data, columns, filename) => {
   try {
     if (!data || data.length === 0) {
-      alert('No data to export.');
+      alert('No data available to export.');
       return;
     }
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -54,7 +62,7 @@ export const exportToPDF = (data, columns, filename) => {
       },
     });
 
-    doc.save(`${filename}_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`${generateFilename(filename)}.pdf`);
   } catch (err) {
     console.error('PDF export failed:', err);
     alert('Failed to export PDF. Please try again.');
@@ -64,7 +72,7 @@ export const exportToPDF = (data, columns, filename) => {
 export const exportToExcel = (data, columns, filename) => {
   try {
     if (!data || data.length === 0) {
-      alert('No data to export.');
+      alert('No data available to export.');
       return;
     }
     const wsData = [
@@ -84,7 +92,7 @@ export const exportToExcel = (data, columns, filename) => {
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Audit Data');
-    XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `${generateFilename(filename)}.xlsx`);
   } catch (err) {
     console.error('Excel export failed:', err);
     alert('Failed to export Excel. Please try again.');

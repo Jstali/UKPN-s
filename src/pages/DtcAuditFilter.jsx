@@ -352,21 +352,21 @@ const DtcAuditFilter = () => {
     });
 
     // Apply filters
-    if (filters.sourceApp !== 'All') {
+    if (filters.sourceApp && filters.sourceApp !== 'All') {
       const selectedApps = filters.sourceApp.split(',');
       results = results.filter(r => selectedApps.includes(r.sourceApp));
     }
-    if (filters.destinationApp !== 'All') {
+    if (filters.destinationApp && filters.destinationApp !== 'All') {
       const selectedApps = filters.destinationApp.split(',');
       results = results.filter(r => selectedApps.includes(r.application));
     }
-    if (filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
-    if (filters.flow !== 'All') results = results.filter(r => r.flowVersion === filters.flow);
-    if (filters.fromRole !== 'All') results = results.filter(r => r.fromRole === filters.fromRole);
-    if (filters.fromMPID !== 'All') results = results.filter(r => r.fromMPID === filters.fromMPID);
-    if (filters.toRole !== 'All') results = results.filter(r => r.toRole === filters.toRole);
-    if (filters.toMPID !== 'All') results = results.filter(r => r.toMPID === filters.toMPID);
-    if (filters.receivingApp !== 'All') results = results.filter(r => r.recApp === filters.receivingApp);
+    if (filters.eventType && filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
+    if (filters.flow && filters.flow !== 'All') results = results.filter(r => r.flowVersion === filters.flow);
+    if (filters.fromRole && filters.fromRole !== 'All') results = results.filter(r => r.fromRole === filters.fromRole);
+    if (filters.fromMPID && filters.fromMPID !== 'All') results = results.filter(r => r.fromMPID === filters.fromMPID);
+    if (filters.toRole && filters.toRole !== 'All') results = results.filter(r => r.toRole === filters.toRole);
+    if (filters.toMPID && filters.toMPID !== 'All') results = results.filter(r => r.toMPID === filters.toMPID);
+    if (filters.receivingApp && filters.receivingApp !== 'All') results = results.filter(r => r.recApp === filters.receivingApp);
     if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
     if (filters.msgId) results = results.filter(r => r.msgId && r.msgId.includes(filters.msgId));
 
@@ -378,11 +378,11 @@ const DtcAuditFilter = () => {
 
   // Auto-query if navigated from DTC Audit page
   useEffect(() => {
-    if (incomingFilters) {
+    if (incomingFilters && auditData.length > 0 && !hasQueried) {
       handleQuery();
       window.history.replaceState({}, document.title);
     }
-  }, []);
+  }, [auditData, incomingFilters, hasQueried]);
 
   // Build dropdown options
   const flatData = [];
