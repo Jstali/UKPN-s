@@ -13,7 +13,7 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-import { parseHeader, EVENT_TYPE_LABELS, formatDateTime } from '../utils/auditUtils';
+import { parseHeader, EVENT_TYPE_LABELS, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 
 // Flatten audit data to create one row per event
@@ -31,7 +31,7 @@ const flattenAuditEvents = (data) => {
       reversedEvents.forEach(event => {
         flatData.push({
           ...item,
-          flowVersion: parsed.flowVersion || 'UNKNOWN',
+          flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
           fileId: item.File_ID || '',
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
@@ -71,7 +71,7 @@ const buildFilteredResults = (data, filtersToUse) => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
-          flowVersion: parsed.flowVersion,
+          flowVersion: formatFlowVersion(parsed.flowVersion),
           fileId: item.File_ID,
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
@@ -438,12 +438,11 @@ const DtcAudit = () => {
         data={hasQueried ? filteredResults : flattenedAuditData}
         columns={columns}
         compactColumns={[
-          { key: 'sourceApplication', label: 'Source App' },
-          { key: 'fileName', label: 'File Name' },
+          { key: 'flowVersion', label: 'Flow Version' },
+          { key: 'fileId', label: 'File ID' },
           { key: 'timestamp', label: 'Event Timestamp' },
-          { key: 'status', label: 'Status' },
+          { key: 'sourceApplication', label: 'Source App' },
           { key: 'application', label: 'Dest App' },
-          { key: 'flowVersion', label: 'Flows' },
         ]}
         onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
         exportConfig={{ filename: 'dtc_audit_report' }}
