@@ -463,16 +463,20 @@ const DtcAudit = () => {
         data={hasQueried ? filteredResults : flattenedAuditData}
         columns={columns}
         compactColumns={[
-          { key: 'id', label: 'Unique ID' },
-          { key: 'flowVersion', label: 'Flow Version' },
+          { key: 'flowVersion', label: 'Flow' },
           { key: 'fileId', label: 'File ID' },
-          { key: 'fromRoleMPID', label: 'From Role From MPID' },
-          { key: 'toRoleMPID', label: 'To Role To MPID' },
-          { key: 'fileName', label: 'Source File Name' },
           { key: 'timestamp', label: 'Event Timestamp' },
-          { key: 'sourceApplication', label: 'Source App' },
-          { key: 'application', label: 'Dest App' },
+          { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+          { key: 'toRoleMPID', label: 'To Role + To MPID' },
+          { key: 'sourceApplication', label: 'Source' },
+          { key: 'application', label: 'Destination' },
+          { key: 'status', label: 'Status' },
+          { key: 'fileName', label: 'Source File Name' },
+          { key: 'eventId', label: 'Message ID' },
         ]}
+        defaultSort={{ key: 'timestamp', direction: 'desc' }}
+        defaultPageSize={50}
+        groupByKey="eventId"
         onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
         exportConfig={{ filename: 'dtc_audit_report' }}
         onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
