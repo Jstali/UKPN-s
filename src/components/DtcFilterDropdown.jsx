@@ -1,7 +1,124 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, RotateCcw } from 'lucide-react';
+import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+
+const MultiSelectDropdown = ({ label, value, options, onChange, style }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedValues = value === 'All' ? [] : (value ? value.split(',') : []);
+  const displayText = selectedValues.length === 0 ? 'All' : 
+                      selectedValues.length === 1 ? selectedValues[0] :
+                      `${selectedValues.length} selected`;
+
+  const handleToggle = (option) => {
+    let newSelected;
+    if (selectedValues.includes(option)) {
+      newSelected = selectedValues.filter(v => v !== option);
+    } else {
+      newSelected = [...selectedValues, option];
+    }
+    onChange(newSelected.length === 0 ? 'All' : newSelected.join(','));
+  };
+
+  const handleSelectAll = () => {
+    onChange('All');
+  };
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          ...style,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {displayText}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, marginLeft: '4px', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      </div>
+      
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          marginTop: '4px',
+          background: '#fff',
+          border: '1.5px solid #e2e8f0',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          maxHeight: '250px',
+          overflowY: 'auto',
+          zIndex: 1000
+        }}>
+          <div
+            onClick={handleSelectAll}
+            style={{
+              padding: '8px 12px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              borderBottom: '1px solid #f1f5f9',
+              background: selectedValues.length === 0 ? '#f8fafc' : '#fff',
+              fontWeight: selectedValues.length === 0 ? 600 : 400
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+            onMouseLeave={(e) => e.currentTarget.style.background = selectedValues.length === 0 ? '#f8fafc' : '#fff'}
+          >
+            <input
+              type="checkbox"
+              checked={selectedValues.length === 0}
+              readOnly
+              style={{ marginRight: '8px', cursor: 'pointer' }}
+            />
+            All
+          </div>
+          {options.map(option => (
+            <div
+              key={option}
+              onClick={() => handleToggle(option)}
+              style={{
+                padding: '8px 12px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                borderBottom: '1px solid #f1f5f9',
+                background: selectedValues.includes(option) ? '#eef2ff' : '#fff'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#f8fafc'}
+              onMouseLeave={(e) => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#fff'}
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(option)}
+                readOnly
+                style={{ marginRight: '8px', cursor: 'pointer' }}
+              />
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, onApply }) => {
   // Extract unique values from audit data
@@ -119,7 +236,32 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>
         {/* All fields in compact 6-column grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
-          {mainFields.map(({ label, field }) => (
+          {/* Source Application - Multi-select */}
+          <div>
+            <label style={labelStyle}>Source Application</label>
+            <MultiSelectDropdown
+              label="Source Application"
+              value={filters.sourceApplication}
+              options={uniqueValues.sourceApplication || []}
+              onChange={(value) => onFilterChange('sourceApplication', value)}
+              style={selectStyle}
+            />
+          </div>
+
+          {/* Destination Application - Multi-select */}
+          <div>
+            <label style={labelStyle}>Destination Application</label>
+            <MultiSelectDropdown
+              label="Destination Application"
+              value={filters.destinationApplication}
+              options={uniqueValues.destinationApplication || []}
+              onChange={(value) => onFilterChange('destinationApplication', value)}
+              style={selectStyle}
+            />
+          </div>
+
+          {/* Other fields - regular dropdowns */}
+          {mainFields.filter(f => f.field !== 'sourceApplication' && f.field !== 'destinationApplication').map(({ label, field }) => (
             <div key={field}>
               <label style={labelStyle}>{label}</label>
               <select

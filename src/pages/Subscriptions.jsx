@@ -6,10 +6,6 @@ import {
   Layers, CheckCircle, XCircle, Copy, ChevronRight, Search,
   Filter, FolderOpen, FileText, Globe, Clock
 } from 'lucide-react';
-import admsData from '../data/ADMS_DEV_V1.js';
-import electralinkData from '../data/Electralink_DEV_V1.js';
-import mprsData from '../data/MPRS_DEV_V1.js';
-import msbiData from '../data/application subscription.js';
 import { useApp } from '../context/AppContext';
 import { fetchDtcSubscriptions } from '../utils/api';
 
@@ -23,24 +19,6 @@ const APP_COLORS = {
 const getAppColor = (appName) => {
   const key = Object.keys(APP_COLORS).find(k => appName?.toUpperCase().includes(k));
   return APP_COLORS[key] || { accent: '#6b7280', light: '#f9fafb', border: '#d1d5db' };
-};
-
-const buildSubscriptionsFromLocal = () => {
-  const allSubscriptions = [admsData, electralinkData, mprsData, msbiData];
-  return allSubscriptions.map(app => {
-    const allHeaderStrings = app.rules.flatMap(rule => rule.Header_String.value);
-    const allDestinations = app.rules.map(rule => rule.destination);
-
-    return {
-      application: app.Application,
-      filterId: app.filterId,
-      headerStrings: allHeaderStrings,
-      destinations: allDestinations,
-      id: app.id,
-      status: app.status,
-      rules: app.rules
-    };
-  });
 };
 
 const normalizeSubscription = (app) => {
@@ -71,7 +49,7 @@ const Subscriptions = () => {
   const [copiedRule, setCopiedRule] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRules, setExpandedRules] = useState({});
-  const [existingSubscriptions, setExistingSubscriptions] = useState(buildSubscriptionsFromLocal);
+  const [existingSubscriptions, setExistingSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -87,12 +65,12 @@ const Subscriptions = () => {
         const apiData = await fetchDtcSubscriptions();
         const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
         if (isMounted) {
-          setExistingSubscriptions(normalized.length ? normalized : buildSubscriptionsFromLocal());
+          setExistingSubscriptions(normalized);
         }
       } catch (error) {
         if (isMounted) {
           setLoadError(error.message || 'Failed to load subscriptions.');
-          setExistingSubscriptions(buildSubscriptionsFromLocal());
+          setExistingSubscriptions([]);
         }
       } finally {
         if (isMounted) setLoading(false);

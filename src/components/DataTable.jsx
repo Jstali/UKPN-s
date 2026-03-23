@@ -506,7 +506,7 @@ const DataTable = ({ data, columns, compactColumns, onDownload, exportConfig, on
                         <span className={`status-badge ${getStatusClass(row[col.key])}`}>
                           {row[col.key]}
                         </span>
-                      ) : col.key === 'application' ? (
+                      ) : col.key === 'id' ? (
                         <span
                           style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline' }}
                           onClick={() => {

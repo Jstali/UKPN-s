@@ -27,6 +27,18 @@ export const formatFlowVersion = (flowVersion) => {
   return flowVersion;
 };
 
+// Format From Role and From MPID with space: X + EELC → X EELC
+export const formatFromRoleMPID = (fromRole, fromMPID) => {
+  if (!fromRole && !fromMPID) return '';
+  return `${fromRole || ''} ${fromMPID || ''}`.trim();
+};
+
+// Format To Role and To MPID with space: R + % → R %
+export const formatToRoleMPID = (toRole, toMPID) => {
+  if (!toRole && !toMPID) return '';
+  return `${toRole || ''} ${toMPID || ''}`.trim();
+};
+
 // Wildcard matching: cos* = startsWith, *cos = endsWith, *cos* = contains, plain = contains
 export const wildcardMatch = (value, pattern) => {
   const val = value.toLowerCase();

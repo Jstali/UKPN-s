@@ -13,7 +13,7 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-import { parseHeader, EVENT_TYPE_LABELS, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
+import { parseHeader, EVENT_TYPE_LABELS, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 
 // Flatten audit data to create one row per event
@@ -31,8 +31,11 @@ const flattenAuditEvents = (data) => {
       reversedEvents.forEach(event => {
         flatData.push({
           ...item,
+          id: item.id,
           flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
           fileId: item.File_ID || '',
+          fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
+          toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
           toRole: parsed.toRole,
@@ -71,8 +74,11 @@ const buildFilteredResults = (data, filtersToUse) => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
+          id: item.id,
           flowVersion: formatFlowVersion(parsed.flowVersion),
           fileId: item.File_ID,
+          fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
+          toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
           toRole: parsed.toRole,
@@ -95,8 +101,6 @@ const buildFilteredResults = (data, filtersToUse) => {
 
   const filterMap = {
     application: 'application',
-    sourceApplication: 'sourceApplication',
-    destinationApplication: 'application',
     eventType: 'eventType',
     flow: 'flowVersion',
     version: 'flowVersion',
@@ -107,6 +111,18 @@ const buildFilteredResults = (data, filtersToUse) => {
     receivingApp: 'recApp',
   };
 
+  // Handle multi-select for source and destination applications
+  if (filtersToUse.sourceApplication && filtersToUse.sourceApplication !== 'All') {
+    const selectedApps = filtersToUse.sourceApplication.split(',');
+    results = results.filter(item => selectedApps.includes(item.sourceApplication));
+  }
+
+  if (filtersToUse.destinationApplication && filtersToUse.destinationApplication !== 'All') {
+    const selectedApps = filtersToUse.destinationApplication.split(',');
+    results = results.filter(item => selectedApps.includes(item.application));
+  }
+
+  // Handle other filters
   Object.entries(filterMap).forEach(([filterKey, dataKey]) => {
     if (filtersToUse[filterKey] && filtersToUse[filterKey] !== 'All') {
       results = results.filter(item => item[dataKey] === filtersToUse[filterKey]);
@@ -438,8 +454,12 @@ const DtcAudit = () => {
         data={hasQueried ? filteredResults : flattenedAuditData}
         columns={columns}
         compactColumns={[
+          { key: 'id', label: 'Unique ID' },
           { key: 'flowVersion', label: 'Flow Version' },
           { key: 'fileId', label: 'File ID' },
+          { key: 'fromRoleMPID', label: 'From Role From MPID' },
+          { key: 'toRoleMPID', label: 'To Role To MPID' },
+          { key: 'fileName', label: 'Source File Name' },
           { key: 'timestamp', label: 'Event Timestamp' },
           { key: 'sourceApplication', label: 'Source App' },
           { key: 'application', label: 'Dest App' },
