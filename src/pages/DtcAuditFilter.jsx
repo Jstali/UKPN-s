@@ -382,7 +382,8 @@ const DtcAuditFilter = () => {
       handleQuery();
       window.history.replaceState({}, document.title);
     }
-  }, [auditData, incomingFilters, hasQueried]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auditData.length, hasQueried]);
 
   // Build dropdown options
   const flatData = [];
