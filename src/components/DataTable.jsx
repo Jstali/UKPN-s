@@ -362,12 +362,17 @@ const DataTable = ({
     const fileName = row.fileName || row.Source_FileName || 'file.txt';
     const fileContent = row.fileContent || row.File_Content || '';
 
+    if (!fileContent) {
+      alert('File content is not available in the current data. This feature requires file content to be included in the API response.');
+      return;
+    }
+
     setFileViewModal({
       show: true,
       fileName,
       fileContent,
       loading: false,
-      error: fileContent ? null : 'File content not available',
+      error: null,
       fileId: row.fileId || row.File_ID,
     });
   };
@@ -377,7 +382,9 @@ const DataTable = ({
     const fileContent = row.fileContent || row.File_Content || '';
 
     if (!fileContent) {
-      alert('File content not available');
+      alert('File content is not available in the current data. This feature requires file content to be included in the API response.');
+      return;
+    }
       return;
     }
 
