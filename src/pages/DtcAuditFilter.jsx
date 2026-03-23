@@ -558,7 +558,7 @@ const DtcAuditFilter = () => {
                   onChange={(e) => { const time = filters.eventTimestampFrom.split('T')[1] || '00:00'; handleFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : ''); }}
                   style={smallInputStyle} />
                 <input type="time" value={filters.eventTimestampFrom.split('T')[1] || ''}
-                  onChange={(e) => { const date = filters.eventTimestampFrom.split('T')[0] || new Date().toISOString().split('T')[0]; handleFilterChange('eventTimestampFrom', `${date}T${e.target.value}`); }}
+                  onChange={(e) => { const date = filters.eventTimestampFrom.split('T')[0]; if (date) handleFilterChange('eventTimestampFrom', `${date}T${e.target.value}`); }}
                   style={smallInputStyle} />
               </div>
             </div>
@@ -570,7 +570,7 @@ const DtcAuditFilter = () => {
                   onChange={(e) => { const time = filters.eventTimestampTo.split('T')[1] || '23:59'; handleFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : ''); }}
                   style={smallInputStyle} />
                 <input type="time" value={filters.eventTimestampTo.split('T')[1] || ''}
-                  onChange={(e) => { const date = filters.eventTimestampTo.split('T')[0] || new Date().toISOString().split('T')[0]; handleFilterChange('eventTimestampTo', `${date}T${e.target.value}`); }}
+                  onChange={(e) => { const date = filters.eventTimestampTo.split('T')[0]; if (date) handleFilterChange('eventTimestampTo', `${date}T${e.target.value}`); }}
                   style={smallInputStyle} />
               </div>
             </div>
