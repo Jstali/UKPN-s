@@ -117,15 +117,17 @@ export const FILTERED_COLUMNS = [
 ];
 
 export const DEFAULT_COLUMNS_BUSINESS = [
+  { key: 'flowVersion', label: 'Flow Version' },
+  { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp' },
   { key: 'sourceApplication', label: 'Source Application' },
   { key: 'application', label: 'Destination Application' },
-  { key: 'fileName', label: 'File Name' },
 ];
 
 export const DEFAULT_COLUMNS_FULL = [
+  { key: 'flowVersion', label: 'Flow Version' },
+  { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp' },
   { key: 'sourceApplication', label: 'Source Application' },
   { key: 'application', label: 'Destination Application' },
-  { key: 'fileName', label: 'File Name' },
 ];
