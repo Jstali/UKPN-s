@@ -96,6 +96,7 @@ const buildFilteredResults = (data, filtersToUse) => {
   const filterMap = {
     application: 'application',
     sourceApplication: 'sourceApplication',
+    destinationApplication: 'application',
     eventType: 'eventType',
     flow: 'flowVersion',
     version: 'flowVersion',
@@ -124,7 +125,8 @@ const buildFilteredResults = (data, filtersToUse) => {
 
 // Selection criteria display config
 const CRITERIA_FIELDS = [
-  { label: 'Application', key: 'application' },
+  { label: 'Source Application', key: 'sourceApplication' },
+  { label: 'Destination Application', key: 'destinationApplication' },
   { label: 'Event Type', key: 'eventType' },
   { label: 'Flow', key: 'flow' },
   { label: 'Version', key: 'version' },

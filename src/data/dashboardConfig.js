@@ -83,6 +83,7 @@ export const PERFORMANCE_ITEMS = [
 export const DEFAULT_FILTERS = {
   application: 'All',
   sourceApplication: 'All',
+  destinationApplication: 'All',
   eventType: 'All',
   flow: 'All',
   version: 'All',
@@ -116,26 +117,15 @@ export const FILTERED_COLUMNS = [
 ];
 
 export const DEFAULT_COLUMNS_BUSINESS = [
-  { key: 'id', label: 'ID' },
-  { key: 'Source_FileName', label: 'File Name' },
-  { key: 'Header_String', label: 'Header String' },
-  { key: 'sourceApplication', label: 'Source App' },
-  { key: 'eventType', label: 'Event Type' },
-  { key: 'status', label: 'Status' },
-  { key: 'application', label: 'Application' },
+  { key: 'timestamp', label: 'Event Timestamp' },
+  { key: 'sourceApplication', label: 'Source Application' },
+  { key: 'application', label: 'Destination Application' },
+  { key: 'fileName', label: 'File Name' },
 ];
 
 export const DEFAULT_COLUMNS_FULL = [
-  { key: 'id', label: 'ID' },
-  { key: 'Source_FileName', label: 'File Name' },
-  { key: 'sourceApplication', label: 'Source App' },
-  { key: 'eventType', label: 'Event Type' },
-  { key: 'status', label: 'Status' },
-  { key: 'application', label: 'Application' },
-  { key: 'timestamp', label: 'Timestamp' },
-  { key: 'eventId', label: 'Event ID' },
-  { key: 'destinationPath', label: 'Destination Path' },
-  { key: 'destinationFileName', label: 'Destination File' },
-  { key: 'Source_Path', label: 'Source Path' },
-  { key: 'Header_String', label: 'Header String' },
+  { key: 'timestamp', label: 'Event Timestamp' },
+  { key: 'sourceApplication', label: 'Source Application' },
+  { key: 'application', label: 'Destination Application' },
+  { key: 'fileName', label: 'File Name' },
 ];

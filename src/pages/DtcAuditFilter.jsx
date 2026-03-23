@@ -138,7 +138,8 @@ const DtcAuditFilter = () => {
   const incomingFilters = location.state?.filters;
 
   const defaultFilters = {
-    application: 'All',
+    sourceApp: 'All',
+    destinationApp: 'All',
     eventType: 'All',
     flow: 'All',
     version: 'All',
@@ -193,8 +194,6 @@ const DtcAuditFilter = () => {
 
   const handleReset = () => {
     setFilters({ ...defaultFilters });
-    setHasQueried(false);
-    setFilteredResults([]);
     setSearchTerm('');
     setColumnFilters({});
     setSortConfig({ key: null, direction: 'asc' });
@@ -218,6 +217,7 @@ const DtcAuditFilter = () => {
             toRole: parsed.toRole,
             toMPID: parsed.toMPID,
             recApp: parsed.recApp,
+            sourceApp: item.Source_Application || 'Unknown',
             application: event.applicationName || event.Destination_Application || 'Unknown',
             eventType: event.Event_Type || 'Unknown',
             status: event.Status || 'Unknown',
@@ -235,7 +235,8 @@ const DtcAuditFilter = () => {
     });
 
     // Apply filters
-    if (filters.application !== 'All') results = results.filter(r => r.application === filters.application);
+    if (filters.sourceApp !== 'All') results = results.filter(r => r.sourceApp === filters.sourceApp);
+    if (filters.destinationApp !== 'All') results = results.filter(r => r.application === filters.destinationApp);
     if (filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
     if (filters.flow !== 'All') results = results.filter(r => r.flowVersion === filters.flow);
     if (filters.fromRole !== 'All') results = results.filter(r => r.fromRole === filters.fromRole);
@@ -266,13 +267,15 @@ const DtcAuditFilter = () => {
     if (item.events && item.events.length > 0) {
       item.events.forEach(event => {
         flatData.push({
+          sourceApp: item.Source_Application || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Event_Type || 'Unknown',
         });
       });
     }
   });
-  const applicationOptions = ['All', ...new Set(flatData.map(i => i.application).filter(Boolean))];
+  const sourceAppOptions = ['All', ...new Set(flatData.map(i => i.sourceApp).filter(Boolean))];
+  const destinationAppOptions = ['All', ...new Set(flatData.map(i => i.application).filter(Boolean))];
   const eventTypeOptions = ['All', ...new Set(flatData.map(i => i.eventType).filter(Boolean))].sort();
 
   // Search + column filters + sort + paginate
@@ -331,15 +334,16 @@ const DtcAuditFilter = () => {
   }, [currentPage, totalPages]);
 
   const dropdownFields = [
-    { label: 'Application', field: 'application', options: applicationOptions },
+    { label: 'Source Application', field: 'sourceApp', options: sourceAppOptions },
+    { label: 'Destination Application', field: 'destinationApp', options: destinationAppOptions },
     { label: 'Event Type', field: 'eventType', options: eventTypeOptions },
     { label: 'Flow', field: 'flow', options: ['All'] },
     { label: 'Version', field: 'version', options: ['All'] },
+    { label: 'Receiving App', field: 'receivingApp', options: ['All'] },
     { label: 'From Role', field: 'fromRole', options: ['All'] },
     { label: 'From MPID', field: 'fromMPID', options: ['All'] },
     { label: 'To Role', field: 'toRole', options: ['All'] },
     { label: 'To MPID', field: 'toMPID', options: ['All'] },
-    { label: 'Receiving App', field: 'receivingApp', options: ['All'] },
   ];
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
@@ -388,7 +392,7 @@ const DtcAuditFilter = () => {
         boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
       }}>
         <div style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
             {dropdownFields.map(({ label, field, options }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
@@ -400,7 +404,7 @@ const DtcAuditFilter = () => {
 
             <div>
               <label style={labelStyle}>Event Timestamp From</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
                 <input type="date" value={filters.eventTimestampFrom.split('T')[0] || ''}
                   onChange={(e) => { const time = filters.eventTimestampFrom.split('T')[1] || '00:00'; handleFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : ''); }}
                   style={smallInputStyle} />
@@ -412,7 +416,7 @@ const DtcAuditFilter = () => {
 
             <div>
               <label style={labelStyle}>Event Timestamp To</label>
-              <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
                 <input type="date" value={filters.eventTimestampTo.split('T')[0] || ''}
                   onChange={(e) => { const time = filters.eventTimestampTo.split('T')[1] || '23:59'; handleFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : ''); }}
                   style={smallInputStyle} />
@@ -472,6 +476,105 @@ const DtcAuditFilter = () => {
             overflow: 'hidden', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
           }}
         >
+          {/* Selection Criteria - only show if any filter is applied */}
+          {(filters.sourceApp !== 'All' || filters.destinationApp !== 'All' || filters.eventType !== 'All' || 
+            filters.flow !== 'All' || filters.version !== 'All' || filters.receivingApp !== 'All' || 
+            filters.fromRole !== 'All' || filters.fromMPID !== 'All' || filters.toRole !== 'All' || 
+            filters.toMPID !== 'All' || filters.eventTimestampFrom || filters.eventTimestampTo || 
+            filters.fileCreationDate || filters.fileId || filters.msgId) && (
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #f1f5f9',
+              background: '#f8fafc',
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '12px', textAlign: 'center' }}>
+                Your Selection Criteria is
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                {filters.sourceApp !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Source App: {filters.sourceApp}
+                  </span>
+                )}
+                {filters.destinationApp !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Destination App: {filters.destinationApp}
+                  </span>
+                )}
+                {filters.eventType !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Event Type: {filters.eventType}
+                  </span>
+                )}
+                {filters.flow !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Flow: {filters.flow}
+                  </span>
+                )}
+                {filters.version !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Version: {filters.version}
+                  </span>
+                )}
+                {filters.receivingApp !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Receiving App: {filters.receivingApp}
+                  </span>
+                )}
+                {filters.fromRole !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    From Role: {filters.fromRole}
+                  </span>
+                )}
+                {filters.fromMPID !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    From MPID: {filters.fromMPID}
+                  </span>
+                )}
+                {filters.toRole !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    To Role: {filters.toRole}
+                  </span>
+                )}
+                {filters.toMPID !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    To MPID: {filters.toMPID}
+                  </span>
+                )}
+                {filters.eventTimestampFrom && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    From: {filters.eventTimestampFrom}
+                  </span>
+                )}
+                {filters.eventTimestampTo && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    To: {filters.eventTimestampTo}
+                  </span>
+                )}
+                {filters.fileCreationDate && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    File Date: {filters.fileCreationDate}
+                  </span>
+                )}
+                {filters.fileId && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    File ID: {filters.fileId}
+                  </span>
+                )}
+                {filters.msgId && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Msg ID: {filters.msgId}
+                  </span>
+                )}
+              </div>
+              {searchedResults.length === 0 && (
+                <p style={{ textAlign: 'center', color: '#64748b', fontSize: '13px', marginTop: '12px' }}>
+                  No DTC audit records found matching your criteria
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Table toolbar */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',

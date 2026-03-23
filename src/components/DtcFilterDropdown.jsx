@@ -9,6 +9,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     if (!auditData || auditData.length === 0) {
       return {
         sourceApplication: [],
+        destinationApplication: [],
         application: [],
         eventType: [],
         flow: [],
@@ -23,6 +24,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
     const values = {
       sourceApplication: new Set(),
+      destinationApplication: new Set(),
       application: new Set(),
       eventType: new Set(),
       flow: new Set(),
@@ -51,7 +53,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
       item.events?.forEach(event => {
         const app = event.applicationName || event.Destination_Application;
-        if (app) values.application.add(app);
+        if (app) {
+          values.application.add(app);
+          values.destinationApplication.add(app);
+        }
         
         const eventType = EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type;
         if (eventType) values.eventType.add(eventType);
@@ -64,17 +69,20 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     );
   }, [auditData]);
 
-  const dropdownFields = [
+  const mainFields = [
     { label: 'Source Application', field: 'sourceApplication' },
-    { label: 'Application', field: 'application' },
+    { label: 'Destination Application', field: 'destinationApplication' },
     { label: 'Event Type', field: 'eventType' },
     { label: 'Flow', field: 'flow' },
     { label: 'Version', field: 'version' },
+    { label: 'Receiving App', field: 'receivingApp' },
+  ];
+
+  const compactFields = [
     { label: 'From Role', field: 'fromRole' },
     { label: 'From MPID', field: 'fromMPID' },
     { label: 'To Role', field: 'toRole' },
     { label: 'To MPID', field: 'toMPID' },
-    { label: 'Receiving App', field: 'receivingApp' },
   ];
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
@@ -109,8 +117,25 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     >
       {/* Filter Fields */}
       <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
-          {dropdownFields.map(({ label, field }) => (
+        {/* All fields in compact 6-column grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+          {mainFields.map(({ label, field }) => (
+            <div key={field}>
+              <label style={labelStyle}>{label}</label>
+              <select
+                value={filters[field]}
+                onChange={(e) => onFilterChange(field, e.target.value)}
+                style={selectStyle}
+              >
+                <option value="All">All</option>
+                {uniqueValues[field]?.map(value => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+
+          {compactFields.map(({ label, field }) => (
             <div key={field}>
               <label style={labelStyle}>{label}</label>
               <select
@@ -129,7 +154,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
           {/* Event Timestamp From */}
           <div>
             <label style={labelStyle}>Event Timestamp From</label>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '4px' }}>
               <input type="date"
                 value={filters.eventTimestampFrom.split('T')[0] || ''}
                 onChange={(e) => {
@@ -152,7 +177,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
           {/* Event Timestamp To */}
           <div>
             <label style={labelStyle}>Event Timestamp To</label>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '4px' }}>
               <input type="date"
                 value={filters.eventTimestampTo.split('T')[0] || ''}
                 onChange={(e) => {
@@ -203,7 +228,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
               style={inputStyle}
             />
           </div>
-
         </div>
       </div>
 
