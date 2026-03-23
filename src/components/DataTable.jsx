@@ -436,7 +436,7 @@ const DataTable = ({
                     minWidth: '60px',
                     padding: '8px 10px',
                     fontSize: '11px',
-                    background: sortConfig.key === col.key ? '#eef2ff' : undefined,
+                    background: sortConfig.key === col.key ? '#5b4fc7' : undefined,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
