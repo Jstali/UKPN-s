@@ -86,7 +86,7 @@ export const DEFAULT_FILTERS = {
   toRole: 'All',
   toMPID: 'All',
   receivingApp: 'All',
-  eventTimestampFrom: '',
+  eventTimestampFrom: `${new Date().toISOString().split('T')[0]}T00:00`,
   eventTimestampTo: '',
   fileCreationDate: '',
   fileId: '',

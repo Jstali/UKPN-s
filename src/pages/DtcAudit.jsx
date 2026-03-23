@@ -13,8 +13,17 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-import { parseHeader, EVENT_TYPE_LABELS, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
+
+// Event Type mapping
+const EVENT_TYPE_MAP = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  'Failed': 'Failed'
+};
 
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
@@ -44,7 +53,7 @@ const flattenAuditEvents = (data) => {
           fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
           application: event.applicationName || event.Destination_Application || 'Unknown',
-          eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
+          eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
           status: event.Status || 'Unknown',
           processed: event.processed || 'false',
           timestamp: event.timestamp || '',
@@ -87,7 +96,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
-          eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
+          eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
           application: event.applicationName || event.Destination_Application || 'Unknown',
           timestamp: event.timestamp || '',
           status: event.Status || 'Unknown',
@@ -139,21 +148,21 @@ const buildFilteredResults = (data, filtersToUse) => {
   return results;
 };
 
-// Selection criteria display config
+// Selection criteria display config - Reordered to match filter order
 const CRITERIA_FIELDS = [
-  { label: 'Source Application', key: 'sourceApplication' },
-  { label: 'Destination Application', key: 'destinationApplication' },
-  { label: 'Event Type', key: 'eventType' },
   { label: 'Flow', key: 'flow' },
   { label: 'Version', key: 'version' },
   { label: 'From Role', key: 'fromRole' },
   { label: 'From MPID', key: 'fromMPID' },
   { label: 'To Role', key: 'toRole' },
   { label: 'To MPID', key: 'toMPID' },
+  { label: 'Source Application', key: 'sourceApplication' },
+  { label: 'Destination Application', key: 'destinationApplication' },
+  { label: 'Event Type', key: 'eventType' },
   { label: 'Receiving App', key: 'receivingApp' },
   { label: 'Event Timestamp From', key: 'eventTimestampFrom' },
   { label: 'Event Timestamp To', key: 'eventTimestampTo' },
-  { label: 'Created Date', key: 'fileCreationDate' },
+  { label: 'File Creation Date', key: 'fileCreationDate' },
   { label: 'File ID', key: 'fileId' },
   { label: 'Msg ID', key: 'msgId' },
 ];
