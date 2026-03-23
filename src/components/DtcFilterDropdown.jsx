@@ -210,19 +210,19 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     { label: 'Receiving App', field: 'receivingApp' },
   ];
 
-  const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
+  const labelStyle = { fontSize: '10px', fontWeight: 600, color: '#64748b', marginBottom: '3px', display: 'block' };
   const selectStyle = {
-    width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
-    borderRadius: '8px', fontSize: '13px', color: '#1e293b',
+    width: '100%', padding: '5px 8px', border: '1.5px solid #e2e8f0',
+    borderRadius: '6px', fontSize: '12px', color: '#1e293b',
     background: '#fff', cursor: 'pointer', outline: 'none'
   };
   const inputStyle = {
-    width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
-    borderRadius: '8px', fontSize: '13px', outline: 'none'
+    width: '100%', padding: '5px 8px', border: '1.5px solid #e2e8f0',
+    borderRadius: '6px', fontSize: '12px', outline: 'none'
   };
   const smallInputStyle = {
-    flex: 1, padding: '7px 8px', border: '1.5px solid #e2e8f0',
-    borderRadius: '8px', fontSize: '12px', outline: 'none'
+    flex: 1, padding: '5px 6px', border: '1.5px solid #e2e8f0',
+    borderRadius: '6px', fontSize: '11px', outline: 'none'
   };
 
   // Set default timestamp to current date at 00:00
@@ -238,134 +238,157 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.2 }}
       style={{
-        background: 'white', borderRadius: '12px',
+        background: 'white', borderRadius: '8px',
         border: '1px solid #e5e7eb', overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 28px rgba(15, 23, 42, 0.06)',
-        maxHeight: '70vh',
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+        maxHeight: '65vh',
         display: 'flex',
         flexDirection: 'column'
       }}
     >
-      {/* Filter Fields - Compact Layout */}
-      <div style={{ padding: '14px 18px', overflowY: 'auto', flex: 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-          {orderedFields.map(({ label, field }) => (
-            <div key={field}>
-              <label style={labelStyle}>{label}</label>
-              <MultiSelectDropdown
-                label={label}
-                value={filters[field]}
-                options={uniqueValues[field] || []}
-                onChange={(value) => onFilterChange(field, value)}
-                style={selectStyle}
-              />
-            </div>
-          ))}
+      {/* Filter Fields - Compact Layout with Priority Grouping */}
+      <div style={{ padding: '10px 14px', overflowY: 'auto', flex: 1 }}>
+        {/* Priority Group 1: Most Used Filters */}
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primary Filters</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+            {orderedFields.slice(0, 6).map(({ label, field }) => (
+              <div key={field}>
+                <label style={labelStyle}>{label}</label>
+                <MultiSelectDropdown
+                  label={label}
+                  value={filters[field]}
+                  options={uniqueValues[field] || []}
+                  onChange={(value) => onFilterChange(field, value)}
+                  style={selectStyle}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Event Timestamp From */}
-          <div>
-            <label style={labelStyle}>Event Timestamp From</label>
-            <div style={{ display: 'flex', gap: '4px' }}>
+        {/* Priority Group 2: Secondary Filters */}
+        <div style={{ marginBottom: '8px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Filters</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+            {orderedFields.slice(6).map(({ label, field }) => (
+              <div key={field}>
+                <label style={labelStyle}>{label}</label>
+                <MultiSelectDropdown
+                  label={label}
+                  value={filters[field]}
+                  options={uniqueValues[field] || []}
+                  onChange={(value) => onFilterChange(field, value)}
+                  style={selectStyle}
+                />
+              </div>
+            ))}
+
+            {/* Event Timestamp From */}
+            <div>
+              <label style={labelStyle}>Event From</label>
+              <div style={{ display: 'flex', gap: '3px' }}>
+                <input type="date"
+                  value={filters.eventTimestampFrom.split('T')[0] || ''}
+                  onChange={(e) => {
+                    const time = filters.eventTimestampFrom.split('T')[1] || '00:00';
+                    onFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : '');
+                  }}
+                  style={smallInputStyle}
+                />
+                <input type="time"
+                  value={filters.eventTimestampFrom.split('T')[1] || ''}
+                  onChange={(e) => {
+                    const date = filters.eventTimestampFrom.split('T')[0] || new Date().toISOString().split('T')[0];
+                    onFilterChange('eventTimestampFrom', `${date}T${e.target.value}`);
+                  }}
+                  style={smallInputStyle}
+                />
+              </div>
+            </div>
+
+            {/* Event Timestamp To */}
+            <div>
+              <label style={labelStyle}>Event To</label>
+              <div style={{ display: 'flex', gap: '3px' }}>
+                <input type="date"
+                  value={filters.eventTimestampTo.split('T')[0] || ''}
+                  onChange={(e) => {
+                    const time = filters.eventTimestampTo.split('T')[1] || '23:59';
+                    onFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : '');
+                  }}
+                  style={smallInputStyle}
+                />
+                <input type="time"
+                  value={filters.eventTimestampTo.split('T')[1] || ''}
+                  onChange={(e) => {
+                    const date = filters.eventTimestampTo.split('T')[0] || new Date().toISOString().split('T')[0];
+                    onFilterChange('eventTimestampTo', `${date}T${e.target.value}`);
+                  }}
+                  style={smallInputStyle}
+                />
+              </div>
+            </div>
+
+            {/* File Creation Date */}
+            <div>
+              <label style={labelStyle}>File Created</label>
               <input type="date"
-                value={filters.eventTimestampFrom.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = filters.eventTimestampFrom.split('T')[1] || '00:00';
-                  onFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-                style={smallInputStyle}
-              />
-              <input type="time"
-                value={filters.eventTimestampFrom.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = filters.eventTimestampFrom.split('T')[0] || new Date().toISOString().split('T')[0];
-                  onFilterChange('eventTimestampFrom', `${date}T${e.target.value}`);
-                }}
-                style={smallInputStyle}
+                value={filters.fileCreationDate}
+                onChange={(e) => onFilterChange('fileCreationDate', e.target.value)}
+                style={inputStyle}
               />
             </div>
-          </div>
 
-          {/* Event Timestamp To */}
-          <div>
-            <label style={labelStyle}>Event Timestamp To</label>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <input type="date"
-                value={filters.eventTimestampTo.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = filters.eventTimestampTo.split('T')[1] || '23:59';
-                  onFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-                style={smallInputStyle}
-              />
-              <input type="time"
-                value={filters.eventTimestampTo.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = filters.eventTimestampTo.split('T')[0] || new Date().toISOString().split('T')[0];
-                  onFilterChange('eventTimestampTo', `${date}T${e.target.value}`);
-                }}
-                style={smallInputStyle}
+            {/* File ID */}
+            <div>
+              <label style={labelStyle}>File ID</label>
+              <input type="text"
+                value={filters.fileId}
+                onChange={(e) => onFilterChange('fileId', e.target.value)}
+                placeholder="File ID"
+                style={inputStyle}
               />
             </div>
-          </div>
 
-          {/* File Creation Date */}
-          <div>
-            <label style={labelStyle}>File Creation Date</label>
-            <input type="date"
-              value={filters.fileCreationDate}
-              onChange={(e) => onFilterChange('fileCreationDate', e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          {/* File ID */}
-          <div>
-            <label style={labelStyle}>File ID</label>
-            <input type="text"
-              value={filters.fileId}
-              onChange={(e) => onFilterChange('fileId', e.target.value)}
-              placeholder="Enter File ID"
-              style={inputStyle}
-            />
-          </div>
-
-          {/* Msg ID */}
-          <div>
-            <label style={labelStyle}>Msg ID</label>
-            <input type="text"
-              value={filters.msgId}
-              onChange={(e) => onFilterChange('msgId', e.target.value)}
-              placeholder="Enter Msg ID"
-              style={inputStyle}
-            />
+            {/* Msg ID */}
+            <div>
+              <label style={labelStyle}>Msg ID</label>
+              <input type="text"
+                value={filters.msgId}
+                onChange={(e) => onFilterChange('msgId', e.target.value)}
+                placeholder="Msg ID"
+                style={inputStyle}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Actions */}
       <div style={{
-        display: 'flex', justifyContent: 'flex-end', gap: '10px',
-        padding: '12px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
+        display: 'flex', justifyContent: 'flex-end', gap: '8px',
+        padding: '8px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
         flexShrink: 0
       }}>
         <button onClick={onReset} style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '8px 16px', background: '#f1f5f9', color: '#475569',
           border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
-          fontSize: '13px', fontWeight: 600
+          fontSize: '12px', fontWeight: 600
         }}>
-          <RotateCcw size={14} />
+          <RotateCcw size={13} />
           Reset
         </button>
         <button onClick={onApply} style={{
           display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', background: '#667eea', color: 'white',
-          border: 'none', borderRadius: '8px', cursor: 'pointer',
-          fontSize: '13px', fontWeight: 600
+          padding: '6px 14px', background: '#667eea', color: 'white',
+          border: 'none', borderRadius: '6px', cursor: 'pointer',
+          fontSize: '12px', fontWeight: 600
         }}>
-          <Search size={14} />
+          <Search size={13} />
           Apply Filters
         </button>
       </div>

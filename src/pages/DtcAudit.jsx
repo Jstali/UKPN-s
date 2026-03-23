@@ -5,7 +5,6 @@ import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity } fro
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import api from '../utils/api';
-import { exportToCSV } from '../utils/exportUtils';
 import ColorBar, { FLOW_COLORS, APP_COLORS } from '../components/ColorBar';
 import {
   DEFAULT_FILTERS,
@@ -331,49 +330,47 @@ const DtcAudit = () => {
           </div>
         </div>
 
-        {/* Inline KPI chips */}
-        <div className="dtc-kpi-row">
-          <div className="dtc-kpi-chip">
-            <BarChart3 size={14} color="#6366f1" />
-            <span className="dtc-kpi-label">Events</span>
-            <span className="dtc-kpi-value">{flattenedAuditData.length.toLocaleString()}</span>
+        {/* Action buttons - moved to right */}
+        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
+          <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <BarChart3 size={13} color="#6366f1" />
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Events</span>
+            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{flattenedAuditData.length.toLocaleString()}</span>
           </div>
-          <div className="dtc-kpi-chip">
-            <Activity size={14} color="#0ea5e9" />
-            <span className="dtc-kpi-label">Flows</span>
-            <span className="dtc-kpi-value">{uniqueFlowCount}</span>
+          <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <Activity size={13} color="#0ea5e9" />
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Flows</span>
+            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{uniqueFlowCount}</span>
           </div>
           {hasQueried && (
-            <div className="dtc-kpi-chip dtc-kpi-results">
-              <span className="dtc-kpi-label">Results</span>
-              <span className="dtc-kpi-value">{filteredResults.length.toLocaleString()}</span>
+            <div className="dtc-kpi-chip dtc-kpi-results" style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Results</span>
+              <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{filteredResults.length.toLocaleString()}</span>
             </div>
           )}
-        </div>
-
-        {/* Action buttons */}
-        <div className="dtc-header-actions">
           <button
             className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
             onClick={() => setShowApps(!showApps)}
+            style={{ padding: '6px 14px', fontSize: '13px' }}
           >
             Charts
-            <ChevronDown size={12} style={{
+            <ChevronDown size={11} style={{
               transform: showApps ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease'
             }} />
           </button>
           {hasQueried && (
-            <button onClick={handleReset} className="dtc-reset-btn">
-              <RotateCcw size={13} /> Reset
+            <button onClick={handleReset} className="dtc-reset-btn" style={{ padding: '6px 14px', fontSize: '13px' }}>
+              <RotateCcw size={12} /> Reset
             </button>
           )}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`dtc-filter-btn ${showFilters ? 'active' : ''}`}
+            style={{ padding: '6px 14px', fontSize: '13px' }}
           >
-            <Filter size={14} /> Filters
-            <ChevronDown size={12} style={{
+            <Filter size={13} /> Filters
+            <ChevronDown size={11} style={{
               transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
               transition: 'transform 0.2s ease'
             }} />
@@ -418,27 +415,27 @@ const DtcAudit = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
           style={{
-            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px',
-            marginBottom: '12px', overflow: 'hidden',
+            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+            marginBottom: '8px', overflow: 'hidden',
             boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
           }}
         >
           <div style={{
-            padding: '10px 20px', borderBottom: '1px solid #f1f5f9',
+            padding: '8px 16px', borderBottom: '1px solid #f1f5f9',
             textAlign: 'center'
           }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>Your Selection Criteria is</h3>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Your Selection Criteria is</h3>
           </div>
 
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '6px 20px', padding: '12px 20px'
+            gap: '6px 16px', padding: '10px 16px'
           }}>
             {CRITERIA_FIELDS.filter(({ key }) => {
               const value = appliedFilters[key];
               return value && value !== 'All' && value !== '';
             }).map(({ label, key }) => (
-              <div key={key} style={{ fontSize: '13px', color: '#475569', padding: '3px 0' }}>
+              <div key={key} style={{ fontSize: '12px', color: '#475569', padding: '2px 0' }}>
                 <span style={{ fontWeight: 700, color: '#1e293b' }}>{label}:</span>{' '}
                 {appliedFilters[key]}
               </div>
@@ -446,8 +443,8 @@ const DtcAudit = () => {
           </div>
 
           <div style={{
-            padding: '10px 20px', borderTop: '1px solid #f1f5f9',
-            textAlign: 'center', fontSize: '13px', color: '#475569'
+            padding: '8px 16px', borderTop: '1px solid #f1f5f9',
+            textAlign: 'center', fontSize: '12px', color: '#475569'
           }}>
             {filteredResults.length === 0 ? (
               <span>No DTC audit records found matching your criteria</span>
@@ -477,8 +474,8 @@ const DtcAudit = () => {
         defaultSort={{ key: 'timestamp', direction: 'desc' }}
         defaultPageSize={50}
         groupByKey="eventId"
-        onDownload={(row) => exportToCSV([row], columns, `dtc_audit_${row.id}`)}
-        exportConfig={{ filename: 'dtc_audit_report' }}
+        onDownload={true}
+        exportConfig={{ filename: 'DTC_Audit_Export' }}
         onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
       />
 

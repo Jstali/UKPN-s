@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X, Eye } from 'lucide-react';
 import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
+import FileViewModal from './FileViewModal';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { wildcardMatch, formatDateTime } from '../utils/auditUtils';
 import useDebounce from '../hooks/useDebounce';
@@ -211,6 +212,18 @@ const DataTable = ({
   const [viewAll, setViewAll] = useState(false);
   const resizing = useRef(null);
 
+  // File view modal state
+  const [fileViewModal, setFileViewModal] = useState({
+    show: false,
+    fileName: '',
+    fileContent: '',
+    loading: false,
+    error: null,
+    fileId: null,
+  });
+
+  const [exporting, setExporting] = useState(false);
+
   const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
 
   const handleResizeStart = useCallback((colKey, e) => {
@@ -322,14 +335,73 @@ const DataTable = ({
   };
 
   const handleExport = useCallback((exportFn) => {
+    if (sortedData.length === 0) {
+      alert('No data available to export.');
+      return;
+    }
     if (sortedData.length > MAX_EXPORT_ROWS) {
       const proceed = window.confirm(
         `You are about to export ${sortedData.length.toLocaleString()} rows. This may take a while and could slow down your browser.\n\nContinue?`
       );
       if (!proceed) return;
     }
-    exportFn();
+    setExporting(true);
+    setTimeout(() => {
+      try {
+        exportFn();
+      } catch (error) {
+        console.error('Export failed:', error);
+        alert('Export failed. Please try again.');
+      } finally {
+        setExporting(false);
+      }
+    }, 100);
   }, [sortedData.length]);
+
+  const handleViewFile = async (row) => {
+    const fileName = row.fileName || row.Source_FileName || 'file.txt';
+    const fileContent = row.fileContent || row.File_Content || '';
+
+    setFileViewModal({
+      show: true,
+      fileName,
+      fileContent,
+      loading: false,
+      error: fileContent ? null : 'File content not available',
+      fileId: row.fileId || row.File_ID,
+    });
+  };
+
+  const handleDownloadFile = (row) => {
+    const fileName = row.fileName || row.Source_FileName || 'download.txt';
+    const fileContent = row.fileContent || row.File_Content || '';
+
+    if (!fileContent) {
+      alert('File content not available');
+      return;
+    }
+
+    const blob = new Blob([fileContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const closeFileViewModal = () => {
+    setFileViewModal({
+      show: false,
+      fileName: '',
+      fileContent: '',
+      loading: false,
+      error: null,
+      fileId: null,
+    });
+  };
 
   return (
     <div className="table-container">
@@ -355,12 +427,24 @@ const DataTable = ({
             )}
           </div>
           {exportConfig && (
-            <ExportDropdown
-              onExportPDF={() => handleExport(() => exportToPDF(sortedData, columns, exportConfig.filename))}
-              onExportExcel={() => handleExport(() => exportToExcel(sortedData, columns, exportConfig.filename))}
-              onExportCSV={() => handleExport(() => exportToCSV(sortedData, columns, exportConfig.filename))}
-              onSendEmail={() => setShowEmailModal(true)}
-            />
+            <>
+              {exporting && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 16px', background: '#eef2ff', color: '#4338ca',
+                  borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                }}>
+                  <div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
+                  Exporting...
+                </div>
+              )}
+              <ExportDropdown
+                onExportPDF={() => handleExport(() => exportToPDF(sortedData, activeColumns, exportConfig.filename))}
+                onExportExcel={() => handleExport(() => exportToExcel(sortedData, activeColumns, exportConfig.filename))}
+                onExportCSV={() => handleExport(() => exportToCSV(sortedData, activeColumns, exportConfig.filename))}
+                onSendEmail={() => setShowEmailModal(true)}
+              />
+            </>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
@@ -411,6 +495,20 @@ const DataTable = ({
       </div>
 
       {showEmailModal && <EmailModal onClose={() => setShowEmailModal(false)} />}
+      
+      {fileViewModal.show && (
+        <FileViewModal
+          fileName={fileViewModal.fileName}
+          fileContent={fileViewModal.fileContent}
+          loading={fileViewModal.loading}
+          error={fileViewModal.error}
+          onClose={closeFileViewModal}
+          onDownload={() => {
+            const row = paginatedData.find(r => (r.fileId || r.File_ID) === fileViewModal.fileId);
+            if (row) handleDownloadFile(row);
+          }}
+        />
+      )}
 
       <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
         <table
@@ -500,7 +598,7 @@ const DataTable = ({
                   )}
                 </th>
               ))}
-              {onDownload && <th style={{ width: '80px', position: 'sticky', top: 0, zIndex: 20 }}>Action</th>}
+              {onDownload && <th style={{ width: '120px', position: 'sticky', top: 0, zIndex: 20 }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -548,6 +646,19 @@ const DataTable = ({
                           >
                             {row[col.key]}
                           </span>
+                        ) : col.key === 'application' ? (
+                          <span
+                            style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}
+                            onClick={() => {
+                              sessionStorage.setItem('dataTablePage', String(currentPage));
+                              sessionStorage.setItem('dataTablePageSize', String(pageSize));
+                              navigate(`/audit-details`, { state: { record: row, uniqueId: row.id || row.eventId } });
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                          >
+                            {row[col.key]}
+                          </span>
                         ) : (col.key === 'timestamp' || col.key === 'created') ? (
                           <span style={{ fontSize: '12px' }}>{formatDateTime(row[col.key])}</span>
                         ) : col.key === 'fileName' ? (
@@ -561,14 +672,24 @@ const DataTable = ({
                     ))}
                     {onDownload && (
                       <td style={{ padding: '6px 10px' }}>
-                        <button
-                          className="table-download-btn"
-                          onClick={() => onDownload(row)}
-                          title="Download"
-                          style={{ padding: '4px 8px' }}
-                        >
-                          <Download size={14} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            className="table-action-btn"
+                            onClick={() => handleViewFile(row)}
+                            title="View file"
+                            style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                          >
+                            <Eye size={14} color="#475569" />
+                          </button>
+                          <button
+                            className="table-download-btn"
+                            onClick={() => handleDownloadFile(row)}
+                            title="Download file"
+                            style={{ padding: '4px 8px' }}
+                          >
+                            <Download size={14} />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
