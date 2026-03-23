@@ -385,8 +385,6 @@ const DataTable = ({
       alert('File content is not available in the current data. This feature requires file content to be included in the API response.');
       return;
     }
-      return;
-    }
 
     const blob = new Blob([fileContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
