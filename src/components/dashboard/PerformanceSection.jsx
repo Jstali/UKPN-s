@@ -5,10 +5,16 @@ import { Gauge, Clock } from 'lucide-react';
 
 const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
-  const overallAverage =
-    performanceItems.length > 0
-      ? (performanceItems.reduce((sum, app) => sum + app.actual, 0) / performanceItems.length).toFixed(1)
-      : '0.0';
+  
+  // Calculate correct overall average: total duration / total files
+  const overallAverage = React.useMemo(() => {
+    if (performanceItems.length === 0) return '0.0';
+    
+    const totalDuration = performanceItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
+    const totalFiles = performanceItems.reduce((sum, app) => sum + app.files, 0);
+    
+    return totalFiles > 0 ? (totalDuration / totalFiles).toFixed(1) : '0.0';
+  }, [performanceItems]);
 
   return (
     <motion.div
