@@ -45,6 +45,10 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style }) => {
     onChange('All');
   };
 
+  const handleClearAll = () => {
+    onChange('All');
+  };
+
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       <div
@@ -177,16 +181,13 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
       item.events?.forEach(event => {
         const app = event.applicationName || event.Destination_Application;
-        if (app) values.destinationApplication.add(app);
-        
-        // Map event types to readable names
-        const eventTypeKey = event.Event_Type;
-        const eventTypeName = EVENT_TYPE_MAP[eventTypeKey] || eventTypeKey;
-        if (event.Status === 'Failed') {
-          values.eventType.add('Failed');
-        } else if (eventTypeName) {
-          values.eventType.add(eventTypeName);
+        if (app) {
+          values.application.add(app);
+          values.destinationApplication.add(app);
         }
+        
+        const eventType = EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type;
+        if (eventType) values.eventType.add(eventType);
       });
     });
 
@@ -196,42 +197,36 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     );
   }, [auditData]);
 
-  // Reordered fields based on priority
-  const orderedFields = [
+  const mainFields = [
+    { label: 'Source Application', field: 'sourceApplication' },
+    { label: 'Destination Application', field: 'destinationApplication' },
+    { label: 'Event Type', field: 'eventType' },
     { label: 'Flow', field: 'flow' },
     { label: 'Version', field: 'version' },
+    { label: 'Receiving App', field: 'receivingApp' },
+  ];
+
+  const compactFields = [
     { label: 'From Role', field: 'fromRole' },
     { label: 'From MPID', field: 'fromMPID' },
     { label: 'To Role', field: 'toRole' },
     { label: 'To MPID', field: 'toMPID' },
-    { label: 'Source Application', field: 'sourceApplication' },
-    { label: 'Destination Application', field: 'destinationApplication' },
-    { label: 'Event Type', field: 'eventType' },
-    { label: 'Receiving App', field: 'receivingApp' },
   ];
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
   const selectStyle = {
-    width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
+    width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0',
     borderRadius: '8px', fontSize: '13px', color: '#1e293b',
     background: '#fff', cursor: 'pointer', outline: 'none'
   };
   const inputStyle = {
-    width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0',
+    width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0',
     borderRadius: '8px', fontSize: '13px', outline: 'none'
   };
   const smallInputStyle = {
-    flex: 1, padding: '7px 8px', border: '1.5px solid #e2e8f0',
+    flex: 1, padding: '8px 8px', border: '1.5px solid #e2e8f0',
     borderRadius: '8px', fontSize: '12px', outline: 'none'
   };
-
-  // Set default timestamp to current date at 00:00
-  useEffect(() => {
-    if (!filters.eventTimestampFrom) {
-      const today = new Date().toISOString().split('T')[0];
-      onFilterChange('eventTimestampFrom', `${today}T00:00`);
-    }
-  }, []);
 
   return (
     <motion.div
@@ -248,19 +243,64 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
         flexDirection: 'column'
       }}
     >
-      {/* Filter Fields - Compact Layout */}
-      <div style={{ padding: '14px 18px', overflowY: 'auto', flex: 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-          {orderedFields.map(({ label, field }) => (
+      {/* Filter Fields */}
+      <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1 }}>
+        {/* All fields in compact 6-column grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
+          {/* Source Application - Multi-select */}
+          <div>
+            <label style={labelStyle}>Source Application</label>
+            <MultiSelectDropdown
+              label="Source Application"
+              value={filters.sourceApplication}
+              options={uniqueValues.sourceApplication || []}
+              onChange={(value) => onFilterChange('sourceApplication', value)}
+              style={selectStyle}
+            />
+          </div>
+
+          {/* Destination Application - Multi-select */}
+          <div>
+            <label style={labelStyle}>Destination Application</label>
+            <MultiSelectDropdown
+              label="Destination Application"
+              value={filters.destinationApplication}
+              options={uniqueValues.destinationApplication || []}
+              onChange={(value) => onFilterChange('destinationApplication', value)}
+              style={selectStyle}
+            />
+          </div>
+
+          {/* Other fields - regular dropdowns */}
+          {mainFields.filter(f => f.field !== 'sourceApplication' && f.field !== 'destinationApplication').map(({ label, field }) => (
             <div key={field}>
               <label style={labelStyle}>{label}</label>
-              <MultiSelectDropdown
-                label={label}
+              <select
                 value={filters[field]}
-                options={uniqueValues[field] || []}
-                onChange={(value) => onFilterChange(field, value)}
+                onChange={(e) => onFilterChange(field, e.target.value)}
                 style={selectStyle}
-              />
+              >
+                <option value="All">All</option>
+                {uniqueValues[field]?.map(value => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+
+          {compactFields.map(({ label, field }) => (
+            <div key={field}>
+              <label style={labelStyle}>{label}</label>
+              <select
+                value={filters[field]}
+                onChange={(e) => onFilterChange(field, e.target.value)}
+                style={selectStyle}
+              >
+                <option value="All">All</option>
+                {uniqueValues[field]?.map(value => (
+                  <option key={value} value={value}>{value}</option>
+                ))}
+              </select>
             </div>
           ))}
 
@@ -347,7 +387,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       {/* Actions */}
       <div style={{
         display: 'flex', justifyContent: 'flex-end', gap: '10px',
-        padding: '12px 18px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
+        padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
         flexShrink: 0
       }}>
         <button onClick={onReset} style={{
@@ -373,4 +413,4 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
   );
 };
 
-export default DtcFilterDropdown;
+export default React.memo(DtcFilterDropdown);
