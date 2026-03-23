@@ -407,10 +407,13 @@ const DtcAudit = () => {
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '6px 20px', padding: '12px 20px'
           }}>
-            {CRITERIA_FIELDS.map(({ label, key }) => (
+            {CRITERIA_FIELDS.filter(({ key }) => {
+              const value = appliedFilters[key];
+              return value && value !== 'All' && value !== '';
+            }).map(({ label, key }) => (
               <div key={key} style={{ fontSize: '13px', color: '#475569', padding: '3px 0' }}>
                 <span style={{ fontWeight: 700, color: '#1e293b' }}>{label}:</span>{' '}
-                {appliedFilters[key] || 'All'}
+                {appliedFilters[key]}
               </div>
             ))}
           </div>
@@ -419,7 +422,11 @@ const DtcAudit = () => {
             padding: '10px 20px', borderTop: '1px solid #f1f5f9',
             textAlign: 'center', fontSize: '13px', color: '#475569'
           }}>
-            There have been <span style={{ fontWeight: 700, color: '#ef4444' }}>{exceptionCount} DTC exception messages</span> since N/A relating to your applications
+            {filteredResults.length === 0 ? (
+              <span>No DTC audit records found matching your criteria</span>
+            ) : (
+              <>Found <span style={{ fontWeight: 700, color: '#10b981' }}>{filteredResults.length}</span> DTC audit record{filteredResults.length !== 1 ? 's' : ''} matching your criteria</>
+            )}
           </div>
         </motion.div>
       )}
