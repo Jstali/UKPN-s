@@ -225,14 +225,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     borderRadius: '6px', fontSize: '11px', outline: 'none'
   };
 
-  // Set default timestamp to current date at 00:00
-  useEffect(() => {
-    if (!filters.eventTimestampFrom) {
-      const today = new Date().toISOString().split('T')[0];
-      onFilterChange('eventTimestampFrom', `${today}T00:00`);
-    }
-  }, []);
-
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
