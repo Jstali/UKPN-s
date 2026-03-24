@@ -320,7 +320,7 @@ const Home = () => {
             >
               <div
                 onClick={() => {
-                  navigate('/dtc-audit', { state: { showFailedOnly: true, failedFiles: failedFiles.dtcFailed } });
+                  navigate('/dtc-failed-files');
                   setShowFailedDropdown(false);
                 }}
                 style={{
@@ -338,7 +338,7 @@ const Home = () => {
               </div>
               <div
                 onClick={() => {
-                  navigate('/non-dtc-audit', { state: { showFailedOnly: true, failedFiles: failedFiles.nonDtcFailed } });
+                  navigate('/non-dtc-failed-files');
                   setShowFailedDropdown(false);
                 }}
                 style={{

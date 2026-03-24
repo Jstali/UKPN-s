@@ -20,6 +20,8 @@ const Analytics = lazy(() => import('./pages/Analytics'));
 const PerformanceGraphPage = lazy(() => import('./pages/PerformanceGraphPage'));
 const PerformanceDetail = lazy(() => import('./pages/PerformanceDetail'));
 const FailedFiles = lazy(() => import('./pages/FailedFiles'));
+const DtcFailedFiles = lazy(() => import('./pages/DtcFailedFiles'));
+const NonDtcFailedFiles = lazy(() => import('./pages/NonDtcFailedFiles'));
 const Login = lazy(() => import('./pages/Login'));
 
 const PageLoader = () => (
@@ -76,6 +78,8 @@ function AppRoutes() {
               <Route path="/performance-graph" element={<PerformanceGraphPage />} />
               <Route path="/performance-detail" element={<PerformanceDetail />} />
               <Route path="/failed-files" element={<FailedFiles />} />
+              <Route path="/dtc-failed-files" element={<DtcFailedFiles />} />
+              <Route path="/non-dtc-failed-files" element={<NonDtcFailedFiles />} />
             </Routes>
           </Suspense>
         </main>

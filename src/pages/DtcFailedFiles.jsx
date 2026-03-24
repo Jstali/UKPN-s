@@ -1,0 +1,161 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronRight, ArrowLeft } from 'lucide-react';
+import DataTable from '../components/DataTable';
+import api from '../utils/api';
+import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
+
+const EVENT_TYPE_MAP = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  'Failed': 'Failed'
+};
+
+const flattenAuditEvents = (data) => {
+  const flatData = [];
+  data.forEach(item => {
+    const parsed = parseHeader(item.Header_String);
+    if (item.events && item.events.length > 0) {
+      const sourceApplication = item.events[0]?.applicationName || 'Unknown';
+      const reversedEvents = [...item.events].reverse();
+      
+      reversedEvents.forEach(event => {
+        flatData.push({
+          ...item,
+          id: item.id,
+          flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
+          fileId: item.File_ID || '',
+          fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
+          toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
+          fromRole: parsed.fromRole,
+          fromMPID: parsed.fromMPID,
+          toRole: parsed.toRole,
+          toMPID: parsed.toMPID,
+          recApp: parsed.recApp,
+          fileName: item.Source_FileName,
+          sourceApplication: sourceApplication,
+          application: event.applicationName || event.Destination_Application || 'Unknown',
+          eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
+          status: event.Status || 'Unknown',
+          processed: event.processed || 'false',
+          timestamp: event.timestamp || '',
+          eventId: event.id || '',
+          destinationPath: event.Destination_Path || '',
+          destinationFileName: event.Destination_fileName || '',
+        });
+      });
+    }
+  });
+  return flatData;
+};
+
+const DtcFailedFiles = () => {
+  const navigate = useNavigate();
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await api.fetchDtcAuditData();
+        setAuditData(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch audit data:', error);
+        setAuditData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const failedFiles = useMemo(() => {
+    if (auditData.length === 0) return [];
+    const flattened = flattenAuditEvents(auditData);
+    return flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+  }, [auditData]);
+
+  return (
+    <motion.div
+      className="page-container dtc-audit-page"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="dtc-header-bar">
+        <div className="dtc-header-left">
+          <div className="dtc-breadcrumb-inline">
+            <Link to="/">Home</Link>
+            <ChevronRight size={12} />
+            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Failed Files</span>
+          </div>
+        </div>
+
+        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', background: '#667eea', color: 'white',
+              border: 'none', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 600,
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Home
+          </button>
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        style={{
+          background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px',
+          marginBottom: '8px', padding: '12px 20px',
+          boxShadow: '0 1px 2px rgba(239, 68, 68, 0.04)'
+        }}
+      >
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#991b1b', marginBottom: '4px' }}>
+          ⚠️ DTC Failed Files
+        </div>
+        <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
+          {failedFiles.length === 0 ? (
+            <span>No failed files found</span>
+          ) : (
+            <>Found <span style={{ fontWeight: 700 }}>{failedFiles.length}</span> failed file{failedFiles.length !== 1 ? 's' : ''}</>
+          )}
+        </div>
+      </motion.div>
+
+      <DataTable
+        data={failedFiles}
+        columns={DEFAULT_COLUMNS_FULL}
+        compactColumns={[
+          { key: 'flowVersion', label: 'Flow' },
+          { key: 'fileId', label: 'File ID' },
+          { key: 'timestamp', label: 'Event Timestamp' },
+          { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+          { key: 'toRoleMPID', label: 'To Role + To MPID' },
+          { key: 'sourceApplication', label: 'Source' },
+          { key: 'application', label: 'Destination' },
+          { key: 'status', label: 'Status' },
+          { key: 'fileName', label: 'Source File Name' },
+          { key: 'eventId', label: 'Message ID' },
+        ]}
+        defaultSort={{ key: 'timestamp', direction: 'desc' }}
+        defaultPageSize={50}
+        groupByKey="eventId"
+        onDownload={true}
+        exportConfig={{ filename: 'DTC_Failed_Files_Export' }}
+      />
+    </motion.div>
+  );
+};
+
+export default DtcFailedFiles;
