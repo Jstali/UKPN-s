@@ -119,7 +119,6 @@ const api = {
 
         const durationSec = (end - start) / 1000;
         const appName = event1.applicationName || 'Unknown';
-
         if (!appStats.has(appName)) {
           appStats.set(appName, { totalDuration: 0, files: 0 });
         }
