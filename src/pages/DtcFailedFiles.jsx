@@ -57,6 +57,7 @@ const DtcFailedFiles = () => {
   const navigate = useNavigate();
   const [auditData, setAuditData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
@@ -64,10 +65,15 @@ const DtcFailedFiles = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await api.fetchDtcAuditData();
+        setFetchError(null);
+        const response = await api.fetchDtcAuditData(null, 500);
+        if (!response.data || response.data.length === 0) {
+          setFetchError('No data returned from API. Ensure you are connected to the AVD network.');
+        }
         setAuditData(response.data || []);
       } catch (error) {
         console.error('Failed to fetch audit data:', error);
+        setFetchError(error.message || 'Failed to fetch data from API.');
         setAuditData([]);
       } finally {
         setLoading(false);
@@ -132,6 +138,15 @@ const DtcFailedFiles = () => {
           </button>
         </div>
       </div>
+
+      {fetchError && (
+        <div style={{
+          background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '8px',
+          padding: '10px 16px', marginBottom: '8px', fontSize: '13px', color: '#856404'
+        }}>
+          ⚠️ {fetchError}
+        </div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 6 }}
