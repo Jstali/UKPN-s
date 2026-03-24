@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity } from 'lucide-react';
+import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity, RefreshCw } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import api from '../utils/api';
@@ -167,7 +167,7 @@ const CRITERIA_FIELDS = [
 ];
 
 const DtcAudit = () => {
-  const { user } = useApp();
+  const { user, autoRefresh, setAutoRefresh } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -187,24 +187,34 @@ const DtcAudit = () => {
   const [pageSize] = useState(50); // Reduced from 100 for better initial performance
 
   // Fetch audit data from API on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.fetchDtcAuditData(null, pageSize);
-        setAuditData(response.data || []);
-        setContinuationToken(response.continuationToken || null);
-        setTotalCount(response.totalCount || 0);
-        console.log(`📊 Total records in DB: ${response.totalCount}, Loaded: ${response.data?.length}`);
-      } catch (error) {
-        console.error('Failed to fetch audit data:', error);
-        setAuditData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.fetchDtcAuditData(null, pageSize);
+      setAuditData(response.data || []);
+      setContinuationToken(response.continuationToken || null);
+      setTotalCount(response.totalCount || 0);
+      console.log(`📊 Total records in DB: ${response.totalCount}, Loaded: ${response.data?.length}`);
+    } catch (error) {
+      console.error('Failed to fetch audit data:', error);
+      setAuditData([]);
+    } finally {
+      setLoading(false);
+    }
   }, [pageSize]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [autoRefresh, fetchData]);
 
   const handleLoadMore = async () => {
     if (!continuationToken || loadingMore) return;
@@ -348,6 +358,26 @@ const DtcAudit = () => {
               <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{filteredResults.length.toLocaleString()}</span>
             </div>
           )}
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '11px',
+              fontWeight: 600,
+              background: autoRefresh ? '#22c55e' : '#cbd5e1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title={autoRefresh ? 'Disable Auto Refresh' : 'Enable Auto Refresh'}
+          >
+            <RefreshCw size={11} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
+            Auto Refresh {autoRefresh ? 'ON' : 'OFF'}
+          </button>
           <button
             className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
             onClick={() => setShowApps(!showApps)}
