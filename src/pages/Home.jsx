@@ -304,10 +304,9 @@ const Home = () => {
                   : '#065f46', 
                 fontWeight: 600 
               }}>
-                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? 'Failed Files Detected: ' : 'No failed files at the moment'}
-                {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
-                {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
-                {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
+                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
+                  ? 'Some files have failed processing. Click View Failed to see details.' 
+                  : 'All files are processing successfully.'}
               </span>
             </div>
           </div>
