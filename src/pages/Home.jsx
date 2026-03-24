@@ -74,7 +74,7 @@ const Home = () => {
   }, [auditData]);
 
   const pendingFiles = React.useMemo(() => {
-    return auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '2') && !item.events?.some(e => String(e.Event_Type) === '4'));
+    return auditData.filter(item => !item.events?.some(e => String(e.Event_Type) === '4'));
   }, [auditData]);
 
   const failedFiles = React.useMemo(() => {
@@ -176,7 +176,7 @@ const Home = () => {
       },
       subscriptions: {
         title: 'Total Files Subscribed',
-        items: [],
+        items: auditData.map(item => item.Source_FileName).filter(Boolean),
         value: fileStats.totalToBeDelivered,
         chartData: { 
           labels: ['Delivered', 'Pending'], 
