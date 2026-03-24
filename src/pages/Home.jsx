@@ -320,7 +320,7 @@ const Home = () => {
             >
               <div
                 onClick={() => {
-                  navigate('/dtc-audit');
+                  navigate('/dtc-audit', { state: { showFailedOnly: true, failedFiles: failedFiles.dtcFailed } });
                   setShowFailedDropdown(false);
                 }}
                 style={{
@@ -334,11 +334,11 @@ const Home = () => {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
               >
-                DTC Audit
+                DTC Audit ({failedFiles.dtcFailed.length} failed)
               </div>
               <div
                 onClick={() => {
-                  navigate('/non-dtc-audit');
+                  navigate('/non-dtc-audit', { state: { showFailedOnly: true, failedFiles: failedFiles.nonDtcFailed } });
                   setShowFailedDropdown(false);
                 }}
                 style={{
@@ -351,7 +351,7 @@ const Home = () => {
                 onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
                 onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
               >
-                Non DTC Audit
+                Non DTC Audit ({failedFiles.nonDtcFailed.length} failed)
               </div>
             </motion.div>
           )}

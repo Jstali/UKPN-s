@@ -178,6 +178,7 @@ const DtcAudit = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(null);
   const [filters, setFilters] = useState(location.state?.filters || { ...DEFAULT_FILTERS });
+  const [showFailedOnly, setShowFailedOnly] = useState(location.state?.showFailedOnly || false);
   const [exceptionCount, setExceptionCount] = useState(0);
   
   // Pagination state
@@ -272,8 +273,15 @@ const DtcAudit = () => {
 
   const flattenedAuditData = useMemo(() => {
     if (auditData.length === 0) return [];
-    return flattenAuditEvents(auditData);
-  }, [auditData]);
+    const flattened = flattenAuditEvents(auditData);
+    
+    // Filter for failed files only if showFailedOnly is true
+    if (showFailedOnly) {
+      return flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    }
+    
+    return flattened;
+  }, [auditData, showFailedOnly]);
   
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
