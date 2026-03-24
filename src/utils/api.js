@@ -1,5 +1,5 @@
-// API service for connecting to the Express + Redis backend
-// Toggle USE_API to switch between mock data and live backend123 stat
+const DTC_AUDIT_API = process.env.REACT_APP_AZURE_DTC_AUDIT_API ||
+  'https://fadev-im-fileconnect-uks01.azurewebsites.net/api/dtcAuditApi?code=REDACTED_KEY_1=';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
@@ -21,9 +21,7 @@ const handleResponse = async (res) => {
 
 export const fetchDtcSubscriptions = async () => {
   try {
-    const baseUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcSubscriptionApi';
-    const code = 'code=REDACTED_SUBSCRIPTION_API_CODE=';
-    const apiUrl = `${baseUrl}?${code}`;
+    const apiUrl = 'https://fadev-im-fileconnect-uks01.azurewebsites.net/api/dtcSubscriptionApi?code=REDACTED_KEY_1=';
 
     const res = await fetch(apiUrl, {
       method: 'GET',
@@ -155,23 +153,18 @@ const api = {
   },
 
   // Fetch real audit data from Azure Function App with pagination
-  async fetchDtcAuditData(continuationToken = null, pageSize = 100) {
+  async fetchDtcAuditData(continuationToken = null, pageSize = 500) {
     try {
-      const baseUrl = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net/api/dtcAuditApi';
-      const code = 'code=REDACTED_KEY_2=';
-      
-      let apiUrl = `${baseUrl}?${code}&pageSize=${pageSize}`;
+      let apiUrl = `${DTC_AUDIT_API}&pageSize=${pageSize}`;
       if (continuationToken) {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
-      
+
       console.log('🔄 Fetching DTC Audit from Azure:', apiUrl);
-      
+
       const res = await fetch(apiUrl, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       console.log('📊 Response status:', res.status, res.statusText);
@@ -185,7 +178,6 @@ const api = {
       const data = await res.json();
       console.log('✅ Raw API response:', data);
 
-      // Return full response with pagination info
       return {
         data: Array.isArray(data.data) ? data.data : [],
         continuationToken: data.continuationToken || null,
@@ -195,13 +187,7 @@ const api = {
       };
     } catch (error) {
       console.error('❌ Error fetching audit data:', error.message);
-      return {
-        data: [],
-        continuationToken: null,
-        totalCount: 0,
-        pageSize: 0,
-        resultCount: 0,
-      };
+      return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0 };
     }
   },
 
