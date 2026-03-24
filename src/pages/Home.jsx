@@ -259,12 +259,18 @@ const Home = () => {
           style={{
             margin: '6px 24px 0',
             padding: '8px 18px',
-            background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
-            border: '1px solid #fca5a5',
+            background: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
+              ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' 
+              : 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+            border: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
+              ? '1px solid #fca5a5' 
+              : '1px solid #6ee7b7',
             borderRadius: '10px',
             overflow: 'visible',
             position: 'relative',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.1)',
+            boxShadow: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
+              ? '0 2px 8px rgba(239, 68, 68, 0.1)' 
+              : '0 2px 8px rgba(16, 185, 129, 0.1)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -272,7 +278,9 @@ const Home = () => {
               onClick={() => setShowFailedDropdown(!showFailedDropdown)}
               style={{
                 padding: '5px 12px',
-                background: '#dc2626',
+                background: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
+                  ? '#dc2626' 
+                  : '#10b981',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
@@ -288,10 +296,18 @@ const Home = () => {
               View Failed
               <ChevronDown size={14} style={{ transform: showFailedDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
-            <span style={{ fontSize: '18px' }}>⚠️</span>
+            <span style={{ fontSize: '18px' }}>
+              {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️' : '✅'}
+            </span>
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: '13px', color: '#7f1d1d', fontWeight: 600 }}>
-                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment • '}
+              <span style={{ 
+                fontSize: '13px', 
+                color: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
+                  ? '#7f1d1d' 
+                  : '#065f46', 
+                fontWeight: 600 
+              }}>
+                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment'}
                 {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
                 {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
                 {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
