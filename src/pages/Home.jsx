@@ -275,6 +275,50 @@ const Home = () => {
           ))}
         </div>
 
+        {/* Failed Files Marquee */}
+        {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={() => navigate('/failed-files')}
+            style={{
+              background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+              border: '1px solid #fca5a5',
+              borderRadius: '12px',
+              padding: '12px 20px',
+              marginBottom: '20px',
+              cursor: 'pointer',
+              overflow: 'hidden',
+              position: 'relative',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.1)',
+            }}
+            whileHover={{ scale: 1.01, boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '20px' }}>⚠️</span>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div style={{ fontWeight: 700, fontSize: '14px', color: '#991b1b', marginBottom: '4px' }}>
+                  Failed Files Detected
+                </div>
+                <div style={{ display: 'flex', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', animation: 'marquee 30s linear infinite', whiteSpace: 'nowrap' }}>
+                    {[...Array(3)].map((_, i) => (
+                      <span key={i} style={{ fontSize: '12px', color: '#7f1d1d', marginRight: '40px' }}>
+                        {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
+                        {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
+                        {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
+                        {' • Click to view details'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight size={18} color="#991b1b" />
+            </div>
+          </motion.div>
+        )}
+
         {/* Two-column layout: File Status + App Status (left) | Performance (right) */}
         <div className="dashboard-layout">
           <div className="dashboard-col-left">
