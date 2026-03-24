@@ -257,11 +257,11 @@ const Home = () => {
           transition={{ delay: 0.3 }}
           onClick={() => navigate('/failed-files')}
           style={{
+            margin: '6px 24px 0',
+            padding: '8px 18px',
             background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
             border: '1px solid #fca5a5',
-            borderRadius: '12px',
-            padding: '12px 20px',
-            marginBottom: '20px',
+            borderRadius: '10px',
             cursor: 'pointer',
             overflow: 'hidden',
             position: 'relative',
@@ -269,27 +269,24 @@ const Home = () => {
           }}
           whileHover={{ scale: 1.01, boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '20px' }}>⚠️</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '18px' }}>⚠️</span>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontWeight: 700, fontSize: '14px', color: '#991b1b', marginBottom: '4px' }}>
-                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? 'Failed Files Detected' : 'View Failed Files'}
-              </div>
               <div style={{ display: 'flex', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', animation: 'marquee 30s linear infinite', whiteSpace: 'nowrap' }}>
                   {[...Array(3)].map((_, i) => (
-                    <span key={i} style={{ fontSize: '12px', color: '#7f1d1d', marginRight: '40px' }}>
+                    <span key={i} style={{ fontSize: '13px', color: '#7f1d1d', fontWeight: 600, marginRight: '40px' }}>
+                      {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment • '}
                       {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
                       {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
                       {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
-                      {(failedFiles.dtcFailed.length === 0 && failedFiles.nonDtcFailed.length === 0) && 'No failed files at the moment'}
                       {' • Click to view details'}
                     </span>
                   ))}
                 </div>
               </div>
             </div>
-            <ChevronRight size={18} color="#991b1b" />
+            <ChevronRight size={16} color="#991b1b" />
           </div>
         </motion.div>
 
