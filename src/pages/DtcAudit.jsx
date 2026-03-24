@@ -444,12 +444,21 @@ const DtcAudit = () => {
             {CRITERIA_FIELDS.filter(({ key }) => {
               const value = appliedFilters[key];
               return value && value !== 'All' && value !== '';
-            }).map(({ label, key }) => (
-              <div key={key} style={{ fontSize: '12px', color: '#475569', padding: '2px 0' }}>
-                <span style={{ fontWeight: 700, color: '#1e293b' }}>{label}:</span>{' '}
-                {appliedFilters[key]}
-              </div>
-            ))}
+            }).map(({ label, key }) => {
+              let displayValue = appliedFilters[key];
+              
+              // Format timestamp fields
+              if (key === 'eventTimestampFrom' || key === 'eventTimestampTo') {
+                displayValue = displayValue.replace('T', ' ');
+              }
+              
+              return (
+                <div key={key} style={{ fontSize: '12px', color: '#475569', padding: '2px 0' }}>
+                  <span style={{ fontWeight: 700, color: '#1e293b' }}>{label}:</span>{' '}
+                  {displayValue}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{
