@@ -274,7 +274,8 @@ const DtcAuditFilter = () => {
   const [auditData, setAuditData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(defaultFilters);
-  const [hasQueried, setHasQueried] = useState(true); // Changed to true to show table immediately
+  const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
+  const [hasQueried, setHasQueried] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -304,10 +305,10 @@ const DtcAuditFilter = () => {
     fetchData();
   }, []);
 
-  // Auto-query on data load
+  // Auto-query on data load — use default filters (show all)
   useEffect(() => {
     if (auditData.length > 0) {
-      handleQuery();
+      handleQuery(defaultFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auditData.length]);
@@ -318,12 +319,14 @@ const DtcAuditFilter = () => {
 
   const handleReset = () => {
     setFilters({ ...defaultFilters });
+    setAppliedFilters({ ...defaultFilters });
     setSearchTerm('');
     setColumnFilters({});
     setSortConfig({ key: null, direction: 'asc' });
   };
 
-  const handleQuery = () => {
+  const handleQuery = (filtersToUse) => {
+    const f = filtersToUse || appliedFilters;
     let results = [];
     auditData.forEach(item => {
       const parsed = parseHeader(item.Header_String);
@@ -359,23 +362,23 @@ const DtcAuditFilter = () => {
     });
 
     // Apply filters
-    if (filters.sourceApp && filters.sourceApp !== 'All') {
-      const selectedApps = filters.sourceApp.split(',');
+    if (f.sourceApp && f.sourceApp !== 'All') {
+      const selectedApps = f.sourceApp.split(',');
       results = results.filter(r => selectedApps.includes(r.sourceApp));
     }
-    if (filters.destinationApp && filters.destinationApp !== 'All') {
-      const selectedApps = filters.destinationApp.split(',');
+    if (f.destinationApp && f.destinationApp !== 'All') {
+      const selectedApps = f.destinationApp.split(',');
       results = results.filter(r => selectedApps.includes(r.application));
     }
-    if (filters.eventType && filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
-    if (filters.flow && filters.flow !== 'All') results = results.filter(r => r.flowVersion === filters.flow);
-    if (filters.fromRole && filters.fromRole !== 'All') results = results.filter(r => r.fromRole === filters.fromRole);
-    if (filters.fromMPID && filters.fromMPID !== 'All') results = results.filter(r => r.fromMPID === filters.fromMPID);
-    if (filters.toRole && filters.toRole !== 'All') results = results.filter(r => r.toRole === filters.toRole);
-    if (filters.toMPID && filters.toMPID !== 'All') results = results.filter(r => r.toMPID === filters.toMPID);
-    if (filters.receivingApp && filters.receivingApp !== 'All') results = results.filter(r => r.recApp === filters.receivingApp);
-    if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
-    if (filters.msgId) results = results.filter(r => r.msgId && r.msgId.includes(filters.msgId));
+    if (f.eventType && f.eventType !== 'All') results = results.filter(r => r.eventType === f.eventType);
+    if (f.flow && f.flow !== 'All') results = results.filter(r => r.flowVersion === f.flow);
+    if (f.fromRole && f.fromRole !== 'All') results = results.filter(r => r.fromRole === f.fromRole);
+    if (f.fromMPID && f.fromMPID !== 'All') results = results.filter(r => r.fromMPID === f.fromMPID);
+    if (f.toRole && f.toRole !== 'All') results = results.filter(r => r.toRole === f.toRole);
+    if (f.toMPID && f.toMPID !== 'All') results = results.filter(r => r.toMPID === f.toMPID);
+    if (f.receivingApp && f.receivingApp !== 'All') results = results.filter(r => r.recApp === f.receivingApp);
+    if (f.fileId) results = results.filter(r => r.fileId && r.fileId.includes(f.fileId));
+    if (f.msgId) results = results.filter(r => r.msgId && r.msgId.includes(f.msgId));
 
     setFilteredResults(results);
     setExceptionCount(0);
@@ -617,7 +620,7 @@ const DtcAuditFilter = () => {
           }}>
             <RotateCcw size={14} /> Reset
           </button>
-          <button onClick={handleQuery} style={{
+          <button onClick={() => { setAppliedFilters({ ...filters }); handleQuery(filters); }} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', background: '#667eea', color: 'white',
             border: 'none', borderRadius: '8px', cursor: 'pointer',
