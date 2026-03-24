@@ -84,6 +84,7 @@ const NonDtcFailedFiles = () => {
         defaultPageSize={50}
         onDownload={true}
         exportConfig={{ filename: 'Non_DTC_Failed_Files_Export' }}
+        hideViewDetail={true}
       />
     </motion.div>
   );

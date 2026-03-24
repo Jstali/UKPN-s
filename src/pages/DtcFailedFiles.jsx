@@ -153,6 +153,7 @@ const DtcFailedFiles = () => {
         groupByKey="eventId"
         onDownload={true}
         exportConfig={{ filename: 'DTC_Failed_Files_Export' }}
+        hideViewDetail={true}
       />
     </motion.div>
   );
