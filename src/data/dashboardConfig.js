@@ -86,7 +86,11 @@ export const DEFAULT_FILTERS = {
   toRole: 'All',
   toMPID: 'All',
   receivingApp: 'All',
-  eventTimestampFrom: '',
+  eventTimestampFrom: (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+  })(),
   eventTimestampTo: '',
   fileCreationDate: '',
   fileId: '',
