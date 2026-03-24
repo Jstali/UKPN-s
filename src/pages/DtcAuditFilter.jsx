@@ -291,10 +291,14 @@ const DtcAuditFilter = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await api.fetchDtcAuditData();
-        // Extract data array from response object
-        const auditArray = response.data || response || [];
-        setAuditData(Array.isArray(auditArray) ? auditArray : []);
+        let allData = [];
+        let token = null;
+        do {
+          const response = await api.fetchDtcAuditData(token, 500);
+          allData = [...allData, ...(response.data || [])];
+          token = response.continuationToken || null;
+        } while (token);
+        setAuditData(allData);
       } catch (error) {
         console.error('Failed to fetch audit data:', error);
         setAuditData([]);
@@ -323,6 +327,8 @@ const DtcAuditFilter = () => {
     setSearchTerm('');
     setColumnFilters({});
     setSortConfig({ key: null, direction: 'asc' });
+    setFilteredResults([]);
+    setHasQueried(false);
   };
 
   const handleQuery = (filtersToUse) => {
@@ -378,7 +384,32 @@ const DtcAuditFilter = () => {
     if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(','); results = results.filter(r => v.includes(r.toMPID)); }
     if (f.receivingApp && f.receivingApp !== 'All') { const v = f.receivingApp.split(','); results = results.filter(r => v.includes(r.recApp)); }
     if (f.fileId) results = results.filter(r => r.fileId && r.fileId.includes(f.fileId));
-    if (f.msgId) results = results.filter(r => r.msgId && r.msgId.includes(f.msgId));
+    if (f.msgId) results = results.filter(r => r.eventId && r.eventId.includes(f.msgId));
+    if (f.version && f.version !== 'All') { const v = f.version.split(','); results = results.filter(r => v.includes(r.flowVersion)); }
+    if (f.eventTimestampFrom) {
+      const from = new Date(f.eventTimestampFrom);
+      results = results.filter(r => {
+        if (!r.timestamp) return false;
+        const parts = r.timestamp.split(' ')[0]?.split('/');
+        if (parts && parts.length === 3) {
+          const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+          return d >= from;
+        }
+        return new Date(r.timestamp) >= from;
+      });
+    }
+    if (f.eventTimestampTo) {
+      const to = new Date(f.eventTimestampTo);
+      results = results.filter(r => {
+        if (!r.timestamp) return false;
+        const parts = r.timestamp.split(' ')[0]?.split('/');
+        if (parts && parts.length === 3) {
+          const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+          return d <= to;
+        }
+        return new Date(r.timestamp) <= to;
+      });
+    }
 
     setFilteredResults(results);
     setExceptionCount(0);

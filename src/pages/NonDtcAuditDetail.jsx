@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import { nonDtcAuditData } from '../data/mockData';
+import api from '../utils/api';
 
 const ALL_COLUMNS = [
   { key: 'uniqueId', label: 'Unique ID' },
@@ -28,10 +28,33 @@ const NonDtcAuditDetail = () => {
 
   const [filters, setFilters] = useState({ ...defaultFilters });
   const [hasQueried, setHasQueried] = useState(true);
-  const [filteredResults, setFilteredResults] = useState(nonDtcAuditData);
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filteredResults, setFilteredResults] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        let allData = [];
+        let token = null;
+        do {
+          const response = await api.fetchNonDtcAuditData(token, 500);
+          allData = [...allData, ...(response.data || [])];
+          token = response.continuationToken || null;
+        } while (token);
+        setAuditData(allData);
+        setFilteredResults(allData);
+      } catch (error) {
+        console.error('Error fetching Non-DTC audit data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -39,13 +62,13 @@ const NonDtcAuditDetail = () => {
 
   const handleReset = () => {
     setFilters({ ...defaultFilters });
-    setFilteredResults(nonDtcAuditData);
+    setFilteredResults(auditData);
     setSearchTerm('');
     setCurrentPage(1);
   };
 
   const handleQuery = () => {
-    let results = [...nonDtcAuditData];
+    let results = [...auditData];
     if (filters.flow !== 'All') results = results.filter(r => r.flow === filters.flow);
     if (filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
     if (filters.status !== 'All') results = results.filter(r => r.status === filters.status);
@@ -56,9 +79,9 @@ const NonDtcAuditDetail = () => {
   };
 
   // Build dropdown options
-  const flowOptions = ['All', ...new Set(nonDtcAuditData.map(r => r.flow).filter(Boolean))].sort();
-  const eventTypeOptions = ['All', ...new Set(nonDtcAuditData.map(r => r.eventType).filter(Boolean))].sort();
-  const statusOptions = ['All', ...new Set(nonDtcAuditData.map(r => r.status).filter(Boolean))].sort();
+  const flowOptions = ['All', ...new Set(auditData.map(r => r.flow).filter(Boolean))].sort();
+  const eventTypeOptions = ['All', ...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort();
+  const statusOptions = ['All', ...new Set(auditData.map(r => r.status).filter(Boolean))].sort();
 
   // Search + paginate
   const searchedResults = filteredResults.filter(row =>
