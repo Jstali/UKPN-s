@@ -16,8 +16,14 @@ const NonDtcFailedFiles = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await api.fetchNonDtcAuditData();
-        setAuditData(response.data || response || []);
+        let allData = [];
+        let token = null;
+        do {
+          const response = await api.fetchNonDtcAuditData(token, 500);
+          allData = [...allData, ...(response.data || [])];
+          token = response.continuationToken || null;
+        } while (token);
+        setAuditData(allData);
       } catch (error) {
         console.error('Failed to fetch non-DTC audit data:', error);
         setAuditData([]);

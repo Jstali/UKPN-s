@@ -190,6 +190,29 @@ const api = {
     }
   },
 
+  // Fetch Non-DTC audit data
+  async fetchNonDtcAuditData(continuationToken = null, pageSize = 500) {
+    try {
+      const baseUrl = 'https://fadev-im-fileconnect-uks01.azurewebsites.net/api/nonDtcAuditApi';
+      const code = 'code=REDACTED_SUBSCRIPTION_API_CODE_V1=';
+      let apiUrl = `${baseUrl}?${code}&pageSize=${pageSize}`;
+      if (continuationToken) {
+        apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
+      }
+      const res = await fetch(apiUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+      if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
+      const data = await res.json();
+      return {
+        data: Array.isArray(data.data) ? data.data : [],
+        continuationToken: data.continuationToken || null,
+        totalCount: data.totalCount || 0,
+      };
+    } catch (error) {
+      console.error('❌ Error fetching non-DTC audit data:', error.message);
+      return { data: [], continuationToken: null, totalCount: 0 };
+    }
+  },
+
   // Fetch subscription data from Azure Function App
   fetchDtcSubscriptions,
 
