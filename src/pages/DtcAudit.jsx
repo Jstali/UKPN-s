@@ -359,26 +359,6 @@ const DtcAudit = () => {
             </div>
           )}
           <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '11px',
-              fontWeight: 600,
-              background: autoRefresh ? '#22c55e' : '#cbd5e1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-            title={autoRefresh ? 'Disable Auto Refresh' : 'Enable Auto Refresh'}
-          >
-            <RefreshCw size={11} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
-            Auto Refresh {autoRefresh ? 'ON' : 'OFF'}
-          </button>
-          <button
             className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
             onClick={() => setShowApps(!showApps)}
             style={{ padding: '6px 14px', fontSize: '13px' }}
