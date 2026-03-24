@@ -186,15 +186,20 @@ const DtcAudit = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [pageSize] = useState(50); // Reduced from 100 for better initial performance
 
-  // Fetch audit data from API on mount
+  // Fetch audit data from API on mount — fetch all records
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.fetchDtcAuditData(null, pageSize);
-      setAuditData(response.data || []);
-      setContinuationToken(response.continuationToken || null);
-      setTotalCount(response.totalCount || 0);
-      console.log(`📊 Total records in DB: ${response.totalCount}, Loaded: ${response.data?.length}`);
+      let allData = [];
+      let token = null;
+      do {
+        const response = await api.fetchDtcAuditData(token, 500);
+        allData = [...allData, ...(response.data || [])];
+        token = response.continuationToken || null;
+        setTotalCount(response.totalCount || allData.length);
+      } while (token);
+      setAuditData(allData);
+      setContinuationToken(null);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setAuditData([]);
@@ -497,41 +502,6 @@ const DtcAudit = () => {
         exportConfig={{ filename: 'DTC_Audit_Export' }}
         onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
       />
-
-      {/* Pagination Info & Load More Button */}
-      {!hasQueried && totalCount > 0 && (
-        <div style={{
-          padding: '16px 20px',
-          borderTop: '1px solid #e5e7eb',
-          background: '#f9fafb',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <div style={{ fontSize: '13px', color: '#64748b' }}>
-            Showing <span style={{ fontWeight: 700, color: '#1e293b' }}>{auditData.length}</span> of{' '}
-            <span style={{ fontWeight: 700, color: '#1e293b' }}>{totalCount}</span> total records
-          </div>
-          {continuationToken && (
-            <button
-              onClick={handleLoadMore}
-              disabled={loadingMore}
-              style={{
-                padding: '8px 16px',
-                background: loadingMore ? '#cbd5e1' : '#6366f1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loadingMore ? 'not-allowed' : 'pointer',
-                fontSize: '13px',
-                fontWeight: 600,
-              }}
-            >
-              {loadingMore ? 'Loading...' : 'Load More Records'}
-            </button>
-          )}
-        </div>
-      )}
     </motion.div>
   );
 };
