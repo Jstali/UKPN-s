@@ -261,16 +261,16 @@ const Home = () => {
             padding: '8px 18px',
             background: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
               ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' 
-              : 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+              : 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)',
             border: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
               ? '1px solid #fca5a5' 
-              : '1px solid #6ee7b7',
+              : '1px solid #5eead4',
             borderRadius: '10px',
             overflow: 'visible',
             position: 'relative',
             boxShadow: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
               ? '0 2px 8px rgba(239, 68, 68, 0.1)' 
-              : '0 2px 8px rgba(16, 185, 129, 0.1)',
+              : '0 2px 8px rgba(20, 184, 166, 0.1)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -280,7 +280,7 @@ const Home = () => {
                 padding: '5px 12px',
                 background: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
                   ? '#dc2626' 
-                  : '#10b981',
+                  : '#14b8a6',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
@@ -301,7 +301,7 @@ const Home = () => {
                 fontSize: '13px', 
                 color: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
                   ? '#7f1d1d' 
-                  : '#065f46', 
+                  : '#115e59', 
                 fontWeight: 600 
               }}>
                 {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
