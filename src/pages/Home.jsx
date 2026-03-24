@@ -296,9 +296,6 @@ const Home = () => {
               View Failed
               <ChevronDown size={14} style={{ transform: showFailedDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
-            <span style={{ fontSize: '18px' }}>
-              {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️' : '✅'}
-            </span>
             <div style={{ flex: 1 }}>
               <span style={{ 
                 fontSize: '13px', 
@@ -307,7 +304,7 @@ const Home = () => {
                   : '#065f46', 
                 fontWeight: 600 
               }}>
-                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment'}
+                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? 'Failed Files Detected: ' : 'No failed files at the moment'}
                 {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
                 {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
                 {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
