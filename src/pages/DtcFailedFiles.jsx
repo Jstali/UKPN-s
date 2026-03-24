@@ -66,11 +66,17 @@ const DtcFailedFiles = () => {
       try {
         setLoading(true);
         setFetchError(null);
-        const response = await api.fetchDtcAuditData(null, 500);
-        if (!response.data || response.data.length === 0) {
+        let allData = [];
+        let token = null;
+        do {
+          const response = await api.fetchDtcAuditData(token, 500);
+          allData = [...allData, ...(response.data || [])];
+          token = response.continuationToken || null;
+        } while (token);
+        if (allData.length === 0) {
           setFetchError('No data returned from API. Ensure you are connected to the AVD network.');
         }
-        setAuditData(response.data || []);
+        setAuditData(allData);
       } catch (error) {
         console.error('Failed to fetch audit data:', error);
         setFetchError(error.message || 'Failed to fetch data from API.');
@@ -85,7 +91,11 @@ const DtcFailedFiles = () => {
   const failedFiles = useMemo(() => {
     if (auditData.length === 0) return [];
     const flattened = flattenAuditEvents(auditData);
-    let filtered = flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    let filtered = flattened.filter(row => 
+      row.status === 'Failed' || 
+      row.status === 'Invalid Subscription' ||
+      row.status === 'Checksum Mismatch'
+    );
     
     // Apply flow filter
     if (flowFilter && flowFilter !== 'All') {
@@ -104,7 +114,11 @@ const DtcFailedFiles = () => {
 
   const uniqueFlows = useMemo(() => {
     const flattened = flattenAuditEvents(auditData);
-    const failed = flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    const failed = flattened.filter(row => 
+      row.status === 'Failed' || 
+      row.status === 'Invalid Subscription' ||
+      row.status === 'Checksum Mismatch'
+    );
     return ['All', ...new Set(failed.map(row => row.flowVersion).filter(Boolean))];
   }, [auditData]);
 
