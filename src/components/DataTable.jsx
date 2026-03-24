@@ -363,15 +363,21 @@ const DataTable = ({
     const fileName = row.fileName || row.Source_FileName || 'file.txt';
     const fileContent = row.fileContent || row.File_Content || '';
 
-    if (!fileContent) {
-      alert('File content is not available in the current data. This feature requires file content to be included in the API response.');
-      return;
-    }
-
     setFileViewModal({
       show: true,
       fileName,
-      fileContent,
+      fileContent: fileContent || [
+        `File Name   : ${fileName}`,
+        `File ID     : ${row.fileId || row.File_ID || 'N/A'}`,
+        `Flow        : ${row.flowVersion || 'N/A'}`,
+        `Status      : ${row.status || 'N/A'}`,
+        `Timestamp   : ${row.timestamp || 'N/A'}`,
+        `Source      : ${row.sourceApplication || 'N/A'}`,
+        `Destination : ${row.application || 'N/A'}`,
+        `Message ID  : ${row.eventId || 'N/A'}`,
+        '',
+        'Note: Full file content is not available in the API response.',
+      ].join('\n'),
       loading: false,
       error: null,
       fileId: row.fileId || row.File_ID,
@@ -380,12 +386,18 @@ const DataTable = ({
 
   const handleDownloadFile = (row) => {
     const fileName = row.fileName || row.Source_FileName || 'download.txt';
-    const fileContent = row.fileContent || row.File_Content || '';
-
-    if (!fileContent) {
-      alert('File content is not available in the current data. This feature requires file content to be included in the API response.');
-      return;
-    }
+    const fileContent = row.fileContent || row.File_Content || [
+      `File Name   : ${fileName}`,
+      `File ID     : ${row.fileId || row.File_ID || 'N/A'}`,
+      `Flow        : ${row.flowVersion || 'N/A'}`,
+      `Status      : ${row.status || 'N/A'}`,
+      `Timestamp   : ${row.timestamp || 'N/A'}`,
+      `Source      : ${row.sourceApplication || 'N/A'}`,
+      `Destination : ${row.application || 'N/A'}`,
+      `Message ID  : ${row.eventId || 'N/A'}`,
+      '',
+      'Note: Full file content is not available in the API response.',
+    ].join('\n');
 
     const blob = new Blob([fileContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
