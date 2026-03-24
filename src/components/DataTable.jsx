@@ -180,6 +180,7 @@ const DataTable = ({
   onDownload, 
   exportConfig, 
   onViewDetail,
+  hideViewDetail = false,
   defaultSort = null,
   defaultPageSize = 50,
   groupByKey = null
@@ -481,21 +482,23 @@ const DataTable = ({
             <option value={100}>100 per page</option>
             <option value={200}>200 per page</option>
           </select>
-          <span
-            onClick={() => onViewDetail ? onViewDetail() : setViewAll(!viewAll)}
-            style={{
-              color: viewAll ? '#dc2626' : '#4f46e5',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              textDecoration: 'underline',
-              textUnderlineOffset: '2px',
-              marginLeft: '14px',
-            }}
-          >
-            {viewAll ? 'Collapse Table' : 'View in Detail'}
-          </span>
+          {!hideViewDetail && (
+            <span
+              onClick={() => onViewDetail ? onViewDetail() : setViewAll(!viewAll)}
+              style={{
+                color: viewAll ? '#dc2626' : '#4f46e5',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                textDecoration: 'underline',
+                textUnderlineOffset: '2px',
+                marginLeft: '14px',
+              }}
+            >
+              {viewAll ? 'Collapse Table' : 'View in Detail'}
+            </span>
+          )}
         </div>
       </div>
 
