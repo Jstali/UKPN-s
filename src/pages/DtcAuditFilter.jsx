@@ -304,6 +304,13 @@ const DtcAuditFilter = () => {
     fetchData();
   }, []);
 
+  // Auto-query on data load
+  useEffect(() => {
+    if (auditData.length > 0 && !hasQueried) {
+      handleQuery();
+    }
+  }, [auditData.length]);
+
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
