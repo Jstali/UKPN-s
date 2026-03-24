@@ -52,6 +52,8 @@ const Subscriptions = () => {
   const [existingSubscriptions, setExistingSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
 
   const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
 
@@ -85,6 +87,13 @@ const Subscriptions = () => {
     app.application.toLowerCase().includes(searchTerm.toLowerCase()) ||
     app.filterId.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubscriptions.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedSubscriptions = filteredSubscriptions.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const handleSearch = (val) => { setSearchTerm(val); setCurrentPage(1); };
+  const handlePageSize = (val) => { setPageSize(Number(val)); setCurrentPage(1); };
 
   const handleCopyRule = (rule, idx) => {
     const text = `Header Strings: ${rule.Header_String.value.join(', ')}\nFile Name: ${rule.Header_String.fileName}\nDestination: ${rule.destination}`;
@@ -351,8 +360,7 @@ const Subscriptions = () => {
           <div className="sp-card-header-left">
             <Server size={15} color="#667eea" />
             <span className="sp-card-title">All Applications</span>
-            <span className="sp-card-count">{filteredSubscriptions.length}</span>
-          </div>
+            <span className="sp-card-count">{filteredSubscriptions.length}</span>          </div>
           <div className="sp-card-header-right">
             <div className="sp-search">
               <Search size={14} />
@@ -360,7 +368,7 @@ const Subscriptions = () => {
                 type="text"
                 placeholder="Search applications..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
           </div>
@@ -375,7 +383,7 @@ const Subscriptions = () => {
             <div className="sp-app-th" style={{ flex: 1 }}>Headers</div>
             <div className="sp-app-th sp-app-th-action"></div>
           </div>
-          {filteredSubscriptions.map((app, index) => {
+          {pagedSubscriptions.map((app, index) => {
             const colors = getAppColor(app.application);
             return (
               <motion.div
@@ -416,6 +424,37 @@ const Subscriptions = () => {
           {filteredSubscriptions.length === 0 && (
             <div className="sp-empty">No applications match your search.</div>
           )}
+        </div>
+
+        {/* Pagination */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid #e2e8f0', fontSize: '13px', color: '#64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSize(e.target.value)}
+              style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+            >
+              {[10, 15, 25, 50].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span>
+              {filteredSubscriptions.length === 0 ? '0' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filteredSubscriptions.length)}`} of {filteredSubscriptions.length}
+            </span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                style={{ padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: '6px', background: safePage === 1 ? '#f1f5f9' : '#fff', cursor: safePage === 1 ? 'not-allowed' : 'pointer', color: safePage === 1 ? '#94a3b8' : '#374151' }}
+              >‹</button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                style={{ padding: '4px 10px', border: '1px solid #d1d5db', borderRadius: '6px', background: safePage === totalPages ? '#f1f5f9' : '#fff', cursor: safePage === totalPages ? 'not-allowed' : 'pointer', color: safePage === totalPages ? '#94a3b8' : '#374151' }}
+              >›</button>
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>
