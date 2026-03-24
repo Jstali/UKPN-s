@@ -105,7 +105,6 @@ const Home = () => {
       const event1 = events.find((e) => String(e.Event_Type) === '1' && e.timestamp);
       const event4 = events.find((e) => String(e.Event_Type) === '4' && e.timestamp);
 
-      // Only calculate for files that have Event Type 4 (Delivered)
       if (!event1 || !event4) return;
 
       const start = new Date(event1.timestamp).getTime();
@@ -113,12 +112,12 @@ const Home = () => {
       if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
 
       const durationSec = (end - start) / 1000;
-      const appName = event4.applicationName || event4.Destination_Application || 'Unknown';
+      // Group by source application (Event_Type 1), not destination
+      const appName = event1.applicationName || item.Application_Name || 'Unknown';
 
       if (!appStats.has(appName)) {
         appStats.set(appName, { totalDuration: 0, files: 0 });
       }
-
       const current = appStats.get(appName);
       current.totalDuration += durationSec;
       current.files += 1;
