@@ -20,6 +20,7 @@ const Home = () => {
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [showEditModal, setShowEditModal] = React.useState(false);
+  const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [infoText, setInfoText] = React.useState(() => {
     const saved = localStorage.getItem('dashboardInfoText');
     return saved || 'ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section';
@@ -255,33 +256,105 @@ const Home = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          onClick={() => navigate('/failed-files')}
           style={{
             margin: '6px 24px 0',
             padding: '8px 18px',
             background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
             border: '1px solid #fca5a5',
             borderRadius: '10px',
-            cursor: 'pointer',
-            overflow: 'hidden',
+            overflow: 'visible',
             position: 'relative',
             boxShadow: '0 2px 8px rgba(239, 68, 68, 0.1)',
           }}
-          whileHover={{ scale: 1.01, boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setShowFailedDropdown(!showFailedDropdown)}
+              style={{
+                padding: '5px 12px',
+                background: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '12px',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              View Failed
+              <ChevronDown size={14} style={{ transform: showFailedDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+            </button>
             <span style={{ fontSize: '18px' }}>⚠️</span>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div style={{ flex: 1 }}>
               <span style={{ fontSize: '13px', color: '#7f1d1d', fontWeight: 600 }}>
                 {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment • '}
                 {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
                 {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
                 {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
-                {' • Click to view details'}
               </span>
             </div>
-            <ChevronRight size={16} color="#991b1b" />
           </div>
+
+          {/* Dropdown Menu */}
+          {showFailedDropdown && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: '18px',
+                marginTop: '4px',
+                background: '#fff',
+                border: '1px solid #fca5a5',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                zIndex: 1000,
+                minWidth: '200px',
+              }}
+            >
+              <div
+                onClick={() => {
+                  navigate('/dtc-audit');
+                  setShowFailedDropdown(false);
+                }}
+                style={{
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#1e293b',
+                  borderBottom: '1px solid #f1f5f9',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
+              >
+                DTC Audit
+              </div>
+              <div
+                onClick={() => {
+                  navigate('/non-dtc-audit');
+                  setShowFailedDropdown(false);
+                }}
+                style={{
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#1e293b',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
+              >
+                Non DTC Audit
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Navigation Cards — 3 equal-width on one row */}
