@@ -12,10 +12,7 @@ const generateFilename = (baseFilename) => {
 
 export const exportToCSV = (data, columns, filename) => {
   try {
-    if (!data || data.length === 0) {
-      alert('No data available to export.');
-      return;
-    }
+    if (!data || data.length === 0) return;
     const headers = columns.map(col => col.label).join(',');
     const rows = data.map(row =>
       columns.map(col => `"${String(row[col.key] || '').replace(/"/g, '""')}"`).join(',')
@@ -36,10 +33,7 @@ export const exportToCSV = (data, columns, filename) => {
 
 export const exportToPDF = (data, columns, filename) => {
   try {
-    if (!data || data.length === 0) {
-      alert('No data available to export.');
-      return;
-    }
+    if (!data || data.length === 0) return;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
     const headers = columns.map(col => col.label);
@@ -71,10 +65,7 @@ export const exportToPDF = (data, columns, filename) => {
 
 export const exportToExcel = (data, columns, filename) => {
   try {
-    if (!data || data.length === 0) {
-      alert('No data available to export.');
-      return;
-    }
+    if (!data || data.length === 0) return;
     const wsData = [
       columns.map(col => col.label),
       ...data.map(row => columns.map(col => row[col.key] ?? ''))

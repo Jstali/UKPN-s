@@ -336,10 +336,7 @@ const DataTable = ({
   };
 
   const handleExport = useCallback((exportFn) => {
-    if (sortedData.length === 0) {
-      alert('No data available to export.');
-      return;
-    }
+    if (sortedData.length === 0) return;
     if (sortedData.length > MAX_EXPORT_ROWS) {
       const proceed = window.confirm(
         `You are about to export ${sortedData.length.toLocaleString()} rows. This may take a while and could slow down your browser.\n\nContinue?`
