@@ -82,14 +82,19 @@ const Home = () => {
     const nonDtcFailed = [];
     
     auditData.forEach(item => {
-      const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription');
+      const hasFailed = item.events?.some(e => 
+        e.Status === 'Failed' || 
+        e.Status === 'Invalid Subscription' ||
+        e.Status === 'Checksum Mismatch'
+      );
       if (hasFailed) {
-        // Check if it's DTC or Non-DTC based on header string or other criteria
         const parsed = parseHeader(item.Header_String);
-        if (parsed.flowVersion && parsed.flowVersion !== 'UNKNOWN') {
+        // If header has a valid flow version it's DTC, otherwise Non-DTC
+        if (parsed.flowVersion && parsed.flowVersion !== '' && item.Header_String !== 'UNKNOWN') {
           dtcFailed.push(item);
         } else {
-          nonDtcFailed.push(item);
+          // UNKNOWN header_string files from DTC audit API are still DTC
+          dtcFailed.push(item);
         }
       }
     });
@@ -146,7 +151,7 @@ const Home = () => {
     // Calculate actual status distribution from audit data
     const statusCounts = auditData.reduce((acc, item) => {
       const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
-      const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription');
+      const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription' || e.Status === 'Checksum Mismatch');
       const hasPending = item.events?.some(e => String(e.Event_Type) === '2');
       
       if (hasDelivered) {
