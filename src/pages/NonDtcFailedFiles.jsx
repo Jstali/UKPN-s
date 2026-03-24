@@ -1,16 +1,34 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
-import { nonDtcAuditData } from '../data/mockData';
+import api from '../utils/api';
 
 const NonDtcFailedFiles = () => {
   const navigate = useNavigate();
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await api.fetchNonDtcAuditData();
+        setAuditData(response.data || response || []);
+      } catch (error) {
+        console.error('Failed to fetch non-DTC audit data:', error);
+        setAuditData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const failedFiles = useMemo(() => {
-    return nonDtcAuditData.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
-  }, []);
+    return auditData.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+  }, [auditData]);
 
   const columns = [
     { key: 'uniqueId', label: 'Unique ID' },
