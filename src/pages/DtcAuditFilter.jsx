@@ -274,7 +274,7 @@ const DtcAuditFilter = () => {
   const [auditData, setAuditData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(defaultFilters);
-  const [hasQueried, setHasQueried] = useState(false);
+  const [hasQueried, setHasQueried] = useState(true); // Changed to true to show table immediately
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -309,7 +309,8 @@ const DtcAuditFilter = () => {
     if (auditData.length > 0 && !hasQueried) {
       handleQuery();
     }
-  }, [auditData.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auditData.length, hasQueried]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
