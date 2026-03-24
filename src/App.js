@@ -53,7 +53,7 @@ function AppRoutes() {
 
   return (
     <ClickSpark
-      sparkColor='#f04f14'
+      sparkColor='#667eea'
       sparkSize={10}
       sparkRadius={15}
       sparkCount={8}
