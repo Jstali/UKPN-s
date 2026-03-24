@@ -35,7 +35,10 @@ const NonDtcFailedFiles = () => {
   }, []);
 
   const failedFiles = useMemo(() => {
-    let filtered = auditData.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    let filtered = auditData.filter(row => {
+      const status = (row.status || row.Status || '').toLowerCase();
+      return status === 'failed' || status === 'invalid subscription' || status === 'checksum mismatch';
+    });
     
     // Apply flow filter
     if (flowFilter && flowFilter !== 'All') {
@@ -53,7 +56,10 @@ const NonDtcFailedFiles = () => {
   }, [auditData, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    const failed = auditData.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    const failed = auditData.filter(row => {
+      const status = (row.status || row.Status || '').toLowerCase();
+      return status === 'failed' || status === 'invalid subscription' || status === 'checksum mismatch';
+    });
     return ['All', ...new Set(failed.map(row => row.flow).filter(Boolean))];
   }, [auditData]);
 

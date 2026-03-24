@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { AlertTriangle, Filter, X } from 'lucide-react';
-import { nonDtcAuditData } from '../data/mockData';
+
 import api from '../utils/api';
 import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
@@ -16,25 +16,35 @@ const FailedFiles = () => {
   const [auditData, setAuditData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch DTC audit data
+  // Fetch audit data (DTC or Non-DTC)
   useEffect(() => {
-    if (isDtc) {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          const response = await api.fetchDtcAuditData(null, 200);
-          setAuditData(response.data || []);
-        } catch (error) {
-          console.error('Failed to fetch audit data:', error);
-          setAuditData([]);
-        } finally {
-          setLoading(false);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        let allData = [];
+        let token = null;
+        if (isDtc) {
+          do {
+            const response = await api.fetchDtcAuditData(token, 500);
+            allData = [...allData, ...(response.data || [])];
+            token = response.continuationToken || null;
+          } while (token);
+        } else {
+          do {
+            const response = await api.fetchNonDtcAuditData(token, 500);
+            allData = [...allData, ...(response.data || [])];
+            token = response.continuationToken || null;
+          } while (token);
         }
-      };
-      fetchData();
-    } else {
-      setLoading(false);
-    }
+        setAuditData(allData);
+      } catch (error) {
+        console.error('Failed to fetch audit data:', error);
+        setAuditData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [isDtc]);
 
   // Extract failed records from audit data
@@ -62,7 +72,11 @@ const FailedFiles = () => {
     return failed;
   }, [auditData]);
 
-  const nonDtcFailed = nonDtcAuditData.filter(item => item.status === 'Failed');
+  const nonDtcFailed = useMemo(() => {
+    return auditData.filter(item =>
+      item.status === 'Failed' || item.status === 'Invalid Subscription' || item.status === 'Checksum Mismatch'
+    );
+  }, [auditData]);
   const allFailedRecords = isDtc ? dtcFailed : nonDtcFailed;
 
   // Filter states

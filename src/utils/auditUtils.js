@@ -20,7 +20,7 @@ export const parseHeader = (headerStr) => {
 export const formatFlowVersion = (flowVersion) => {
   if (!flowVersion || flowVersion === 'UNKNOWN') return flowVersion;
   // Match pattern: letters followed by digits, split at last 3 digits
-  const match = flowVersion.match(/^([A-Z]+\d+)(\d{3})$/);
+  const match = flowVersion.match(/^([A-Z]+\d{4})(\d{3})$/);
   if (match) {
     return `${match[1]} ${match[2]}`;
   }

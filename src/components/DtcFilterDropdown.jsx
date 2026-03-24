@@ -175,10 +175,21 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       if (parsed.recApp) values.receivingApp.add(parsed.recApp);
 
       item.events?.forEach(event => {
-        const app = event.applicationName || event.Destination_Application;
-        if (app) {
-          values.sourceApplication.add(app);
-          values.destinationApplication.add(app);
+        // Source application: from the first event (Event_Type '1' — the receiving/source app)
+        if (event.Event_Type === '1' || event.Event_Type === 1) {
+          const sourceApp = event.applicationName;
+          if (sourceApp) values.sourceApplication.add(sourceApp);
+        }
+
+        // Destination application: from later events (Event_Type '2','3','4') or Destination_Application
+        if (event.Event_Type === '2' || event.Event_Type === 2 ||
+            event.Event_Type === '3' || event.Event_Type === 3 ||
+            event.Event_Type === '4' || event.Event_Type === 4) {
+          const destApp = event.applicationName;
+          if (destApp) values.destinationApplication.add(destApp);
+        }
+        if (event.Destination_Application) {
+          values.destinationApplication.add(event.Destination_Application);
         }
         
         // Map event types to readable names

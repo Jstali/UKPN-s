@@ -91,7 +91,7 @@ const Analytics = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {chartData.labels?.map((label, index) => {
-              const percentage = (chartData.values[index] / totalValue) * 100;
+              const percentage = totalValue === 0 ? 0 : (chartData.values[index] / totalValue) * 100;
               return (
                 <div key={index}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '14px', color: '#4b5563' }}>
@@ -140,7 +140,7 @@ const Analytics = () => {
               {(() => {
                 let currentAngle = 0;
                 return chartData.values.map((val, index) => {
-                  const percentage = val / totalValue;
+                  const percentage = totalValue === 0 ? 0 : val / totalValue;
                   const angle = percentage * 360;
                   const radius = 70;
                   const innerRadius = 45;
@@ -176,7 +176,7 @@ const Analytics = () => {
             </svg>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {chartData.labels?.map((label, index) => {
-                const percentage = ((chartData.values[index] / totalValue) * 100).toFixed(1);
+                const percentage = (totalValue === 0 ? 0 : (chartData.values[index] / totalValue) * 100).toFixed(1);
                 return (
                   <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{

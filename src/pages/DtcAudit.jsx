@@ -130,10 +130,11 @@ const buildFilteredResults = (data, filtersToUse) => {
     results = results.filter(item => selectedApps.includes(item.application));
   }
 
-  // Handle other filters
+  // Handle other filters (support comma-separated multi-select values)
   Object.entries(filterMap).forEach(([filterKey, dataKey]) => {
     if (filtersToUse[filterKey] && filtersToUse[filterKey] !== 'All') {
-      results = results.filter(item => item[dataKey] === filtersToUse[filterKey]);
+      const selectedValues = filtersToUse[filterKey].split(',');
+      results = results.filter(item => selectedValues.includes(item[dataKey]));
     }
   });
 
@@ -141,7 +142,31 @@ const buildFilteredResults = (data, filtersToUse) => {
     results = results.filter(item => item.fileId && item.fileId.includes(filtersToUse.fileId));
   }
   if (filtersToUse.msgId) {
-    results = results.filter(item => item.msgId && item.msgId.includes(filtersToUse.msgId));
+    results = results.filter(item => item.eventId && item.eventId.includes(filtersToUse.msgId));
+  }
+
+  // Timestamp filtering
+  if (filtersToUse.eventTimestampFrom) {
+    const from = new Date(filtersToUse.eventTimestampFrom);
+    results = results.filter(item => {
+      const ts = item.timestamp ? new Date(item.timestamp) : null;
+      return ts && ts >= from;
+    });
+  }
+  if (filtersToUse.eventTimestampTo) {
+    const to = new Date(filtersToUse.eventTimestampTo);
+    results = results.filter(item => {
+      const ts = item.timestamp ? new Date(item.timestamp) : null;
+      return ts && ts <= to;
+    });
+  }
+  if (filtersToUse.fileCreationDate) {
+    results = results.filter(item => {
+      const ts = item.timestamp ? new Date(item.timestamp) : null;
+      if (!ts) return false;
+      const dateStr = ts.toISOString().split('T')[0];
+      return dateStr === filtersToUse.fileCreationDate;
+    });
   }
 
   return results;
@@ -182,9 +207,6 @@ const DtcAudit = () => {
   
   // Pagination state
   const [totalCount, setTotalCount] = useState(0);
-  const [continuationToken, setContinuationToken] = useState(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [pageSize] = useState(50); // Reduced from 100 for better initial performance
 
   // Fetch audit data from API on mount — fetch all records
   const fetchData = useCallback(async () => {
@@ -199,14 +221,13 @@ const DtcAudit = () => {
         setTotalCount(response.totalCount || allData.length);
       } while (token);
       setAuditData(allData);
-      setContinuationToken(null);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setAuditData([]);
     } finally {
       setLoading(false);
     }
-  }, [pageSize]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -220,21 +241,6 @@ const DtcAudit = () => {
     }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [autoRefresh, fetchData]);
-
-  const handleLoadMore = async () => {
-    if (!continuationToken || loadingMore) return;
-    try {
-      setLoadingMore(true);
-      const response = await api.fetchDtcAuditData(continuationToken, pageSize);
-      setAuditData(prev => [...prev, ...(response.data || [])]);
-      setContinuationToken(response.continuationToken || null);
-      console.log(`✅ Loaded more: ${response.resultCount} records. Total so far: ${auditData.length + response.data?.length}`);
-    } catch (error) {
-      console.error('Failed to load more records:', error);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -295,18 +301,6 @@ const DtcAudit = () => {
   const columns = hasQueried ? FILTERED_COLUMNS : defaultColumns;
 
   const tableData = hasQueried ? filteredResults : flattenedAuditData;
-
-  const flowCounts = useMemo(() => {
-    if (tableData.length === 0) return [];
-    const counts = {};
-    tableData.forEach(row => {
-      const flow = row.flowVersion || 'UNKNOWN';
-      counts[flow] = (counts[flow] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [tableData]);
 
   const appCounts = useMemo(() => {
     if (tableData.length === 0) return [];

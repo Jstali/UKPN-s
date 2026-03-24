@@ -97,8 +97,14 @@ const api = {
   // Fetch performance data from Azure or calculate from audit data
   async fetchPerformanceData() {
     try {
-      const auditResponse = await this.fetchDtcAuditData(null, 500);
-      const auditData = auditResponse.data || [];
+      let allAuditData = [];
+      let token = null;
+      do {
+        const response = await this.fetchDtcAuditData(token, 500);
+        allAuditData = [...allAuditData, ...(response.data || [])];
+        token = response.continuationToken || null;
+      } while (token);
+      const auditData = allAuditData;
 
       if (auditData.length === 0) {
         return [];

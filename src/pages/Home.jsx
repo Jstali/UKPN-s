@@ -171,7 +171,10 @@ const Home = () => {
     // Calculate actual status distribution from audit data
     const statusCounts = auditData.reduce((acc, item) => {
       const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
-      const hasFailed = item.events?.some(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription' || e.Status === 'Checksum Mismatch');
+      const hasFailed = item.events?.some(e => {
+        const s = (e.Status || e.status || '').toLowerCase();
+        return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
+      });
       const hasPending = item.events?.some(e => String(e.Event_Type) === '2');
       
       if (hasDelivered) {

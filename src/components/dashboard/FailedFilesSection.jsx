@@ -98,7 +98,10 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                 ) : (
                   filteredFiles.map((file, idx) => {
                     const parsed = parseHeader(file.Header_String);
-                    const failedEvent = file.events?.find(e => e.Status === 'Failed' || e.Status === 'Invalid Subscription');
+                    const failedEvent = file.events?.find(e => {
+                      const s = (e.Status || e.status || '').toLowerCase();
+                      return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
+                    });
                     
                     return (
                       <div
