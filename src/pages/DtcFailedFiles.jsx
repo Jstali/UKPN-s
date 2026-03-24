@@ -57,6 +57,8 @@ const DtcFailedFiles = () => {
   const navigate = useNavigate();
   const [auditData, setAuditData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [flowFilter, setFlowFilter] = useState('All');
+  const [fileNameFilter, setFileNameFilter] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,7 +79,27 @@ const DtcFailedFiles = () => {
   const failedFiles = useMemo(() => {
     if (auditData.length === 0) return [];
     const flattened = flattenAuditEvents(auditData);
-    return flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    let filtered = flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    
+    // Apply flow filter
+    if (flowFilter && flowFilter !== 'All') {
+      filtered = filtered.filter(row => row.flowVersion === flowFilter);
+    }
+    
+    // Apply file name filter
+    if (fileNameFilter) {
+      filtered = filtered.filter(row => 
+        row.fileName && row.fileName.toLowerCase().includes(fileNameFilter.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [auditData, flowFilter, fileNameFilter]);
+
+  const uniqueFlows = useMemo(() => {
+    const flattened = flattenAuditEvents(auditData);
+    const failed = flattened.filter(row => row.status === 'Failed' || row.status === 'Invalid Subscription');
+    return ['All', ...new Set(failed.map(row => row.flowVersion).filter(Boolean))];
   }, [auditData]);
 
   return (
@@ -121,15 +143,59 @@ const DtcFailedFiles = () => {
           boxShadow: '0 1px 2px rgba(239, 68, 68, 0.04)'
         }}
       >
-        <div style={{ fontSize: '14px', fontWeight: 700, color: '#991b1b', marginBottom: '4px' }}>
-          ⚠️ DTC Failed Files
-        </div>
-        <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
-          {failedFiles.length === 0 ? (
-            <span>No failed files found</span>
-          ) : (
-            <>Found <span style={{ fontWeight: 700 }}>{failedFiles.length}</span> failed file{failedFiles.length !== 1 ? 's' : ''}</>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#991b1b', marginBottom: '4px' }}>
+              ⚠️ DTC Failed Files
+            </div>
+            <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
+              {failedFiles.length === 0 ? (
+                <span>No failed files found</span>
+              ) : (
+                <>Found <span style={{ fontWeight: 700 }}>{failedFiles.length}</span> failed file{failedFiles.length !== 1 ? 's' : ''}</>
+              )}
+            </div>
+          </div>
+          
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#7f1d1d', marginRight: '4px' }}>Flow:</label>
+              <select 
+                value={flowFilter} 
+                onChange={(e) => setFlowFilter(e.target.value)}
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  background: '#fff',
+                  cursor: 'pointer'
+                }}
+              >
+                {uniqueFlows.map(flow => (
+                  <option key={flow} value={flow}>{flow}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#7f1d1d', marginRight: '4px' }}>File Name:</label>
+              <input
+                type="text"
+                value={fileNameFilter}
+                onChange={(e) => setFileNameFilter(e.target.value)}
+                placeholder="Search file name..."
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  width: '200px'
+                }}
+              />
+            </div>
+          </div>
         </div>
       </motion.div>
 
