@@ -370,13 +370,13 @@ const DtcAuditFilter = () => {
       const selectedApps = f.destinationApp.split(',');
       results = results.filter(r => selectedApps.includes(r.application));
     }
-    if (f.eventType && f.eventType !== 'All') results = results.filter(r => r.eventType === f.eventType);
-    if (f.flow && f.flow !== 'All') results = results.filter(r => r.flowVersion === f.flow);
-    if (f.fromRole && f.fromRole !== 'All') results = results.filter(r => r.fromRole === f.fromRole);
-    if (f.fromMPID && f.fromMPID !== 'All') results = results.filter(r => r.fromMPID === f.fromMPID);
-    if (f.toRole && f.toRole !== 'All') results = results.filter(r => r.toRole === f.toRole);
-    if (f.toMPID && f.toMPID !== 'All') results = results.filter(r => r.toMPID === f.toMPID);
-    if (f.receivingApp && f.receivingApp !== 'All') results = results.filter(r => r.recApp === f.receivingApp);
+    if (f.eventType && f.eventType !== 'All') { const v = f.eventType.split(','); results = results.filter(r => v.includes(r.eventType)); }
+    if (f.flow && f.flow !== 'All') { const v = f.flow.split(','); results = results.filter(r => v.includes(r.flowVersion)); }
+    if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(','); results = results.filter(r => v.includes(r.fromRole)); }
+    if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(','); results = results.filter(r => v.includes(r.fromMPID)); }
+    if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(','); results = results.filter(r => v.includes(r.toRole)); }
+    if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(','); results = results.filter(r => v.includes(r.toMPID)); }
+    if (f.receivingApp && f.receivingApp !== 'All') { const v = f.receivingApp.split(','); results = results.filter(r => v.includes(r.recApp)); }
     if (f.fileId) results = results.filter(r => r.fileId && r.fileId.includes(f.fileId));
     if (f.msgId) results = results.filter(r => r.msgId && r.msgId.includes(f.msgId));
 
@@ -528,7 +528,7 @@ const DtcAuditFilter = () => {
       {/* Filter Section */}
       <div style={{
         background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px',
-        marginBottom: '16px', overflow: 'hidden',
+        marginBottom: '16px', overflow: 'visible',
         boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
       }}>
         <div style={{ padding: '16px 20px' }}>
@@ -557,13 +557,17 @@ const DtcAuditFilter = () => {
               />
             </div>
 
-            {/* Other fields - regular dropdowns */}
+            {/* Other fields - multi-select dropdowns */}
             {dropdownFields.filter(f => f.field !== 'sourceApp' && f.field !== 'destinationApp').map(({ label, field, options }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
-                <select value={filters[field]} onChange={(e) => handleFilterChange(field, e.target.value)} style={selectStyle}>
-                  {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
+                <MultiSelectDropdown
+                  label={label}
+                  value={filters[field]}
+                  options={options.filter(o => o !== 'All')}
+                  onChange={(value) => handleFilterChange(field, value)}
+                  style={selectStyle}
+                />
               </div>
             ))}
 
