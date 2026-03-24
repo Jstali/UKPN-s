@@ -162,9 +162,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
     auditData.forEach(item => {
       const parsed = parseHeader(item.Header_String);
-      const sourceApp = item.events?.[0]?.applicationName;
-      
-      if (sourceApp) values.sourceApplication.add(sourceApp);
+
       if (parsed.flowVersion) {
         const formatted = formatFlowVersion(parsed.flowVersion);
         values.flow.add(formatted);
@@ -178,7 +176,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
       item.events?.forEach(event => {
         const app = event.applicationName || event.Destination_Application;
-        if (app) values.destinationApplication.add(app);
+        if (app) {
+          values.sourceApplication.add(app);
+          values.destinationApplication.add(app);
+        }
         
         // Map event types to readable names
         const eventTypeKey = event.Event_Type;
