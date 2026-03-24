@@ -306,11 +306,11 @@ const DtcAuditFilter = () => {
 
   // Auto-query on data load
   useEffect(() => {
-    if (auditData.length > 0 && !hasQueried) {
+    if (auditData.length > 0) {
       handleQuery();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auditData.length, hasQueried]);
+  }, [auditData.length]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
