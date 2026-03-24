@@ -250,31 +250,6 @@ const Home = () => {
           </div>
         )}
 
-        {/* Navigation Cards — 3 equal-width on one row */}
-        <div className="dashboard-nav-cards">
-          {NAV_CARDS.map((item) => (
-            <motion.div
-              key={item.path}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
-              onClick={() => navigate(item.path)}
-              className="dashboard-nav-card"
-              whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(102,126,234,0.18)', borderColor: '#667eea', scale: 1.02, transition: { duration: 0.15 } }}
-              whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
-            >
-              <div className="dashboard-nav-card-icon">
-                <img src={`${process.env.PUBLIC_URL}/${item.icon}`} alt={item.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div className="dashboard-nav-card-label">{item.label}</div>
-                <div className="dashboard-nav-card-desc">{item.desc}</div>
-              </div>
-              <ChevronRight size={16} color="#475569" />
-            </motion.div>
-          ))}
-        </div>
-
         {/* Failed Files Marquee */}
         {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) && (
           <motion.div
@@ -318,6 +293,31 @@ const Home = () => {
             </div>
           </motion.div>
         )}
+
+        {/* Navigation Cards — 3 equal-width on one row */}
+        <div className="dashboard-nav-cards">
+          {NAV_CARDS.map((item) => (
+            <motion.div
+              key={item.path}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, type: 'spring', stiffness: 260, damping: 20 }}
+              onClick={() => navigate(item.path)}
+              className="dashboard-nav-card"
+              whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(102,126,234,0.18)', borderColor: '#667eea', scale: 1.02, transition: { duration: 0.15 } }}
+              whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
+            >
+              <div className="dashboard-nav-card-icon">
+                <img src={`${process.env.PUBLIC_URL}/${item.icon}`} alt={item.label} style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="dashboard-nav-card-label">{item.label}</div>
+                <div className="dashboard-nav-card-desc">{item.desc}</div>
+              </div>
+              <ChevronRight size={16} color="#475569" />
+            </motion.div>
+          ))}
+        </div>
 
         {/* Two-column layout: File Status + App Status (left) | Performance (right) */}
         <div className="dashboard-layout">
