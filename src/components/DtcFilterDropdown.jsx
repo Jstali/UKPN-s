@@ -345,13 +345,13 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
               />
             </div>
 
-            {/* Msg ID */}
+            {/* Message ID */}
             <div>
-              <label style={labelStyle}>Msg ID</label>
+              <label style={labelStyle}>Message ID</label>
               <input type="text"
                 value={filters.msgId}
                 onChange={(e) => onFilterChange('msgId', e.target.value)}
-                placeholder="Msg ID"
+                placeholder="Message ID"
                 style={inputStyle}
               />
             </div>
