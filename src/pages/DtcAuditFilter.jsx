@@ -5,7 +5,7 @@ import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calend
 import ExportDropdown from '../components/ExportDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import api from '../utils/api';
-import { parseHeader, wildcardMatch, formatEventType, formatDateTime } from '../utils/auditUtils';
+import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 
 const MultiSelectDropdown = ({ label, value, options, onChange, style }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -335,7 +335,7 @@ const DtcAuditFilter = () => {
             fileName: item.Source_FileName,
             sourcePath: item.Source_Path,
             headerString: item.Header_String,
-            flowVersion: parsed.flowVersion || 'UNKNOWN',
+            flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
             fromRole: parsed.fromRole,
             fromMPID: parsed.fromMPID,
             toRole: parsed.toRole,
@@ -388,12 +388,19 @@ const DtcAuditFilter = () => {
   // Build dropdown options
   const flatData = [];
   auditData.forEach(item => {
+    const parsed = parseHeader(item.Header_String);
     if (item.events && item.events.length > 0) {
       item.events.forEach(event => {
         flatData.push({
           sourceApp: item.Source_Application || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Event_Type || 'Unknown',
+          flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
+          fromRole: parsed.fromRole || '',
+          fromMPID: parsed.fromMPID || '',
+          toRole: parsed.toRole || '',
+          toMPID: parsed.toMPID || '',
+          recApp: parsed.recApp || '',
         });
       });
     }
@@ -401,6 +408,12 @@ const DtcAuditFilter = () => {
   const sourceAppOptions = ['All', ...new Set(flatData.map(i => i.sourceApp).filter(Boolean))];
   const destinationAppOptions = ['All', ...new Set(flatData.map(i => i.application).filter(Boolean))];
   const eventTypeOptions = ['All', ...new Set(flatData.map(i => i.eventType).filter(Boolean))].sort();
+  const flowOptions = ['All', ...new Set(flatData.map(i => i.flowVersion).filter(v => v && v !== 'UNKNOWN'))].sort();
+  const fromRoleOptions = ['All', ...new Set(flatData.map(i => i.fromRole).filter(Boolean))].sort();
+  const fromMPIDOptions = ['All', ...new Set(flatData.map(i => i.fromMPID).filter(Boolean))].sort();
+  const toRoleOptions = ['All', ...new Set(flatData.map(i => i.toRole).filter(Boolean))].sort();
+  const toMPIDOptions = ['All', ...new Set(flatData.map(i => i.toMPID).filter(Boolean))].sort();
+  const recAppOptions = ['All', ...new Set(flatData.map(i => i.recApp).filter(Boolean))].sort();
 
   // Search + column filters + sort + paginate
   const globalFiltered = filteredResults.filter(row =>
@@ -461,13 +474,13 @@ const DtcAuditFilter = () => {
     { label: 'Source Application', field: 'sourceApp', options: sourceAppOptions },
     { label: 'Destination Application', field: 'destinationApp', options: destinationAppOptions },
     { label: 'Event Type', field: 'eventType', options: eventTypeOptions },
-    { label: 'Flow', field: 'flow', options: ['All'] },
-    { label: 'Version', field: 'version', options: ['All'] },
-    { label: 'Receiving App', field: 'receivingApp', options: ['All'] },
-    { label: 'From Role', field: 'fromRole', options: ['All'] },
-    { label: 'From MPID', field: 'fromMPID', options: ['All'] },
-    { label: 'To Role', field: 'toRole', options: ['All'] },
-    { label: 'To MPID', field: 'toMPID', options: ['All'] },
+    { label: 'Flow', field: 'flow', options: flowOptions },
+    { label: 'Version', field: 'version', options: flowOptions },
+    { label: 'Receiving App', field: 'receivingApp', options: recAppOptions },
+    { label: 'From Role', field: 'fromRole', options: fromRoleOptions },
+    { label: 'From MPID', field: 'fromMPID', options: fromMPIDOptions },
+    { label: 'To Role', field: 'toRole', options: toRoleOptions },
+    { label: 'To MPID', field: 'toMPID', options: toMPIDOptions },
   ];
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };

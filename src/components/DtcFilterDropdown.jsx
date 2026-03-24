@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, RotateCcw, ChevronDown } from 'lucide-react';
-import { parseHeader } from '../utils/auditUtils';
+import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 
 // Event Type mapping
 const EVENT_TYPE_MAP = {
@@ -166,8 +166,9 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       
       if (sourceApp) values.sourceApplication.add(sourceApp);
       if (parsed.flowVersion) {
-        values.flow.add(parsed.flowVersion);
-        values.version.add(parsed.flowVersion);
+        const formatted = formatFlowVersion(parsed.flowVersion);
+        values.flow.add(formatted);
+        values.version.add(formatted);
       }
       if (parsed.fromRole) values.fromRole.add(parsed.fromRole);
       if (parsed.fromMPID) values.fromMPID.add(parsed.fromMPID);
