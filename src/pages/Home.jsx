@@ -272,19 +272,13 @@ const Home = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '18px' }}>⚠️</span>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', animation: 'marquee 30s linear infinite', whiteSpace: 'nowrap' }}>
-                  {[...Array(3)].map((_, i) => (
-                    <span key={i} style={{ fontSize: '13px', color: '#7f1d1d', fontWeight: 600, marginRight: '40px' }}>
-                      {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment • '}
-                      {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
-                      {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
-                      {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
-                      {' • Click to view details'}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <span style={{ fontSize: '13px', color: '#7f1d1d', fontWeight: 600 }}>
+                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) ? '⚠️ Failed Files Detected: ' : '✓ No failed files at the moment • '}
+                {failedFiles.dtcFailed.length > 0 && `DTC Failed: ${failedFiles.dtcFailed.length} file${failedFiles.dtcFailed.length !== 1 ? 's' : ''}`}
+                {failedFiles.dtcFailed.length > 0 && failedFiles.nonDtcFailed.length > 0 && ' • '}
+                {failedFiles.nonDtcFailed.length > 0 && `Non-DTC Failed: ${failedFiles.nonDtcFailed.length} file${failedFiles.nonDtcFailed.length !== 1 ? 's' : ''}`}
+                {' • Click to view details'}
+              </span>
             </div>
             <ChevronRight size={16} color="#991b1b" />
           </div>
