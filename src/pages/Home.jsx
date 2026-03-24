@@ -47,6 +47,14 @@ const Home = () => {
         token = response.continuationToken || null;
         if (!token) setTotalCount(response.totalCount || allDtc.length);
       } while (token);
+      // Debug: log sample event statuses to verify field names
+      if (allDtc.length > 0) {
+        const sampleEvents = allDtc.slice(0, 3).map(item => ({
+          fileName: item.Source_FileName,
+          events: item.events?.map(e => ({ Status: e.Status, status: e.status, Event_Type: e.Event_Type }))
+        }));
+        console.log('🔍 DTC sample event statuses:', JSON.stringify(sampleEvents, null, 2));
+      }
       setAuditData(allDtc);
 
       // Fetch Non-DTC data (all pages) for failed count
@@ -57,6 +65,11 @@ const Home = () => {
         allNonDtc = [...allNonDtc, ...(response.data || [])];
         nonDtcToken = response.continuationToken || null;
       } while (nonDtcToken);
+      // Debug: log sample non-DTC statuses
+      if (allNonDtc.length > 0) {
+        const sampleNonDtc = allNonDtc.slice(0, 3).map(item => ({ status: item.status, Status: item.Status }));
+        console.log('🔍 Non-DTC sample statuses:', JSON.stringify(sampleNonDtc, null, 2));
+      }
       setNonDtcAuditData(allNonDtc);
 
       const newTime = new Date().toLocaleTimeString();
@@ -94,17 +107,17 @@ const Home = () => {
   }, [auditData]);
 
   const failedFiles = React.useMemo(() => {
+    const FAILED_STATUSES = ['failed', 'invalid subscription', 'checksum mismatch'];
+    const isFailed = (status) => {
+      if (!status) return false;
+      return FAILED_STATUSES.includes(String(status).toLowerCase());
+    };
+
     const dtcFailed = auditData.filter(item =>
-      item.events?.some(e =>
-        e.Status === 'Failed' ||
-        e.Status === 'Invalid Subscription' ||
-        e.Status === 'Checksum Mismatch'
-      )
+      item.events?.some(e => isFailed(e.Status) || isFailed(e.status))
     );
     const nonDtcFailed = nonDtcAuditData.filter(item =>
-      item.status === 'Failed' ||
-      item.status === 'Invalid Subscription' ||
-      item.status === 'Checksum Mismatch'
+      isFailed(item.status) || isFailed(item.Status)
     );
     return { dtcFailed, nonDtcFailed };
   }, [auditData, nonDtcAuditData]);
