@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronRight, RefreshCw, ChevronDown } from 'lucide-react';
 import api from '../utils/api';
 import { NAV_CARDS } from '../data/dashboardConfig';
 import FileStatusSection from '../components/dashboard/FileStatusSection';
