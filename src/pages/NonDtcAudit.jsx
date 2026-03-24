@@ -1,39 +1,62 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronDown, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
-import { nonDtcAuditData } from '../data/mockData';
+import api from '../utils/api';
 import { exportToCSV } from '../utils/exportUtils';
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
   const [showBars, setShowBars] = useState(false);
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const uniqueFlows = [...new Set(nonDtcAuditData.map(item => item.flow))].length;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        let allData = [];
+        let token = null;
+        do {
+          const response = await api.fetchNonDtcAuditData(token, 500);
+          allData = [...allData, ...(response.data || [])];
+          token = response.continuationToken || null;
+        } while (token);
+        setAuditData(allData);
+      } catch (error) {
+        console.error('Failed to fetch non-DTC audit data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const uniqueFlows = [...new Set(auditData.map(item => item.flow))].filter(Boolean).length;
 
   const flowCounts = useMemo(() => {
     const counts = {};
-    nonDtcAuditData.forEach(row => {
+    auditData.forEach(row => {
       const flow = row.flow || 'UNKNOWN';
       counts[flow] = (counts[flow] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, []);
+  }, [auditData]);
 
   const eventTypeCounts = useMemo(() => {
     const counts = {};
-    nonDtcAuditData.forEach(row => {
+    auditData.forEach(row => {
       const et = row.eventType || 'Unknown';
       counts[et] = (counts[et] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, []);
+  }, [auditData]);
 
   const columns = [
     { key: 'uniqueId', label: 'Unique ID' },
@@ -69,7 +92,7 @@ const NonDtcAudit = () => {
           <div className="dtc-kpi-chip">
             <BarChart3 size={14} color="#6366f1" />
             <span className="dtc-kpi-label">Files</span>
-            <span className="dtc-kpi-value">{nonDtcAuditData.length.toLocaleString()}</span>
+            <span className="dtc-kpi-value">{auditData.length.toLocaleString()}</span>
           </div>
           <div className="dtc-kpi-chip">
             <Activity size={14} color="#0ea5e9" />
@@ -112,7 +135,7 @@ const NonDtcAudit = () => {
 
       {/* Data Table */}
       <DataTable
-        data={nonDtcAuditData}
+        data={auditData}
         columns={columns}
         compactColumns={[
           { key: 'uniqueId', label: 'Unique ID' },

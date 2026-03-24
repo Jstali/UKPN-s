@@ -17,6 +17,7 @@ const Home = () => {
   const { user, autoRefresh, setAutoRefresh } = useApp();
   const navigate = useNavigate();
   const [auditData, setAuditData] = React.useState([]);
+  const [nonDtcAuditData, setNonDtcAuditData] = React.useState([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [showEditModal, setShowEditModal] = React.useState(false);
@@ -37,12 +38,27 @@ const Home = () => {
   const fetchData = React.useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.fetchDtcAuditData();
-      const auditArray = response.data || response || [];
-      setTotalCount(response.totalCount || (Array.isArray(auditArray) ? auditArray.length : 0));
-      setAuditData(Array.isArray(auditArray) ? auditArray : []);
-      
-      // Update timestamp
+      // Fetch DTC data (all pages)
+      let allDtc = [];
+      let token = null;
+      do {
+        const response = await api.fetchDtcAuditData(token, 500);
+        allDtc = [...allDtc, ...(response.data || [])];
+        token = response.continuationToken || null;
+        if (!token) setTotalCount(response.totalCount || allDtc.length);
+      } while (token);
+      setAuditData(allDtc);
+
+      // Fetch Non-DTC data (all pages) for failed count
+      let allNonDtc = [];
+      let nonDtcToken = null;
+      do {
+        const response = await api.fetchNonDtcAuditData(nonDtcToken, 500);
+        allNonDtc = [...allNonDtc, ...(response.data || [])];
+        nonDtcToken = response.continuationToken || null;
+      } while (nonDtcToken);
+      setNonDtcAuditData(allNonDtc);
+
       const newTime = new Date().toLocaleTimeString();
       setDashboardUpdatedAt(newTime);
       sessionStorage.setItem('dashboardUpdatedAt', newTime);
@@ -78,29 +94,20 @@ const Home = () => {
   }, [auditData]);
 
   const failedFiles = React.useMemo(() => {
-    const dtcFailed = [];
-    const nonDtcFailed = [];
-    
-    auditData.forEach(item => {
-      const hasFailed = item.events?.some(e => 
-        e.Status === 'Failed' || 
+    const dtcFailed = auditData.filter(item =>
+      item.events?.some(e =>
+        e.Status === 'Failed' ||
         e.Status === 'Invalid Subscription' ||
         e.Status === 'Checksum Mismatch'
-      );
-      if (hasFailed) {
-        const parsed = parseHeader(item.Header_String);
-        // If header has a valid flow version it's DTC, otherwise Non-DTC
-        if (parsed.flowVersion && parsed.flowVersion !== '' && item.Header_String !== 'UNKNOWN') {
-          dtcFailed.push(item);
-        } else {
-          // UNKNOWN header_string files from DTC audit API are still DTC
-          dtcFailed.push(item);
-        }
-      }
-    });
-    
+      )
+    );
+    const nonDtcFailed = nonDtcAuditData.filter(item =>
+      item.status === 'Failed' ||
+      item.status === 'Invalid Subscription' ||
+      item.status === 'Checksum Mismatch'
+    );
     return { dtcFailed, nonDtcFailed };
-  }, [auditData]);
+  }, [auditData, nonDtcAuditData]);
 
   const performanceItems = React.useMemo(() => {
     const appStats = new Map();
