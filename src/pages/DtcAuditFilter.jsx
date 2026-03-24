@@ -278,7 +278,7 @@ const DtcAuditFilter = () => {
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
