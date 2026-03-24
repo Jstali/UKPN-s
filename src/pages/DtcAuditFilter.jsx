@@ -578,8 +578,8 @@ const DtcAuditFilter = () => {
             </div>
 
             <div>
-              <label style={labelStyle}>Msg ID</label>
-              <input type="text" value={filters.msgId} onChange={(e) => handleFilterChange('msgId', e.target.value)} placeholder="Enter Msg ID" style={inputStyle} />
+              <label style={labelStyle}>Message ID</label>
+              <input type="text" value={filters.msgId} onChange={(e) => handleFilterChange('msgId', e.target.value)} placeholder="Enter Message ID" style={inputStyle} />
             </div>
           </div>
         </div>
@@ -704,7 +704,7 @@ const DtcAuditFilter = () => {
                 )}
                 {filters.msgId && (
                   <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
-                    Msg ID: {filters.msgId}
+                    Message ID: {filters.msgId}
                   </span>
                 )}
               </div>

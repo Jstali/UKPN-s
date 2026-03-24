@@ -163,7 +163,7 @@ const CRITERIA_FIELDS = [
   { label: 'Event Timestamp To', key: 'eventTimestampTo' },
   { label: 'File Creation Date', key: 'fileCreationDate' },
   { label: 'File ID', key: 'fileId' },
-  { label: 'Msg ID', key: 'msgId' },
+  { label: 'Message ID', key: 'msgId' },
 ];
 
 const DtcAudit = () => {
