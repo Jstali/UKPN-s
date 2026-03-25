@@ -424,24 +424,39 @@ const Home = () => {
         </div>
 
         {/* Two-column layout: File Status + App Status (left) | Performance (right) */}
-        <div className="dashboard-layout">
-          <div className="dashboard-col-left">
-            <FileStatusSection
-              fileStats={fileStats}
-              dashboardUpdatedAt={dashboardUpdatedAt}
-              onShowDetails={showDetails}
-            />
-            <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
-            <FailedFilesSection
-              dtcFailed={failedFiles.dtcFailed}
-              nonDtcFailed={failedFiles.nonDtcFailed}
-              dashboardUpdatedAt={dashboardUpdatedAt}
-            />
+        {loading ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            minHeight: '300px', flexDirection: 'column', gap: '14px',
+            color: '#64748b', fontSize: '14px', fontWeight: 500,
+          }}>
+            <div style={{
+              width: '36px', height: '36px', border: '3px solid #e2e8f0',
+              borderTopColor: '#667eea', borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            Fetching dashboard data...
           </div>
-          <div className="dashboard-col-right">
-            <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} />
+        ) : (
+          <div className="dashboard-layout">
+            <div className="dashboard-col-left">
+              <FileStatusSection
+                fileStats={fileStats}
+                dashboardUpdatedAt={dashboardUpdatedAt}
+                onShowDetails={showDetails}
+              />
+              <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
+              <FailedFilesSection
+                dtcFailed={failedFiles.dtcFailed}
+                nonDtcFailed={failedFiles.nonDtcFailed}
+                dashboardUpdatedAt={dashboardUpdatedAt}
+              />
+            </div>
+            <div className="dashboard-col-right">
+              <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Edit Modal */}

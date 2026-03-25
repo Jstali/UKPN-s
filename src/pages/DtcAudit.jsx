@@ -474,28 +474,43 @@ const DtcAudit = () => {
       )}
 
       {/* Data Table — flush, no extra wrapper */}
-      <DataTable
-        data={hasQueried ? filteredResults : flattenedAuditData}
-        columns={columns}
-        compactColumns={[
-          { key: 'flowVersion', label: 'Flow' },
-          { key: 'fileId', label: 'File ID' },
-          { key: 'timestamp', label: 'Event Timestamp' },
-          { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-          { key: 'toRoleMPID', label: 'To Role + To MPID' },
-          { key: 'sourceApplication', label: 'Source' },
-          { key: 'application', label: 'Destination' },
-          { key: 'status', label: 'Status' },
-          { key: 'fileName', label: 'Source File Name' },
-          { key: 'eventId', label: 'Message ID' },
-        ]}
-        defaultSort={{ key: 'timestamp', direction: 'desc' }}
-        defaultPageSize={50}
-        groupByKey="eventId"
-        onDownload={true}
-        exportConfig={{ filename: 'DTC_Audit_Export' }}
-        onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
-      />
+      {loading ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '300px', flexDirection: 'column', gap: '14px',
+          color: '#64748b', fontSize: '14px', fontWeight: 500,
+        }}>
+          <div style={{
+            width: '36px', height: '36px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+          Loading DTC audit data...
+        </div>
+      ) : (
+        <DataTable
+          data={hasQueried ? filteredResults : flattenedAuditData}
+          columns={columns}
+          compactColumns={[
+            { key: 'flowVersion', label: 'Flow' },
+            { key: 'fileId', label: 'File ID' },
+            { key: 'timestamp', label: 'Event Timestamp' },
+            { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+            { key: 'toRoleMPID', label: 'To Role + To MPID' },
+            { key: 'sourceApplication', label: 'Source' },
+            { key: 'application', label: 'Destination' },
+            { key: 'status', label: 'Status' },
+            { key: 'fileName', label: 'Source File Name' },
+            { key: 'eventId', label: 'Message ID' },
+          ]}
+          defaultSort={{ key: 'timestamp', direction: 'desc' }}
+          defaultPageSize={50}
+          groupByKey="eventId"
+          onDownload={true}
+          exportConfig={{ filename: 'DTC_Audit_Export' }}
+          onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
+        />
+      )}
     </motion.div>
   );
 };

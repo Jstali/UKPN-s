@@ -172,15 +172,30 @@ const NonDtcFailedFiles = () => {
         </div>
       </motion.div>
 
-      <DataTable
-        data={failedFiles}
-        columns={columns}
-        defaultSort={{ key: 'startDate', direction: 'desc' }}
-        defaultPageSize={50}
-        onDownload={true}
-        exportConfig={{ filename: 'Non_DTC_Failed_Files_Export' }}
-        hideViewDetail={true}
-      />
+      {loading ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '300px', flexDirection: 'column', gap: '14px',
+          color: '#64748b', fontSize: '14px', fontWeight: 500,
+        }}>
+          <div style={{
+            width: '36px', height: '36px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+          Loading failed files data...
+        </div>
+      ) : (
+        <DataTable
+          data={failedFiles}
+          columns={columns}
+          defaultSort={{ key: 'startDate', direction: 'desc' }}
+          defaultPageSize={50}
+          onDownload={true}
+          exportConfig={{ filename: 'Non_DTC_Failed_Files_Export' }}
+          hideViewDetail={true}
+        />
+      )}
     </motion.div>
   );
 };

@@ -47,22 +47,27 @@ const FailedFiles = () => {
     fetchData();
   }, [isDtc]);
 
+  const isFailedStatus = (status) => {
+    const s = (status || '').toLowerCase();
+    return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
+  };
+
   // Extract failed records from audit data
   const dtcFailed = useMemo(() => {
     const failed = [];
     auditData.forEach(item => {
       const parsed = parseHeader(item.Header_String);
       const sourceApp = item.events?.[0]?.applicationName || 'Unknown';
-      
+
       item.events?.forEach(event => {
-        if (event.Status === 'Failed' || event.Status === 'Invalid Subscription') {
+        if (isFailedStatus(event.Status) || isFailedStatus(event.status)) {
           failed.push({
             flowVersion: parsed.flowVersion || 'UNKNOWN',
             fileId: item.File_ID || '',
             fromMPID: parsed.fromMPID || '',
             toMPID: parsed.toMPID || '',
             eventType: EVENT_TYPE_LABELS[event.Event_Type] || event.Event_Type || 'Unknown',
-            status: event.Status,
+            status: event.Status || event.status,
             fileName: item.Source_FileName,
             sourceApplication: sourceApp,
           });
@@ -74,7 +79,7 @@ const FailedFiles = () => {
 
   const nonDtcFailed = useMemo(() => {
     return auditData.filter(item =>
-      item.status === 'Failed' || item.status === 'Invalid Subscription' || item.status === 'Checksum Mismatch'
+      isFailedStatus(item.status) || isFailedStatus(item.Status)
     );
   }, [auditData]);
   const allFailedRecords = isDtc ? dtcFailed : nonDtcFailed;
