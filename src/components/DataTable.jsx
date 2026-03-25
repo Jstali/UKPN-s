@@ -372,8 +372,6 @@ const DataTable = ({
         `Source      : ${row.sourceApplication || 'N/A'}`,
         `Destination : ${row.application || 'N/A'}`,
         `Message ID  : ${row.eventId || 'N/A'}`,
-        '',
-        'Note: Full file content is not available in the API response.',
       ].join('\n'),
       loading: false,
       error: null,
@@ -392,8 +390,6 @@ const DataTable = ({
       `Source      : ${row.sourceApplication || 'N/A'}`,
       `Destination : ${row.application || 'N/A'}`,
       `Message ID  : ${row.eventId || 'N/A'}`,
-      '',
-      'Note: Full file content is not available in the API response.',
     ].join('\n');
 
     const blob = new Blob([fileContent], { type: 'text/plain' });
