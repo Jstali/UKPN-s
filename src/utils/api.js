@@ -1,5 +1,7 @@
-const DTC_AUDIT_API = process.env.REACT_APP_AZURE_DTC_AUDIT_API ||
-  'https://fadev-im-fileconnect-uks01.azurewebsites.net/api/dtcAuditApi?code=REDACTED_SUBSCRIPTION_API_CODE_V1=';
+const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
+const API_CODE = 'REDACTED_DTC_API_CODE_V2=';
+
+const DTC_AUDIT_API = `${API_HOST}/api/dtcAuditApi?code=${API_CODE}`;
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
@@ -21,7 +23,7 @@ const handleResponse = async (res) => {
 
 export const fetchDtcSubscriptions = async () => {
   try {
-    const apiUrl = 'https://fadev-im-fileconnect-uks01.azurewebsites.net/api/dtcSubscriptionApi?code=REDACTED_SUBSCRIPTION_API_CODE_V1=';
+    const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
 
     const res = await fetch(apiUrl, {
       method: 'GET',
@@ -199,9 +201,7 @@ const api = {
   // Fetch Non-DTC audit data
   async fetchNonDtcAuditData(continuationToken = null, pageSize = 500) {
     try {
-      const baseUrl = 'https://fadev-im-fileconnect-uks01.azurewebsites.net/api/nonDtcAuditApi';
-      const code = 'code=REDACTED_SUBSCRIPTION_API_CODE_V1=';
-      let apiUrl = `${baseUrl}?${code}&pageSize=${pageSize}`;
+      let apiUrl = `${API_HOST}/api/nonDtcAuditApi?code=${API_CODE}&pageSize=${pageSize}`;
       if (continuationToken) {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
