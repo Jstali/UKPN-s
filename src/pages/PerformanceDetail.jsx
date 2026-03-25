@@ -95,9 +95,11 @@ const PerformanceDetail = () => {
     .filter(app => selectedApps.includes(app.name))
     .sort((a, b) => b.actual - a.actual);
 
-  const overallAvg = filteredItems.length > 0
-    ? (filteredItems.reduce((sum, app) => sum + app.actual, 0) / filteredItems.length).toFixed(1)
-    : '0.0';
+  const overallAvg = useMemo(() => {
+    const totalDuration = filteredItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
+    const totalFiles = filteredItems.reduce((sum, app) => sum + app.files, 0);
+    return totalFiles > 0 ? (totalDuration / totalFiles).toFixed(1) : '0.0';
+  }, [filteredItems]);
 
   // Always show green for successful operations
   const getColor = () => '#22c55e';
