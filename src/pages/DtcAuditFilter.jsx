@@ -327,8 +327,7 @@ const DtcAuditFilter = () => {
     setSearchTerm('');
     setColumnFilters({});
     setSortConfig({ key: null, direction: 'asc' });
-    setFilteredResults([]);
-    setHasQueried(false);
+    handleQuery(defaultFilters);
   };
 
   const handleQuery = (filtersToUse) => {
