@@ -35,9 +35,9 @@ const Home = () => {
   });
 
   // Fetch audit data from API on mount and with auto-refresh
-  const fetchData = React.useCallback(async () => {
+  const fetchData = React.useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       // Fetch DTC data (all pages)
       let allDtc = [];
       let token = null;
@@ -90,7 +90,7 @@ const Home = () => {
   React.useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      fetchData();
+      fetchData(true); // silent refresh — no loading screen
     }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [autoRefresh, fetchData]);
