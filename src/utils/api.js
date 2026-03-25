@@ -110,6 +110,7 @@ const api = {
       }
 
       const appStats = new Map();
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000; // last 24 hours
 
       auditData.forEach((item) => {
         const events = Array.isArray(item.events) ? item.events : [];
@@ -121,6 +122,9 @@ const api = {
         const start = new Date(event1.timestamp).getTime();
         const end = new Date(event4.timestamp).getTime();
         if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
+
+        // Only include files received within last 24 hours
+        if (start < cutoff) return;
 
         const durationSec = (end - start) / 1000;
         const appName = event1.applicationName || 'Unknown';
