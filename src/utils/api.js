@@ -25,10 +25,7 @@ export const fetchDtcSubscriptions = async () => {
   try {
     const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
 
-    const res = await fetch(apiUrl, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const res = await fetch(apiUrl, { method: 'GET' });
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -169,10 +166,7 @@ const api = {
 
       console.log('🔄 Fetching DTC Audit from Azure:', apiUrl);
 
-      const res = await fetch(apiUrl, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const res = await fetch(apiUrl, { method: 'GET' });
 
       console.log('📊 Response status:', res.status, res.statusText);
 
@@ -205,7 +199,7 @@ const api = {
       if (continuationToken) {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
-      const res = await fetch(apiUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+      const res = await fetch(apiUrl, { method: 'GET' });
       if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
       const data = await res.json();
       return {
