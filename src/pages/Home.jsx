@@ -446,11 +446,6 @@ const Home = () => {
                 onShowDetails={showDetails}
               />
               <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
-              <FailedFilesSection
-                dtcFailed={failedFiles.dtcFailed}
-                nonDtcFailed={failedFiles.nonDtcFailed}
-                dashboardUpdatedAt={dashboardUpdatedAt}
-              />
             </div>
             <div className="dashboard-col-right">
               <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} />
