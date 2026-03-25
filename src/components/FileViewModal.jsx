@@ -97,27 +97,27 @@ const FileViewModal = ({ fileName, fileContent, onClose, onDownload, loading, er
             flex: 1,
             overflow: 'auto',
             padding: '20px',
-            background: '#f8fafc',
+            background: '#0f172a',
           }}
         >
           {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', color: '#64748b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', color: '#94a3b8' }}>
               <Loader size={20} className="spinner" />
               <span>Loading file content...</span>
             </div>
           ) : error ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#dc2626' }}>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#f87171' }}>
               <p style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Failed to load file</p>
-              <p style={{ fontSize: '12px', color: '#64748b' }}>{error}</p>
+              <p style={{ fontSize: '12px', color: '#94a3b8' }}>{error}</p>
             </div>
           ) : (
             <pre
               style={{
                 margin: 0,
                 fontFamily: 'Monaco, Consolas, "Courier New", monospace',
-                fontSize: '12px',
-                lineHeight: '1.6',
-                color: '#1e293b',
+                fontSize: '13px',
+                lineHeight: '1.8',
+                color: '#e2e8f0',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}
