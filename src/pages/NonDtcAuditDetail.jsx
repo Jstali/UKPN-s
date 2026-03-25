@@ -189,8 +189,24 @@ const NonDtcAuditDetail = () => {
         </div>
       </div>
 
+      {/* Loading state */}
+      {loading && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '300px', flexDirection: 'column', gap: '14px',
+          color: '#64748b', fontSize: '14px', fontWeight: 500,
+        }}>
+          <div style={{
+            width: '36px', height: '36px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+          Loading Non-DTC audit data...
+        </div>
+      )}
+
       {/* Results Table */}
-      {hasQueried && (
+      {!loading && hasQueried && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -270,8 +286,8 @@ const NonDtcAuditDetail = () => {
                           {col.key === 'status' ? (
                             <span style={{
                               padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
-                              background: row[col.key] === 'Success' ? '#dcfce7' : row[col.key] === 'Failed' ? '#fef2f2' : '#f1f5f9',
-                              color: row[col.key] === 'Success' ? '#16a34a' : row[col.key] === 'Failed' ? '#dc2626' : '#475569',
+                              background: (row[col.key] || '').toLowerCase() === 'success' ? '#dcfce7' : (row[col.key] || '').toLowerCase() === 'failed' ? '#fef2f2' : '#f1f5f9',
+                              color: (row[col.key] || '').toLowerCase() === 'success' ? '#16a34a' : (row[col.key] || '').toLowerCase() === 'failed' ? '#dc2626' : '#475569',
                             }}>
                               {row[col.key] || ''}
                             </span>

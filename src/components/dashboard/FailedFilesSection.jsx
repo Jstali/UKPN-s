@@ -14,23 +14,29 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
     setFileNameFilter('');
   };
 
-  const getFilteredFiles = (files) => {
+  const getFilteredFiles = (files, category) => {
+    const isDtc = category === 'dtc';
     return files.filter(file => {
-      const parsed = parseHeader(file.Header_String);
-      const matchesFlow = flowFilter === 'All' || parsed.flowVersion === flowFilter;
-      const matchesFileName = !fileNameFilter || file.Source_FileName?.toLowerCase().includes(fileNameFilter.toLowerCase());
+      const flowVal = isDtc ? parseHeader(file.Header_String).flowVersion : file.flow;
+      const fileName = isDtc ? file.Source_FileName : file.sourceFile;
+      const matchesFlow = flowFilter === 'All' || flowVal === flowFilter;
+      const matchesFileName = !fileNameFilter || fileName?.toLowerCase().includes(fileNameFilter.toLowerCase());
       return matchesFlow && matchesFileName;
     });
   };
 
-  const getUniqueFlows = (files) => {
-    const flows = files.map(f => parseHeader(f.Header_String).flowVersion).filter(Boolean);
+  const getUniqueFlows = (files, category) => {
+    const isDtc = category === 'dtc';
+    const flows = files.map(f =>
+      isDtc ? parseHeader(f.Header_String).flowVersion : f.flow
+    ).filter(Boolean);
     return ['All', ...new Set(flows)];
   };
 
   const renderFileList = (files, category) => {
-    const filteredFiles = getFilteredFiles(files);
-    const flows = getUniqueFlows(files);
+    const isDtc = category === 'dtc';
+    const filteredFiles = getFilteredFiles(files, category);
+    const flows = getUniqueFlows(files, category);
 
     return (
       <AnimatePresence>
@@ -97,12 +103,17 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                   </div>
                 ) : (
                   filteredFiles.map((file, idx) => {
-                    const parsed = parseHeader(file.Header_String);
-                    const failedEvent = file.events?.find(e => {
-                      const s = (e.Status || e.status || '').toLowerCase();
-                      return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
-                    });
-                    
+                    const fileName = isDtc ? file.Source_FileName : file.sourceFile;
+                    const flowDisplay = isDtc
+                      ? (parseHeader(file.Header_String).flowVersion || 'N/A')
+                      : (file.flow || 'N/A');
+                    const statusDisplay = isDtc
+                      ? (file.events?.find(e => {
+                          const s = (e.Status || e.status || '').toLowerCase();
+                          return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
+                        })?.Status || 'Failed')
+                      : (file.status || file.Status || 'Failed');
+
                     return (
                       <div
                         key={idx}
@@ -116,11 +127,11 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                         }}
                       >
                         <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '4px' }}>
-                          {file.Source_FileName}
+                          {fileName || 'Unknown file'}
                         </div>
                         <div style={{ display: 'flex', gap: '12px', color: '#64748b', fontSize: '11px' }}>
-                          <span>Flow: {parsed.flowVersion || 'N/A'}</span>
-                          <span>Status: <span style={{ color: '#dc2626', fontWeight: 600 }}>{failedEvent?.Status}</span></span>
+                          <span>Flow: {flowDisplay}</span>
+                          <span>Status: <span style={{ color: '#dc2626', fontWeight: 600 }}>{statusDisplay}</span></span>
                         </div>
                       </div>
                     );

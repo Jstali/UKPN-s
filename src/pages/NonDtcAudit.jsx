@@ -134,20 +134,35 @@ const NonDtcAudit = () => {
       </AnimatePresence>
 
       {/* Data Table */}
-      <DataTable
-        data={auditData}
-        columns={columns}
-        compactColumns={[
-          { key: 'uniqueId', label: 'Unique ID' },
-          { key: 'flow', label: 'Flow' },
-          { key: 'sourceFile', label: 'Source File' },
-          { key: 'eventType', label: 'Event Type' },
-          { key: 'status', label: 'Status' },
-        ]}
-        onDownload={(row) => exportToCSV([row], columns, `non_dtc_audit_${row.uniqueId}`)}
-        exportConfig={{ filename: 'non_dtc_audit_report' }}
-        onViewDetail={() => navigate('/non-dtc-audit-detail')}
-      />
+      {loading ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '300px', flexDirection: 'column', gap: '14px',
+          color: '#64748b', fontSize: '14px', fontWeight: 500,
+        }}>
+          <div style={{
+            width: '36px', height: '36px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }} />
+          Loading Non-DTC audit data...
+        </div>
+      ) : (
+        <DataTable
+          data={auditData}
+          columns={columns}
+          compactColumns={[
+            { key: 'uniqueId', label: 'Unique ID' },
+            { key: 'flow', label: 'Flow' },
+            { key: 'sourceFile', label: 'Source File' },
+            { key: 'eventType', label: 'Event Type' },
+            { key: 'status', label: 'Status' },
+          ]}
+          onDownload={(row) => exportToCSV([row], columns, `non_dtc_audit_${row.uniqueId}`)}
+          exportConfig={{ filename: 'non_dtc_audit_report' }}
+          onViewDetail={() => navigate('/non-dtc-audit-detail')}
+        />
+      )}
     </motion.div>
   );
 };
