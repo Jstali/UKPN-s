@@ -69,7 +69,7 @@ const DtcFailedFiles = () => {
         let allData = [];
         let token = null;
         do {
-          const response = await api.fetchDtcAuditData(token, 50);
+          const response = await api.fetchDtcAuditData(token, 500);
           allData = [...allData, ...(response.data || [])];
           token = response.continuationToken || null;
         } while (token);
