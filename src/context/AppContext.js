@@ -42,6 +42,7 @@ export const AppProvider = ({ children }) => {
       setAuditData(initialDtc);
       setNonDtcAuditData(initialNonDtc);
       setLoading(false);
+      setLastFetch(Date.now());
 
       // Load remaining in background
       let allDtc = [...initialDtc];
@@ -70,11 +71,10 @@ export const AppProvider = ({ children }) => {
         setAuditData([...allDtc]);
         setNonDtcAuditData([...allNonDtc]);
       }
-
-      setLastFetch(Date.now());
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setLoading(false);
+      setLastFetch(Date.now()); // Set lastFetch even on error to prevent infinite retries
     }
   }, [auditData.length, lastFetch]);
 
