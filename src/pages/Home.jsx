@@ -111,11 +111,11 @@ const Home = () => {
   }, [auditData]);
 
   const fileStats = React.useMemo(() => ({
-    filesReceived: totalCount,
-    totalToBeDelivered: totalCount,
+    filesReceived: auditData.length,
+    totalToBeDelivered: auditData.length,
     totalDelivered: deliveredFiles.length,
-    pendingDelivery: Math.max(totalCount - deliveredFiles.length, 0),
-  }), [totalCount, deliveredFiles.length]);
+    pendingDelivery: Math.max(auditData.length - deliveredFiles.length, 0),
+  }), [auditData.length, deliveredFiles.length]);
 
   const showDetails = (type) => {
     // Calculate actual status distribution from audit data
