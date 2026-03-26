@@ -168,20 +168,25 @@ const api = {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
 
-      console.log('🔄 Fetching DTC Audit from Azure:', apiUrl);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-      const res = await fetch(apiUrl, { method: 'GET' });
+      const res = await fetch(apiUrl, { 
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Accept-Encoding': 'gzip, deflate, br'
+        }
+      });
 
-      console.log('📊 Response status:', res.status, res.statusText);
+      clearTimeout(timeout);
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('❌ API Error:', res.status, errorText);
         throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText}`);
       }
 
       const data = await res.json();
-      console.log('✅ Raw API response:', data);
 
       return {
         data: Array.isArray(data.data) ? data.data : [],
@@ -191,7 +196,11 @@ const api = {
         resultCount: data.resultCount || data.data?.length || 0,
       };
     } catch (error) {
-      console.error('❌ Error fetching audit data:', error.message);
+      if (error.name === 'AbortError') {
+        console.error('❌ Request timeout');
+      } else {
+        console.error('❌ Error fetching audit data:', error.message);
+      }
       return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0 };
     }
   },
@@ -203,7 +212,20 @@ const api = {
       if (continuationToken) {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
-      const res = await fetch(apiUrl, { method: 'GET' });
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(apiUrl, { 
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Accept-Encoding': 'gzip, deflate, br'
+        }
+      });
+
+      clearTimeout(timeout);
+
       if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
       const data = await res.json();
       return {
@@ -212,7 +234,11 @@ const api = {
         totalCount: data.totalCount || 0,
       };
     } catch (error) {
-      console.error('❌ Error fetching non-DTC audit data:', error.message);
+      if (error.name === 'AbortError') {
+        console.error('❌ Non-DTC request timeout');
+      } else {
+        console.error('❌ Error fetching non-DTC audit data:', error.message);
+      }
       return { data: [], continuationToken: null, totalCount: 0 };
     }
   },
