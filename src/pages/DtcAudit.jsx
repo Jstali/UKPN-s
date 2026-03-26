@@ -371,7 +371,7 @@ const DtcAudit = () => {
           <div style={{ marginBottom: '8px' }}>
             <DtcFilterDropdown
               filters={filters}
-              auditData={auditData}
+              auditData={globalAuditData}
               onFilterChange={handleFilterChange}
               onReset={handleReset}
               onApply={() => handleQuery()}
