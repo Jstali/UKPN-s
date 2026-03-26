@@ -294,7 +294,7 @@ const DtcAuditFilter = () => {
         let allData = [];
         let token = null;
         do {
-          const response = await api.fetchDtcAuditData(token, 500);
+          const response = await api.fetchDtcAuditData(token, 50);
           allData = [...allData, ...(response.data || [])];
           token = response.continuationToken || null;
         } while (token);
