@@ -24,7 +24,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchAllData = useCallback(async (force = false) => {
     // Skip if data exists and fetch was recent (within 5 minutes)
-    if (!force && auditData.length > 0 && lastFetch && (Date.now() - lastFetch < 300000)) {
+    if (!force && lastFetch && (Date.now() - lastFetch < 300000)) {
       return;
     }
 
@@ -101,7 +101,7 @@ export const AppProvider = ({ children }) => {
       setLoading(false);
       setLastFetch(Date.now());
     }
-  }, [auditData.length, lastFetch]);
+  }, [lastFetch]);
 
   const login = (userData) => {
     setUser(userData);
