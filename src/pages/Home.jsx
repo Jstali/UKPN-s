@@ -62,8 +62,8 @@ const Home = () => {
 
         while (dtcToken || nonDtcToken) {
           const promises = [];
-          if (dtcToken) promises.push(api.fetchDtcAuditData(dtcToken, 50));
-          if (nonDtcToken) promises.push(api.fetchNonDtcAuditData(nonDtcToken, 50));
+          if (dtcToken) promises.push(api.fetchDtcAuditData(dtcToken, 500));
+          if (nonDtcToken) promises.push(api.fetchNonDtcAuditData(nonDtcToken, 500));
           
           const results = await Promise.all(promises);
           
