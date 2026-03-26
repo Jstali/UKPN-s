@@ -226,18 +226,13 @@ const DtcAudit = () => {
     const filtersToUse = filterData || filters;
     if (!filtersToUse) return;
     
-    // Use setTimeout to avoid blocking UI
-    setLoading(true);
-    setTimeout(() => {
-      const results = buildFilteredResults(auditData, filtersToUse);
-      setFilteredResults(results);
-      setAppliedFilters({ ...filtersToUse });
-      setExceptionCount(0);
-      setHasQueried(true);
-      setShowFilters(false);
-      setLoading(false);
-    }, 0);
-  }, [auditData, filters]);
+    const results = buildFilteredResults(globalAuditData, filtersToUse);
+    setFilteredResults(results);
+    setAppliedFilters({ ...filtersToUse });
+    setExceptionCount(0);
+    setHasQueried(true);
+    setShowFilters(false);
+  }, [globalAuditData, filters]);
 
   // Handle incoming filters from filter page
   useEffect(() => {
@@ -442,7 +437,7 @@ const DtcAudit = () => {
       )}
 
       {/* Data Table — flush, no extra wrapper */}
-      {loading ? (
+      {globalLoading ? (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: '300px', flexDirection: 'column', gap: '14px',
