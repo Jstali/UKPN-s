@@ -38,39 +38,76 @@ const Home = () => {
   const fetchData = React.useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      // Fetch DTC data (all pages)
-      let allDtc = [];
-      let token = null;
-      do {
-        const response = await api.fetchDtcAuditData(token, 500);
-        allDtc = [...allDtc, ...(response.data || [])];
-        token = response.continuationToken || null;
-        if (!token) setTotalCount(response.totalCount || allDtc.length);
-      } while (token);
-      // Debug: log sample event statuses to verify field names
-      if (allDtc.length > 0) {
-        const sampleEvents = allDtc.slice(0, 3).map(item => ({
-          fileName: item.Source_FileName,
-          events: item.events?.map(e => ({ Status: e.Status, status: e.status, Event_Type: e.Event_Type }))
-        }));
-        console.log('🔍 DTC sample event statuses:', JSON.stringify(sampleEvents, null, 2));
+      
+      // Check cache first (5 min expiry)
+      const cacheKey = 'dashboardData';
+      const cacheTimeKey = 'dashboardDataTime';
+      const cached = sessionStorage.getItem(cacheKey);
+      const cacheTime = sessionStorage.getItem(cacheTimeKey);
+      const now = Date.now();
+      
+      if (cached && cacheTime && (now - parseInt(cacheTime)) < 300000) {
+        const { dtc, nonDtc, count } = JSON.parse(cached);
+        setAuditData(dtc);
+        setNonDtcAuditData(nonDtc);
+        setTotalCount(count);
+        setLoading(false);
+        return;
       }
-      setAuditData(allDtc);
 
-      // Fetch Non-DTC data (all pages) for failed count
-      let allNonDtc = [];
-      let nonDtcToken = null;
-      do {
-        const response = await api.fetchNonDtcAuditData(nonDtcToken, 500);
-        allNonDtc = [...allNonDtc, ...(response.data || [])];
-        nonDtcToken = response.continuationToken || null;
-      } while (nonDtcToken);
-      // Debug: log sample non-DTC statuses
-      if (allNonDtc.length > 0) {
-        const sampleNonDtc = allNonDtc.slice(0, 3).map(item => ({ status: item.status, Status: item.Status }));
-        console.log('🔍 Non-DTC sample statuses:', JSON.stringify(sampleNonDtc, null, 2));
-      }
-      setNonDtcAuditData(allNonDtc);
+      // Fetch first page only for initial load
+      const [dtcResponse, nonDtcResponse] = await Promise.all([
+        api.fetchDtcAuditData(null, 200),
+        api.fetchNonDtcAuditData(null, 200)
+      ]);
+
+      const initialDtc = dtcResponse.data || [];
+      const initialNonDtc = nonDtcResponse.data || [];
+      
+      setAuditData(initialDtc);
+      setNonDtcAuditData(initialNonDtc);
+      setTotalCount(dtcResponse.totalCount || initialDtc.length);
+      setLoading(false);
+
+      // Lazy load remaining pages in background
+      const loadRemaining = async () => {
+        let allDtc = [...initialDtc];
+        let allNonDtc = [...initialNonDtc];
+        let dtcToken = dtcResponse.continuationToken;
+        let nonDtcToken = nonDtcResponse.continuationToken;
+
+        while (dtcToken || nonDtcToken) {
+          const promises = [];
+          if (dtcToken) promises.push(api.fetchDtcAuditData(dtcToken, 500));
+          if (nonDtcToken) promises.push(api.fetchNonDtcAuditData(nonDtcToken, 500));
+          
+          const results = await Promise.all(promises);
+          
+          if (dtcToken) {
+            const dtcRes = results[0];
+            allDtc = [...allDtc, ...(dtcRes.data || [])];
+            dtcToken = dtcRes.continuationToken;
+          }
+          if (nonDtcToken) {
+            const nonDtcRes = results[promises.length === 2 ? 1 : 0];
+            allNonDtc = [...allNonDtc, ...(nonDtcRes.data || [])];
+            nonDtcToken = nonDtcRes.continuationToken;
+          }
+          
+          setAuditData([...allDtc]);
+          setNonDtcAuditData([...allNonDtc]);
+        }
+
+        // Cache complete data
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          dtc: allDtc,
+          nonDtc: allNonDtc,
+          count: dtcResponse.totalCount || allDtc.length
+        }));
+        sessionStorage.setItem(cacheTimeKey, now.toString());
+      };
+
+      loadRemaining();
 
       const newTime = new Date().toLocaleTimeString();
       setDashboardUpdatedAt(newTime);
@@ -78,7 +115,6 @@ const Home = () => {
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setAuditData([]);
-    } finally {
       setLoading(false);
     }
   }, []);
