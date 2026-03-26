@@ -208,7 +208,7 @@ const Home = () => {
     const detailsMap = {
       files: {
         title: 'Files Received',
-        items: auditData.map(item => item.Source_FileName),
+        items: auditData.map(item => item.Source_FileName).slice(0, 100),
         value: fileStats.filesReceived,
         chartData: { 
           labels: ['Valid', 'Invalid', 'Pending'], 
@@ -218,7 +218,7 @@ const Home = () => {
       },
       subscriptions: {
         title: 'Total Files Subscribed',
-        items: auditData.map(item => item.Source_FileName).filter(Boolean),
+        items: auditData.map(item => item.Source_FileName).filter(Boolean).slice(0, 100),
         value: fileStats.totalToBeDelivered,
         chartData: { 
           labels: ['Delivered', 'Pending'], 
@@ -228,7 +228,7 @@ const Home = () => {
       },
       deliveries: {
         title: 'Total Deliveries',
-        items: deliveredFiles.map(item => item.Source_FileName),
+        items: deliveredFiles.map(item => item.Source_FileName).slice(0, 100),
         value: fileStats.totalDelivered,
         chartData: { 
           labels: ['Delivered', 'Pending'], 
@@ -238,7 +238,7 @@ const Home = () => {
       },
       pending: {
         title: 'Pending Delivery',
-        items: pendingFiles.map(item => item.Source_FileName),
+        items: pendingFiles.map(item => item.Source_FileName).slice(0, 100),
         value: fileStats.pendingDelivery,
         chartData: { 
           labels: ['Pending', 'Delivered'], 
