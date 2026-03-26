@@ -272,9 +272,9 @@ const Home = () => {
         </div>
 
         {/* Edit Info Bar */}
-        {(canEditInfo || user?.role === 'Business') && (
+        {(canEditInfo || user?.role === 'Business' || user?.role === 'Testing Team') && (
           <div className="dashboard-info-bar" style={{ background: '#fef3c7' }}>
-            {user?.role !== 'Business' && (
+            {user?.role !== 'Business' && user?.role !== 'Testing Team' && (
               <button onClick={() => setShowEditModal(true)} className="dashboard-info-btn" style={{ background: '#d97706' }}>
                 Edit Info
               </button>

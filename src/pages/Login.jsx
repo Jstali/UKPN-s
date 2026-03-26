@@ -15,7 +15,8 @@ const Login = ({ onLogin }) => {
     { username: 'business', password: 'business123', role: 'Business' },
     { username: 'monitoring', password: 'monitoring123', role: 'Monitoring Team' },
     { username: 'support', password: 'support123', role: 'Core Support' },
-    { username: 'admin', password: 'admin123', role: 'Admin' }
+    { username: 'admin', password: 'admin123', role: 'Admin' },
+    { username: 'testuser', password: 'testuser', role: 'Testing Team' }
   ]));
 
   const handleSubmit = (e) => {
