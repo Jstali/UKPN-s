@@ -30,11 +30,18 @@ export const AppProvider = ({ children }) => {
 
     setLoading(true);
     try {
-      // Fetch first page immediately
-      const [dtcResponse, nonDtcResponse] = await Promise.all([
-        api.fetchDtcAuditData(null, 200),
-        api.fetchNonDtcAuditData(null, 200)
-      ]);
+      // Fetch first page immediately with individual error handling
+      const dtcPromise = api.fetchDtcAuditData(null, 200).catch(err => {
+        console.error('DTC API error:', err);
+        return { data: [], continuationToken: null };
+      });
+      
+      const nonDtcPromise = api.fetchNonDtcAuditData(null, 200).catch(err => {
+        console.error('Non-DTC API error:', err);
+        return { data: [], continuationToken: null };
+      });
+
+      const [dtcResponse, nonDtcResponse] = await Promise.all([dtcPromise, nonDtcPromise]);
 
       const initialDtc = dtcResponse.data || [];
       const initialNonDtc = nonDtcResponse.data || [];
@@ -44,7 +51,11 @@ export const AppProvider = ({ children }) => {
       setLoading(false);
       setLastFetch(Date.now());
 
-      // Load remaining in background
+      // Load remaining in background only if there's more data
+      if (!dtcResponse.continuationToken && !nonDtcResponse.continuationToken) {
+        return;
+      }
+
       let allDtc = [...initialDtc];
       let allNonDtc = [...initialNonDtc];
       let dtcToken = dtcResponse.continuationToken;
@@ -52,8 +63,22 @@ export const AppProvider = ({ children }) => {
 
       while (dtcToken || nonDtcToken) {
         const promises = [];
-        if (dtcToken) promises.push(api.fetchDtcAuditData(dtcToken, 500));
-        if (nonDtcToken) promises.push(api.fetchNonDtcAuditData(nonDtcToken, 500));
+        if (dtcToken) {
+          promises.push(
+            api.fetchDtcAuditData(dtcToken, 500).catch(err => {
+              console.error('DTC pagination error:', err);
+              return { data: [], continuationToken: null };
+            })
+          );
+        }
+        if (nonDtcToken) {
+          promises.push(
+            api.fetchNonDtcAuditData(nonDtcToken, 500).catch(err => {
+              console.error('Non-DTC pagination error:', err);
+              return { data: [], continuationToken: null };
+            })
+          );
+        }
         
         const results = await Promise.all(promises);
         
@@ -74,7 +99,7 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setLoading(false);
-      setLastFetch(Date.now()); // Set lastFetch even on error to prevent infinite retries
+      setLastFetch(Date.now());
     }
   }, [auditData.length, lastFetch]);
 
