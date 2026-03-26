@@ -38,22 +38,6 @@ const Home = () => {
   const fetchData = React.useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      
-      // Check cache first (5 min expiry)
-      const cacheKey = 'dashboardData';
-      const cacheTimeKey = 'dashboardDataTime';
-      const cached = sessionStorage.getItem(cacheKey);
-      const cacheTime = sessionStorage.getItem(cacheTimeKey);
-      const now = Date.now();
-      
-      if (cached && cacheTime && (now - parseInt(cacheTime)) < 300000) {
-        const { dtc, nonDtc, count } = JSON.parse(cached);
-        setAuditData(dtc);
-        setNonDtcAuditData(nonDtc);
-        setTotalCount(count);
-        setLoading(false);
-        return;
-      }
 
       // Fetch first page only for initial load
       const [dtcResponse, nonDtcResponse] = await Promise.all([
@@ -97,14 +81,6 @@ const Home = () => {
           setAuditData([...allDtc]);
           setNonDtcAuditData([...allNonDtc]);
         }
-
-        // Cache complete data
-        sessionStorage.setItem(cacheKey, JSON.stringify({
-          dtc: allDtc,
-          nonDtc: allNonDtc,
-          count: dtcResponse.totalCount || allDtc.length
-        }));
-        sessionStorage.setItem(cacheTimeKey, now.toString());
       };
 
       loadRemaining();
