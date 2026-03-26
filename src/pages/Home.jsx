@@ -14,12 +14,8 @@ import { parseHeader } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 
 const Home = () => {
-  const { user, autoRefresh, setAutoRefresh } = useApp();
+  const { user, autoRefresh, setAutoRefresh, auditData, nonDtcAuditData, loading, fetchAllData } = useApp();
   const navigate = useNavigate();
-  const [auditData, setAuditData] = React.useState([]);
-  const [nonDtcAuditData, setNonDtcAuditData] = React.useState([]);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
   const [infoText, setInfoText] = React.useState(() => {
@@ -34,78 +30,17 @@ const Home = () => {
     return now;
   });
 
-  // Fetch audit data from API on mount and with auto-refresh
-  const fetchData = React.useCallback(async (silent = false) => {
-    try {
-      if (!silent) setLoading(true);
-
-      // Fetch first page only for initial load
-      const [dtcResponse, nonDtcResponse] = await Promise.all([
-        api.fetchDtcAuditData(null, 200),
-        api.fetchNonDtcAuditData(null, 200)
-      ]);
-
-      const initialDtc = dtcResponse.data || [];
-      const initialNonDtc = nonDtcResponse.data || [];
-      
-      setAuditData(initialDtc);
-      setNonDtcAuditData(initialNonDtc);
-      setTotalCount(dtcResponse.totalCount || initialDtc.length);
-      setLoading(false);
-
-      // Lazy load remaining pages in background
-      const loadRemaining = async () => {
-        let allDtc = [...initialDtc];
-        let allNonDtc = [...initialNonDtc];
-        let dtcToken = dtcResponse.continuationToken;
-        let nonDtcToken = nonDtcResponse.continuationToken;
-
-        while (dtcToken || nonDtcToken) {
-          const promises = [];
-          if (dtcToken) promises.push(api.fetchDtcAuditData(dtcToken, 500));
-          if (nonDtcToken) promises.push(api.fetchNonDtcAuditData(nonDtcToken, 500));
-          
-          const results = await Promise.all(promises);
-          
-          if (dtcToken) {
-            const dtcRes = results[0];
-            allDtc = [...allDtc, ...(dtcRes.data || [])];
-            dtcToken = dtcRes.continuationToken;
-          }
-          if (nonDtcToken) {
-            const nonDtcRes = results[promises.length === 2 ? 1 : 0];
-            allNonDtc = [...allNonDtc, ...(nonDtcRes.data || [])];
-            nonDtcToken = nonDtcRes.continuationToken;
-          }
-          
-          setAuditData([...allDtc]);
-          setNonDtcAuditData([...allNonDtc]);
-        }
-      };
-
-      loadRemaining();
-
-      const newTime = new Date().toLocaleTimeString();
-      setDashboardUpdatedAt(newTime);
-      sessionStorage.setItem('dashboardUpdatedAt', newTime);
-    } catch (error) {
-      console.error('Failed to fetch audit data:', error);
-      setAuditData([]);
-      setLoading(false);
-    }
-  }, []);
-
   React.useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   React.useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      fetchData(true); // silent refresh — no loading screen
+      fetchAllData(true); // silent refresh
     }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, [autoRefresh, fetchData]);
+  }, [autoRefresh, fetchAllData]);
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 

@@ -1,10 +1,15 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import api from '../utils/api';
 
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [auditData, setAuditData] = useState([]);
+  const [nonDtcAuditData, setNonDtcAuditData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [lastFetch, setLastFetch] = useState(null);
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
@@ -17,6 +22,62 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
+  const fetchAllData = useCallback(async (force = false) => {
+    // Skip if data exists and fetch was recent (within 5 minutes)
+    if (!force && auditData.length > 0 && lastFetch && (Date.now() - lastFetch < 300000)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Fetch first page immediately
+      const [dtcResponse, nonDtcResponse] = await Promise.all([
+        api.fetchDtcAuditData(null, 200),
+        api.fetchNonDtcAuditData(null, 200)
+      ]);
+
+      const initialDtc = dtcResponse.data || [];
+      const initialNonDtc = nonDtcResponse.data || [];
+      
+      setAuditData(initialDtc);
+      setNonDtcAuditData(initialNonDtc);
+      setLoading(false);
+
+      // Load remaining in background
+      let allDtc = [...initialDtc];
+      let allNonDtc = [...initialNonDtc];
+      let dtcToken = dtcResponse.continuationToken;
+      let nonDtcToken = nonDtcResponse.continuationToken;
+
+      while (dtcToken || nonDtcToken) {
+        const promises = [];
+        if (dtcToken) promises.push(api.fetchDtcAuditData(dtcToken, 500));
+        if (nonDtcToken) promises.push(api.fetchNonDtcAuditData(nonDtcToken, 500));
+        
+        const results = await Promise.all(promises);
+        
+        if (dtcToken) {
+          const dtcRes = results[0];
+          allDtc = [...allDtc, ...(dtcRes.data || [])];
+          dtcToken = dtcRes.continuationToken;
+        }
+        if (nonDtcToken) {
+          const nonDtcRes = results[promises.length === 2 ? 1 : 0];
+          allNonDtc = [...allNonDtc, ...(nonDtcRes.data || [])];
+          nonDtcToken = nonDtcRes.continuationToken;
+        }
+        
+        setAuditData([...allDtc]);
+        setNonDtcAuditData([...allNonDtc]);
+      }
+
+      setLastFetch(Date.now());
+    } catch (error) {
+      console.error('Failed to fetch audit data:', error);
+      setLoading(false);
+    }
+  }, [auditData.length, lastFetch]);
+
   const login = (userData) => {
     setUser(userData);
     sessionStorage.setItem('user', JSON.stringify(userData));
@@ -24,12 +85,25 @@ export const AppProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setAuditData([]);
+    setNonDtcAuditData([]);
+    setLastFetch(null);
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
   };
 
   return (
-    <AppContext.Provider value={{ user, login, logout, autoRefresh, setAutoRefresh }}>
+    <AppContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      autoRefresh, 
+      setAutoRefresh,
+      auditData,
+      nonDtcAuditData,
+      loading,
+      fetchAllData
+    }}>
       {children}
     </AppContext.Provider>
   );
