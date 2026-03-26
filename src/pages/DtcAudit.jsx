@@ -192,12 +192,9 @@ const CRITERIA_FIELDS = [
 ];
 
 const DtcAudit = () => {
-  const { user, autoRefresh, setAutoRefresh } = useApp();
+  const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading, fetchAllData } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [hasQueried, setHasQueried] = useState(false);
   const [filteredResults, setFilteredResults] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -208,39 +205,10 @@ const DtcAudit = () => {
   // Pagination state
   const [totalCount, setTotalCount] = useState(0);
 
-  // Fetch audit data from API on mount — fetch all records
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      let allData = [];
-      let token = null;
-      do {
-        const response = await api.fetchDtcAuditData(token, 500);
-        allData = [...allData, ...(response.data || [])];
-        token = response.continuationToken || null;
-        setTotalCount(response.totalCount || allData.length);
-      } while (token);
-      setAuditData(allData);
-    } catch (error) {
-      console.error('Failed to fetch audit data:', error);
-      setAuditData([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Use global data
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Auto-refresh effect
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      fetchData();
-    }, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [autoRefresh, fetchData]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -289,12 +257,12 @@ const DtcAudit = () => {
         sessionStorage.removeItem('dtcAuditScrollPos');
       }, 100);
     }
-  }, []);
+  }, [fetchAllData]);
 
   const flattenedAuditData = useMemo(() => {
-    if (auditData.length === 0) return [];
-    return flattenAuditEvents(auditData);
-  }, [auditData]);
+    if (globalAuditData.length === 0) return [];
+    return flattenAuditEvents(globalAuditData);
+  }, [globalAuditData]);
   
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
