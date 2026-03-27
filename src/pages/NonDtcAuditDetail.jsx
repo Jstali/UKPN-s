@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../utils/api';
 
@@ -18,6 +18,7 @@ const ALL_COLUMNS = [
 
 const NonDtcAuditDetail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const defaultFilters = {
     flow: 'All',
@@ -57,6 +58,7 @@ const NonDtcAuditDetail = () => {
           startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
           endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
           status: item.status || '',
+          timestamp: item.timestamp || '',
           rawData: item
         }));
         
@@ -70,6 +72,44 @@ const NonDtcAuditDetail = () => {
     };
     fetchData();
   }, []);
+
+  // Apply filters from navigation state
+  useEffect(() => {
+    if (location.state?.filters && auditData.length > 0) {
+      const incomingFilters = location.state.filters;
+      setFilters(incomingFilters);
+      
+      let results = [...auditData];
+      if (incomingFilters.sourceApp !== 'All') results = results.filter(r => r.flow === incomingFilters.sourceApp);
+      if (incomingFilters.subscription !== 'All') results = results.filter(r => r.rawData?.subscription === incomingFilters.subscription);
+      if (incomingFilters.status !== 'All') results = results.filter(r => r.status === incomingFilters.status);
+      if (incomingFilters.eventType !== 'All') results = results.filter(r => r.eventType === incomingFilters.eventType);
+      if (incomingFilters.sourceFile) results = results.filter(r => r.sourceFile?.toLowerCase().includes(incomingFilters.sourceFile.toLowerCase()));
+      if (incomingFilters.fileId) results = results.filter(r => r.fileId?.includes(incomingFilters.fileId));
+      if (incomingFilters.fileCreated) {
+        results = results.filter(r => {
+          const fileDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+          return fileDate === incomingFilters.fileCreated;
+        });
+      }
+      if (incomingFilters.eventFrom) {
+        results = results.filter(r => {
+          const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+          return eventDate >= incomingFilters.eventFrom;
+        });
+      }
+      if (incomingFilters.eventTo) {
+        results = results.filter(r => {
+          const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+          return eventDate <= incomingFilters.eventTo;
+        });
+      }
+      
+      setFilteredResults(results);
+      setHasQueried(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, auditData]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
