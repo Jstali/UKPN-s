@@ -23,7 +23,22 @@ const NonDtcFailedFiles = () => {
           allData = [...allData, ...(response.data || [])];
           token = response.continuationToken || null;
         } while (token);
-        setAuditData(allData);
+        
+        // Map SAP API fields to expected format
+        const mappedData = allData.map(item => ({
+          uniqueId: item.id || '',
+          flow: item.sourceAppName || item.subscription || 'UNKNOWN',
+          sourceFile: item.sourceFileName || '',
+          fileId: item.id || '',
+          sourcePath: item.sourcePath || '',
+          eventType: item.events?.[0]?.eventType || '',
+          startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
+          endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+          status: item.status || '',
+          rawData: item
+        }));
+        
+        setAuditData(mappedData);
       } catch (error) {
         console.error('Failed to fetch non-DTC audit data:', error);
         setAuditData([]);
@@ -36,8 +51,8 @@ const NonDtcFailedFiles = () => {
 
   const failedFiles = useMemo(() => {
     let filtered = auditData.filter(row => {
-      const status = (row.status || row.Status || '').toLowerCase();
-      return status === 'failed' || status === 'invalid subscription' || status === 'checksum mismatch';
+      const status = (row.status || '').toUpperCase();
+      return status.includes('INVALID') || status.includes('FAILED') || status.includes('ERROR');
     });
     
     // Apply flow filter
@@ -57,8 +72,8 @@ const NonDtcFailedFiles = () => {
 
   const uniqueFlows = useMemo(() => {
     const failed = auditData.filter(row => {
-      const status = (row.status || row.Status || '').toLowerCase();
-      return status === 'failed' || status === 'invalid subscription' || status === 'checksum mismatch';
+      const status = (row.status || '').toUpperCase();
+      return status.includes('INVALID') || status.includes('FAILED') || status.includes('ERROR');
     });
     return ['All', ...new Set(failed.map(row => row.flow).filter(Boolean))];
   }, [auditData]);
