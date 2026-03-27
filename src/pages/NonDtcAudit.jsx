@@ -15,12 +15,15 @@ const NonDtcAudit = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    sourceApp: '',
+    sourceApp: 'All',
+    subscription: 'All',
+    status: 'All',
+    eventType: 'All',
     sourceFile: '',
-    status: '',
-    eventType: '',
-    startDate: '',
-    endDate: ''
+    fileId: '',
+    fileCreated: '',
+    eventFrom: '',
+    eventTo: ''
   });
 
   useEffect(() => {
@@ -63,25 +66,25 @@ const NonDtcAudit = () => {
   const applyFilters = () => {
     let filtered = [...auditData];
     
-    if (filters.sourceApp) {
-      filtered = filtered.filter(item => 
-        item.flow?.toLowerCase().includes(filters.sourceApp.toLowerCase())
-      );
+    if (filters.sourceApp !== 'All') {
+      filtered = filtered.filter(item => item.flow === filters.sourceApp);
+    }
+    if (filters.subscription !== 'All') {
+      filtered = filtered.filter(item => item.rawData?.subscription === filters.subscription);
+    }
+    if (filters.status !== 'All') {
+      filtered = filtered.filter(item => item.status === filters.status);
+    }
+    if (filters.eventType !== 'All') {
+      filtered = filtered.filter(item => item.eventType === filters.eventType);
     }
     if (filters.sourceFile) {
       filtered = filtered.filter(item => 
         item.sourceFile?.toLowerCase().includes(filters.sourceFile.toLowerCase())
       );
     }
-    if (filters.status) {
-      filtered = filtered.filter(item => 
-        item.status?.toLowerCase().includes(filters.status.toLowerCase())
-      );
-    }
-    if (filters.eventType) {
-      filtered = filtered.filter(item => 
-        item.eventType?.toLowerCase().includes(filters.eventType.toLowerCase())
-      );
+    if (filters.fileId) {
+      filtered = filtered.filter(item => item.fileId?.includes(filters.fileId));
     }
     
     setFilteredData(filtered);
@@ -90,15 +93,17 @@ const NonDtcAudit = () => {
 
   const resetFilters = () => {
     setFilters({
-      sourceApp: '',
+      sourceApp: 'All',
+      subscription: 'All',
+      status: 'All',
+      eventType: 'All',
       sourceFile: '',
-      status: '',
-      eventType: '',
-      startDate: '',
-      endDate: ''
+      fileId: '',
+      fileCreated: '',
+      eventFrom: '',
+      eventTo: ''
     });
     setFilteredData(auditData);
-    setShowFilters(false);
   };
 
   const uniqueFlows = [...new Set(filteredData.map(item => item.flow))].filter(Boolean).length;
@@ -171,19 +176,15 @@ const NonDtcAudit = () => {
         {/* Action buttons */}
         <div className="dtc-header-actions">
           <button
-            onClick={() => navigate('/non-dtc-audit-filter')}
-            className="dtc-apps-toggle"
-            style={{ background: '#667eea', color: 'white' }}
-          >
-            <Filter size={12} />
-            Advanced Filters
-          </button>
-          <button
             className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={12} />
-            Quick Filters
+            Filters
+            <ChevronDown size={12} style={{
+              transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease'
+            }} />
           </button>
           <button
             className={`dtc-apps-toggle ${showBars ? 'active' : ''}`}
@@ -214,63 +215,170 @@ const NonDtcAudit = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
             }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                  Source Application
-                </label>
-                <input
-                  type="text"
-                  value={filters.sourceApp}
-                  onChange={(e) => setFilters({ ...filters, sourceApp: e.target.value })}
-                  placeholder="Filter by source app..."
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '13px'
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                  Source File
-                </label>
-                <input
-                  type="text"
-                  value={filters.sourceFile}
-                  onChange={(e) => setFilters({ ...filters, sourceFile: e.target.value })}
-                  placeholder="Filter by file name..."
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '13px'
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
-                  Status
-                </label>
-                <input
-                  type="text"
-                  value={filters.status}
-                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                  placeholder="Filter by status..."
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '6px',
-                    fontSize: '13px'
-                  }}
-                />
+            {/* Primary Filters */}
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Primary Filters
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Source Application
+                  </label>
+                  <select
+                    value={filters.sourceApp}
+                    onChange={(e) => setFilters({ ...filters, sourceApp: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      background: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="All">All</option>
+                    {[...new Set(auditData.map(r => r.flow).filter(Boolean))].sort().map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Subscription
+                  </label>
+                  <select
+                    value={filters.subscription}
+                    onChange={(e) => setFilters({ ...filters, subscription: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      background: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="All">All</option>
+                    {[...new Set(auditData.map(r => r.rawData?.subscription).filter(Boolean))].sort().map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Status
+                  </label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      background: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="All">All</option>
+                    {[...new Set(auditData.map(r => r.status).filter(Boolean))].sort().map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Event Type
+                  </label>
+                  <select
+                    value={filters.eventType}
+                    onChange={(e) => setFilters({ ...filters, eventType: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      background: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="All">All</option>
+                    {[...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort().map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+
+            {/* Additional Filters */}
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Additional Filters
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Source File
+                  </label>
+                  <input
+                    type="text"
+                    value={filters.sourceFile}
+                    onChange={(e) => setFilters({ ...filters, sourceFile: e.target.value })}
+                    placeholder="Enter source file name"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    File ID
+                  </label>
+                  <input
+                    type="text"
+                    value={filters.fileId}
+                    onChange={(e) => setFilters({ ...filters, fileId: e.target.value })}
+                    placeholder="Enter File ID"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    File Created
+                  </label>
+                  <input
+                    type="date"
+                    value={filters.fileCreated}
+                    onChange={(e) => setFilters({ ...filters, fileCreated: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
               <button
                 onClick={resetFilters}
                 style={{
