@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronDown, BarChart3, Activity } from 'lucide-react';
+import { ChevronRight, ChevronDown, BarChart3, Activity, Filter, RotateCcw } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
 import api from '../utils/api';
@@ -10,8 +10,18 @@ import { exportToCSV } from '../utils/exportUtils';
 const NonDtcAudit = () => {
   const navigate = useNavigate();
   const [showBars, setShowBars] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [auditData, setAuditData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    sourceApp: '',
+    sourceFile: '',
+    status: '',
+    eventType: '',
+    startDate: '',
+    endDate: ''
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +50,7 @@ const NonDtcAudit = () => {
         }));
         
         setAuditData(mappedData);
+        setFilteredData(mappedData);
       } catch (error) {
         console.error('Failed to fetch non-DTC audit data:', error);
       } finally {
@@ -49,33 +60,74 @@ const NonDtcAudit = () => {
     fetchData();
   }, []);
 
-  const uniqueFlows = [...new Set(auditData.map(item => item.flow))].filter(Boolean).length;
+  const applyFilters = () => {
+    let filtered = [...auditData];
+    
+    if (filters.sourceApp) {
+      filtered = filtered.filter(item => 
+        item.flow?.toLowerCase().includes(filters.sourceApp.toLowerCase())
+      );
+    }
+    if (filters.sourceFile) {
+      filtered = filtered.filter(item => 
+        item.sourceFile?.toLowerCase().includes(filters.sourceFile.toLowerCase())
+      );
+    }
+    if (filters.status) {
+      filtered = filtered.filter(item => 
+        item.status?.toLowerCase().includes(filters.status.toLowerCase())
+      );
+    }
+    if (filters.eventType) {
+      filtered = filtered.filter(item => 
+        item.eventType?.toLowerCase().includes(filters.eventType.toLowerCase())
+      );
+    }
+    
+    setFilteredData(filtered);
+    setShowFilters(false);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      sourceApp: '',
+      sourceFile: '',
+      status: '',
+      eventType: '',
+      startDate: '',
+      endDate: ''
+    });
+    setFilteredData(auditData);
+    setShowFilters(false);
+  };
+
+  const uniqueFlows = [...new Set(filteredData.map(item => item.flow))].filter(Boolean).length;
 
   const flowCounts = useMemo(() => {
     const counts = {};
-    auditData.forEach(row => {
+    filteredData.forEach(row => {
       const flow = row.flow || 'UNKNOWN';
       counts[flow] = (counts[flow] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [auditData]);
+  }, [filteredData]);
 
   const eventTypeCounts = useMemo(() => {
     const counts = {};
-    auditData.forEach(row => {
+    filteredData.forEach(row => {
       const et = row.eventType || 'Unknown';
       counts[et] = (counts[et] || 0) + 1;
     });
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [auditData]);
+  }, [filteredData]);
 
   const columns = [
     { key: 'uniqueId', label: 'Unique ID' },
-    { key: 'flow', label: 'Flow' },
+    { key: 'flow', label: 'Source Application' },
     { key: 'sourceFile', label: 'Source File' },
     { key: 'fileId', label: 'File ID' },
     { key: 'sourcePath', label: 'Source Path' },
@@ -107,7 +159,7 @@ const NonDtcAudit = () => {
           <div className="dtc-kpi-chip">
             <BarChart3 size={14} color="#6366f1" />
             <span className="dtc-kpi-label">Files</span>
-            <span className="dtc-kpi-value">{auditData.length.toLocaleString()}</span>
+            <span className="dtc-kpi-value">{filteredData.length.toLocaleString()}</span>
           </div>
           <div className="dtc-kpi-chip">
             <Activity size={14} color="#0ea5e9" />
@@ -118,6 +170,13 @@ const NonDtcAudit = () => {
 
         {/* Action buttons */}
         <div className="dtc-header-actions">
+          <button
+            className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={12} />
+            Filters
+          </button>
           <button
             className={`dtc-apps-toggle ${showBars ? 'active' : ''}`}
             onClick={() => setShowBars(!showBars)}
@@ -130,6 +189,118 @@ const NonDtcAudit = () => {
           </button>
         </div>
       </div>
+
+      {/* Filter Panel */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '20px',
+              margin: '0 24px 16px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+            }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                  Source Application
+                </label>
+                <input
+                  type="text"
+                  value={filters.sourceApp}
+                  onChange={(e) => setFilters({ ...filters, sourceApp: e.target.value })}
+                  placeholder="Filter by source app..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                  Source File
+                </label>
+                <input
+                  type="text"
+                  value={filters.sourceFile}
+                  onChange={(e) => setFilters({ ...filters, sourceFile: e.target.value })}
+                  placeholder="Filter by file name..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                  Status
+                </label>
+                <input
+                  type="text"
+                  value={filters.status}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                  placeholder="Filter by status..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '13px'
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={resetFilters}
+                style={{
+                  padding: '8px 16px',
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <RotateCcw size={14} />
+                Reset
+              </button>
+              <button
+                onClick={applyFilters}
+                style={{
+                  padding: '8px 16px',
+                  background: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Apply Filters
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Collapsible Color Bars */}
       <AnimatePresence>
@@ -164,11 +335,11 @@ const NonDtcAudit = () => {
         </div>
       ) : (
         <DataTable
-          data={auditData}
+          data={filteredData}
           columns={columns}
           compactColumns={[
             { key: 'uniqueId', label: 'Unique ID' },
-            { key: 'flow', label: 'Flow' },
+            { key: 'flow', label: 'Source Application' },
             { key: 'sourceFile', label: 'Source File' },
             { key: 'eventType', label: 'Event Type' },
             { key: 'status', label: 'Status' },
