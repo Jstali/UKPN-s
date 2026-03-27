@@ -171,11 +171,19 @@ const NonDtcAudit = () => {
         {/* Action buttons */}
         <div className="dtc-header-actions">
           <button
+            onClick={() => navigate('/non-dtc-audit-filter')}
+            className="dtc-apps-toggle"
+            style={{ background: '#667eea', color: 'white' }}
+          >
+            <Filter size={12} />
+            Advanced Filters
+          </button>
+          <button
             className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={12} />
-            Filters
+            Quick Filters
           </button>
           <button
             className={`dtc-apps-toggle ${showBars ? 'active' : ''}`}
