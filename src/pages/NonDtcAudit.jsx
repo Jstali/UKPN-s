@@ -24,7 +24,22 @@ const NonDtcAudit = () => {
           allData = [...allData, ...(response.data || [])];
           token = response.continuationToken || null;
         } while (token);
-        setAuditData(allData);
+        
+        // Map SAP API fields to expected format
+        const mappedData = allData.map(item => ({
+          uniqueId: item.id || '',
+          flow: item.sourceAppName || item.subscription || 'UNKNOWN',
+          sourceFile: item.sourceFileName || '',
+          fileId: item.id || '',
+          sourcePath: item.sourcePath || '',
+          eventType: item.events?.[0]?.eventType || '',
+          startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
+          endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+          status: item.status || '',
+          rawData: item
+        }));
+        
+        setAuditData(mappedData);
       } catch (error) {
         console.error('Failed to fetch non-DTC audit data:', error);
       } finally {
