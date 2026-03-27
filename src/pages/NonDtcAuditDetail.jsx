@@ -6,7 +6,7 @@ import api from '../utils/api';
 
 const ALL_COLUMNS = [
   { key: 'uniqueId', label: 'Unique ID' },
-  { key: 'flow', label: 'Flow' },
+  { key: 'flow', label: 'Source Application' },
   { key: 'sourceFile', label: 'Source File' },
   { key: 'fileId', label: 'File ID' },
   { key: 'sourcePath', label: 'Source Path' },
@@ -45,8 +45,23 @@ const NonDtcAuditDetail = () => {
           allData = [...allData, ...(response.data || [])];
           token = response.continuationToken || null;
         } while (token);
-        setAuditData(allData);
-        setFilteredResults(allData);
+        
+        // Map SAP API fields to expected format
+        const mappedData = allData.map(item => ({
+          uniqueId: item.id || '',
+          flow: item.sourceAppName || item.subscription || 'UNKNOWN',
+          sourceFile: item.sourceFileName || '',
+          fileId: item.id || '',
+          sourcePath: item.sourcePath || '',
+          eventType: item.events?.[0]?.eventType || '',
+          startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
+          endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+          status: item.status || '',
+          rawData: item
+        }));
+        
+        setAuditData(mappedData);
+        setFilteredResults(mappedData);
       } catch (error) {
         console.error('Error fetching Non-DTC audit data:', error);
       } finally {
@@ -142,7 +157,7 @@ const NonDtcAuditDetail = () => {
         <div style={{ padding: '16px 20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Flow</label>
+              <label style={labelStyle}>Source Application</label>
               <select value={filters.flow} onChange={(e) => handleFilterChange('flow', e.target.value)} style={selectStyle}>
                 {flowOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
