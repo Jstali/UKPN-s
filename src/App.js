@@ -13,6 +13,7 @@ const DtcAudit = lazy(() => import('./pages/DtcAudit'));
 const DtcAuditFilter = lazy(() => import('./pages/DtcAuditFilter'));
 const NonDtcAudit = lazy(() => import('./pages/NonDtcAudit'));
 const NonDtcAuditDetail = lazy(() => import('./pages/NonDtcAuditDetail'));
+const NonDtcAuditFilter = lazy(() => import('./pages/NonDtcAuditFilter'));
 const Subscriptions = lazy(() => import('./pages/Subscriptions'));
 const AuditDetails = lazy(() => import('./pages/AuditDetails'));
 const FileView = lazy(() => import('./pages/FileView'));
@@ -72,6 +73,7 @@ function AppRoutes() {
               <Route path="/dtc-audit-filter" element={<DtcAuditFilter />} />
               <Route path="/non-dtc-audit" element={<NonDtcAudit />} />
               <Route path="/non-dtc-audit-detail" element={<NonDtcAuditDetail />} />
+              <Route path="/non-dtc-audit-filter" element={<NonDtcAuditFilter />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/audit-details" element={<AuditDetails />} />
               <Route path="/file-view/:fileId" element={<FileView />} />
