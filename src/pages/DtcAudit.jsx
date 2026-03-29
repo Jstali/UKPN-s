@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity, RefreshCw } from 'lucide-react';
+import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity, RefreshCw, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import api from '../utils/api';
@@ -304,6 +304,17 @@ const DtcAudit = () => {
 
         {/* Action buttons - moved to right */}
         <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', background: '#667eea', color: 'white',
+              border: 'none', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 600,
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Home
+          </button>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <BarChart3 size={13} color="#6366f1" />
             <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Events</span>

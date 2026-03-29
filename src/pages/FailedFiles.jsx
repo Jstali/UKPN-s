@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
-import { AlertTriangle, Filter, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 
 import api from '../utils/api';
 import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
 const FailedFiles = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const type = location.state?.type || 'dtc'; // 'dtc' or 'nondtc'
 
   const isDtc = type === 'dtc';
@@ -119,8 +120,21 @@ const FailedFiles = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-        <Link to="/">Home</Link> → {title}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div className="breadcrumb" style={{ margin: 0 }}>
+          <Link to="/">Home</Link> → {title}
+        </div>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600,
+          }}
+        >
+          <ArrowLeft size={14} /> Back to Home
+        </button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
