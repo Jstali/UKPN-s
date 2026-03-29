@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 
 import api from '../utils/api';
@@ -121,9 +121,7 @@ const FailedFiles = () => {
       transition={{ duration: 0.4 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-        <div className="breadcrumb" style={{ margin: 0 }}>
-          <Link to="/">Home</Link> → {title}
-        </div>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{title}</span>
         <button
           onClick={() => navigate('/')}
           style={{

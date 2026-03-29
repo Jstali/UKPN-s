@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, X, Eye, Download, ArrowLeft, FileJson, Server,
   Layers, CheckCircle, XCircle, Copy, ChevronRight, Search,
@@ -43,6 +43,7 @@ const normalizeSubscription = (app) => {
 
 const Subscriptions = () => {
   const { user } = useApp();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
   const [showJson, setShowJson] = useState(false);
@@ -126,8 +127,8 @@ const Subscriptions = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-          <Link to="/">Home</Link> → <Link to="/subscriptions" onClick={(e) => { e.preventDefault(); setSelectedApp(null); }}>Subscriptions</Link> → {selectedApp.application}
+        <div style={{ marginBottom: '0.75rem' }}>
+          <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{selectedApp.application}</span>
         </div>
 
         {/* Detail Hero Card */}
@@ -306,8 +307,19 @@ const Subscriptions = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-        <Link to="/">Home</Link> → Subscriptions
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Subscriptions</span>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600,
+          }}
+        >
+          <ArrowLeft size={14} /> Back to Home
+        </button>
       </div>
 
       {/* Page Header */}
@@ -612,8 +624,19 @@ const SubscriptionForm = ({ onBack }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-        <Link to="/">Home</Link> → <span onClick={onBack} style={{ cursor: 'pointer', color: 'var(--ukpn-secondary)' }}>Subscriptions</span> → New
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>New Subscription</span>
+        <button
+          onClick={onBack}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600,
+          }}
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
       </div>
 
       <div className="sp-page-header">

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronDown, BarChart3, Activity, Filter, RotateCcw, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, BarChart3, Activity, Filter, RotateCcw, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
 import api from '../utils/api';
@@ -153,8 +153,6 @@ const NonDtcAudit = () => {
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
           <div className="dtc-breadcrumb-inline">
-            <Link to="/">Home</Link>
-            <ChevronRight size={12} />
             <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Non DTC Audit</span>
           </div>
         </div>

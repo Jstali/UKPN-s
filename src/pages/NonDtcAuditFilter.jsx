@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft } from 'lucide-react';
 import api from '../utils/api';
 
@@ -93,13 +93,7 @@ const NonDtcAuditFilter = () => {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: '20px',
       }}>
-        <div style={{ fontSize: '14px', color: '#94a3b8' }}>
-          <Link to="/" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>Home</Link>
-          {' > '}
-          <Link to="/non-dtc-audit" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>Non DTC Audit</Link>
-          {' > '}
-          <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Advanced Filters</span>
-        </div>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Advanced Filters</span>
         <button
           onClick={() => navigate('/non-dtc-audit')}
           style={{
