@@ -9,6 +9,7 @@ export const AppProvider = ({ children }) => {
   const [auditData, setAuditData] = useState([]);
   const [nonDtcAuditData, setNonDtcAuditData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const [lastFetch, setLastFetch] = useState(null);
 
   useEffect(() => {
@@ -29,14 +30,18 @@ export const AppProvider = ({ children }) => {
     }
 
     setLoading(true);
+    setFetchError(null);
     try {
       // Fetch first page immediately with individual error handling
+      let dtcErr = null, nonDtcErr = null;
       const dtcPromise = api.fetchDtcAuditData(null, 200).catch(err => {
+        dtcErr = err.message || 'DTC API error';
         console.error('DTC API error:', err);
         return { data: [], continuationToken: null };
       });
-      
+
       const nonDtcPromise = api.fetchNonDtcAuditData(null, 200).catch(err => {
+        nonDtcErr = err.message || 'Non-DTC API error';
         console.error('Non-DTC API error:', err);
         return { data: [], continuationToken: null };
       });
@@ -45,7 +50,12 @@ export const AppProvider = ({ children }) => {
 
       const initialDtc = dtcResponse.data || [];
       const initialNonDtc = nonDtcResponse.data || [];
-      
+
+      // Surface error if both APIs failed or returned no data
+      if (initialDtc.length === 0 && initialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
+        setFetchError(dtcErr || nonDtcErr);
+      }
+
       setAuditData(initialDtc);
       setNonDtcAuditData(initialNonDtc);
       setLoading(false);
@@ -98,6 +108,7 @@ export const AppProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
+      setFetchError(error.message || 'Failed to load data');
       setLoading(false);
       setLastFetch(Date.now());
     }
@@ -118,15 +129,16 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      autoRefresh, 
+    <AppContext.Provider value={{
+      user,
+      login,
+      logout,
+      autoRefresh,
       setAutoRefresh,
       auditData,
       nonDtcAuditData,
       loading,
+      fetchError,
       fetchAllData
     }}>
       {children}
