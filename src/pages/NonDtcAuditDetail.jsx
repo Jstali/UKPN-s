@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import api from '../utils/api';
+import { useApp } from '../context/AppContext';
 
 const ALL_COLUMNS = [
   { key: 'uniqueId', label: 'Unique ID' },
@@ -27,51 +27,34 @@ const NonDtcAuditDetail = () => {
     fileId: '',
   };
 
+  const { nonDtcAuditData, loading } = useApp();
   const [filters, setFilters] = useState({ ...defaultFilters });
   const [hasQueried, setHasQueried] = useState(true);
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const auditData = useMemo(() => (nonDtcAuditData || []).map(item => ({
+    uniqueId: item.id || '',
+    flow: item.sourceAppName || item.subscription || '-',
+    sourceFile: item.sourceFileName || '',
+    fileId: item.id || '',
+    sourcePath: item.sourcePath || '',
+    eventType: item.events?.[0]?.eventType || '',
+    startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
+    endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+    status: item.status || '',
+    timestamp: item.timestamp || '',
+    rawData: item,
+  })), [nonDtcAuditData]);
+
+  // Initialise filteredResults when data loads (no nav-state filters)
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let allData = [];
-        let token = null;
-        do {
-          const response = await api.fetchNonDtcAuditData(token, 100);
-          allData = [...allData, ...(response.data || [])];
-          token = response.continuationToken || null;
-        } while (token);
-        
-        // Map SAP API fields to expected format
-        const mappedData = allData.map(item => ({
-          uniqueId: item.id || '',
-          flow: item.sourceAppName || item.subscription || 'UNKNOWN',
-          sourceFile: item.sourceFileName || '',
-          fileId: item.id || '',
-          sourcePath: item.sourcePath || '',
-          eventType: item.events?.[0]?.eventType || '',
-          startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
-          endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
-          status: item.status || '',
-          timestamp: item.timestamp || '',
-          rawData: item
-        }));
-        
-        setAuditData(mappedData);
-        setFilteredResults(mappedData);
-      } catch (error) {
-        console.error('Error fetching Non-DTC audit data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    if (!location.state?.filters && auditData.length > 0) {
+      setFilteredResults(auditData);
+    }
+  }, [auditData, location.state]);
 
   // Apply filters from navigation state
   useEffect(() => {
