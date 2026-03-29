@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Filter, RotateCcw, ChevronDown, ChevronRight, BarChart3, Activity, RefreshCw, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
@@ -296,8 +296,6 @@ const DtcAudit = () => {
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
           <div className="dtc-breadcrumb-inline">
-            <Link to="/">Home</Link>
-            <ChevronRight size={12} />
             <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Audit</span>
           </div>
         </div>

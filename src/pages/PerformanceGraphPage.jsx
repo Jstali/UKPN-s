@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Gauge, Clock, ArrowLeft } from 'lucide-react';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -60,9 +60,7 @@ const PerformanceGraphPage = () => {
       transition={{ duration: 0.4 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-        <div className="breadcrumb" style={{ margin: 0 }}>
-          <Link to="/">Home</Link> → <Link to="/performance-detail">Performance</Link> → {app.name}
-        </div>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{app.name} — Performance</span>
         <button
           onClick={() => navigate('/performance-detail')}
           style={{

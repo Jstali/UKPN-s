@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BarChart3, PieChart } from 'lucide-react';
 
 const Analytics = () => {
@@ -30,9 +30,7 @@ const Analytics = () => {
 
       {/* Breadcrumb + Back button row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div className="breadcrumb" style={{ margin: 0 }}>
-          <Link to="/">Home</Link> → Analytics
-        </div>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Analytics</span>
         <button
           onClick={() => navigate('/')}
           style={{

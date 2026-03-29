@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight, ArrowLeft } from 'lucide-react';
 import { PERFORMANCE_ITEMS } from '../data/dashboardConfig';
 import api from '../utils/api';
@@ -112,9 +112,7 @@ const PerformanceDetail = () => {
       transition={{ duration: 0.4 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-        <div className="breadcrumb" style={{ margin: 0 }}>
-          <Link to="/">Home</Link> → Performance Detail
-        </div>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Performance Detail</span>
         <button
           onClick={() => navigate('/')}
           style={{

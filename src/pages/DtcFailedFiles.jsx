@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import api from '../utils/api';
 import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
@@ -129,8 +129,6 @@ const DtcFailedFiles = () => {
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
           <div className="dtc-breadcrumb-inline">
-            <Link to="/">Home</Link>
-            <ChevronRight size={12} />
             <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Failed Files</span>
           </div>
         </div>
