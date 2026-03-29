@@ -116,6 +116,7 @@ const NonDtcFailedFiles = () => {
         </div>
 
         <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
+        </div>
       </div>
 
       <motion.div
