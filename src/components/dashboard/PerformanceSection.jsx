@@ -13,7 +13,9 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     const totalDuration = performanceItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
     const totalFiles = performanceItems.reduce((sum, app) => sum + app.files, 0);
     
-    return totalFiles > 0 ? (totalDuration / totalFiles).toFixed(1) : '0.0';
+    if (totalFiles === 0) return '0.0s';
+    const avg = totalDuration / totalFiles;
+    return avg >= 60 ? `${(avg / 60).toFixed(1)}m` : `${avg.toFixed(1)}s`;
   }, [performanceItems]);
 
   return (
@@ -50,7 +52,7 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
             <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Overall Average</span>
           </div>
           <div style={{ fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>
-            {overallAverage}s
+            {overallAverage}
           </div>
         </div>
 
