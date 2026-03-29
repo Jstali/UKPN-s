@@ -28,6 +28,10 @@ export const AppProvider = ({ children }) => {
     if (!force && lastFetch && (Date.now() - lastFetch < 300000)) {
       return;
     }
+    // If last fetch had an error, back off for 2 minutes before auto-retrying
+    if (force && fetchError && lastFetch && (Date.now() - lastFetch < 120000)) {
+      return;
+    }
 
     setLoading(true);
     setFetchError(null);
@@ -36,13 +40,11 @@ export const AppProvider = ({ children }) => {
       let dtcErr = null, nonDtcErr = null;
       const dtcPromise = api.fetchDtcAuditData(null, 200).catch(err => {
         dtcErr = err.message || 'DTC API error';
-        console.error('DTC API error:', err);
         return { data: [], continuationToken: null };
       });
 
       const nonDtcPromise = api.fetchNonDtcAuditData(null, 200).catch(err => {
         nonDtcErr = err.message || 'Non-DTC API error';
-        console.error('Non-DTC API error:', err);
         return { data: [], continuationToken: null };
       });
 
@@ -112,7 +114,7 @@ export const AppProvider = ({ children }) => {
       setLoading(false);
       setLastFetch(Date.now());
     }
-  }, [lastFetch]);
+  }, [lastFetch, fetchError]);
 
   const login = (userData) => {
     setUser(userData);
