@@ -36,6 +36,15 @@ const EVENT_TYPE_MAP = {
 
 const flattenAuditEvents = (data) => {
   const flatData = [];
+  // Log first UNKNOWN-flow item so we can see what fields the API returns
+  const firstUnknown = data.find(item =>
+    !parseHeader(item.Header_String).flowVersion &&
+    !item.Flow_Version && !item.flow_version && !item.flow &&
+    !isFlowCode(item.File_ID) &&
+    !flowFromFileName(item.Source_FileName)
+  );
+  if (firstUnknown) console.log('[DtcFailedFiles] Sample UNKNOWN-flow record:', firstUnknown);
+
   data.forEach(item => {
     const parsed = parseHeader(item.Header_String);
     if (item.events && item.events.length > 0) {
