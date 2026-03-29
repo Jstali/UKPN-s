@@ -120,8 +120,7 @@ const FailedFiles = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{title}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
         <button
           onClick={() => navigate('/')}
           style={{
@@ -133,6 +132,7 @@ const FailedFiles = () => {
         >
           <ArrowLeft size={14} /> Back to Home
         </button>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{title}</span>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>

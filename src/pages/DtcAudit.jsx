@@ -295,13 +295,6 @@ const DtcAudit = () => {
       {/* Compact Header: Breadcrumb + Title + KPIs + Actions — all in one row */}
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
-          <div className="dtc-breadcrumb-inline">
-            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Audit</span>
-          </div>
-        </div>
-
-        {/* Action buttons - moved to right */}
-        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
           <button
             onClick={() => navigate('/')}
             style={{
@@ -313,6 +306,13 @@ const DtcAudit = () => {
           >
             <ArrowLeft size={14} /> Back to Home
           </button>
+          <div className="dtc-breadcrumb-inline">
+            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Audit</span>
+          </div>
+        </div>
+
+        {/* Action buttons - moved to right */}
+        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <BarChart3 size={13} color="#6366f1" />
             <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Events</span>
