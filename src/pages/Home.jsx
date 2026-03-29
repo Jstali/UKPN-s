@@ -237,15 +237,22 @@ const Home = () => {
         {fetchError && !loading && auditData.length === 0 && (
           <div style={{
             margin: '6px 24px 0',
-            padding: '10px 18px',
+            padding: '12px 18px',
             background: '#fef2f2',
             border: '1px solid #fca5a5',
             borderRadius: '10px',
             display: 'flex', alignItems: 'center', gap: '12px',
           }}>
-            <span style={{ fontSize: '13px', color: '#991b1b', fontWeight: 600, flex: 1 }}>
-              ⚠️ Could not load audit data: {fetchError}
-            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', color: '#991b1b', fontWeight: 700, marginBottom: '2px' }}>
+                ⚠️ Azure API Error — No data available
+              </div>
+              <div style={{ fontSize: '12px', color: '#b91c1c' }}>
+                {fetchError.includes('500')
+                  ? 'The Azure Function returned a 500 Internal Server Error. This is a backend issue — please check the Azure Function App logs.'
+                  : fetchError}
+              </div>
+            </div>
             <button
               onClick={() => fetchAllData(true)}
               style={{
