@@ -7,6 +7,8 @@ import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import api from '../utils/api';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 
+const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -391,7 +393,7 @@ const DtcAuditFilter = () => {
         item.events.forEach(event => {
           results.push({
             id: item.id,
-            fileId: item.File_ID || item.fileId || item.file_id || item.correlationId || '',
+            fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
             fileName: item.Source_FileName,
             sourcePath: item.Source_Path,
             headerString: item.Header_String,

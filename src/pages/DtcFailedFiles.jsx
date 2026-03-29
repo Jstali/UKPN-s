@@ -7,6 +7,8 @@ import api from '../utils/api';
 import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
+const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+
 const EVENT_TYPE_MAP = {
   '1': 'Received',
   '2': 'Subscribed',
@@ -28,7 +30,7 @@ const flattenAuditEvents = (data) => {
           ...item,
           id: item.id,
           flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
-          fileId: item.File_ID || item.fileId || item.file_id || item.id || item.correlationId || '',
+          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
