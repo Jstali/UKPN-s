@@ -397,7 +397,7 @@ const DtcAuditFilter = () => {
             fileName: item.Source_FileName,
             sourcePath: item.Source_Path,
             headerString: item.Header_String,
-            flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+            flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
             fromRole: parsed.fromRole,
             fromMPID: parsed.fromMPID,
             toRole: parsed.toRole,
@@ -482,7 +482,7 @@ const DtcAuditFilter = () => {
           sourceApp: item.Source_Application || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Event_Type || 'Unknown',
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
           fromRole: parsed.fromRole || '',
           fromMPID: parsed.fromMPID || '',
           toRole: parsed.toRole || '',
@@ -495,7 +495,7 @@ const DtcAuditFilter = () => {
   const sourceAppOptions = ['All', ...new Set(flatData.map(i => i.sourceApp).filter(Boolean))];
   const destinationAppOptions = ['All', ...new Set(flatData.map(i => i.application).filter(Boolean))];
   const eventTypeOptions = ['All', ...new Set(flatData.map(i => i.eventType).filter(Boolean))].sort();
-  const flowOptions = ['All', ...new Set(flatData.map(i => i.flowVersion).filter(v => v && v !== 'UNKNOWN'))].sort();
+  const flowOptions = ['All', ...new Set(flatData.map(i => i.flowVersion).filter(v => v && v !== '-'))].sort();
   const fromRoleOptions = ['All', ...new Set(flatData.map(i => i.fromRole).filter(Boolean))].sort();
   const fromMPIDOptions = ['All', ...new Set(flatData.map(i => i.fromMPID).filter(Boolean))].sort();
   const toRoleOptions = ['All', ...new Set(flatData.map(i => i.toRole).filter(Boolean))].sort();

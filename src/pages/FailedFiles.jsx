@@ -4,7 +4,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 
 import api from '../utils/api';
-import { parseHeader, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+import { parseHeader, formatFlowVersion, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+
+// Extract DTC flow code from filename e.g. "BMANW7475.D0209" → "D0209"
+const flowFromFileName = (fileName) => {
+  if (!fileName) return '';
+  const match = fileName.match(/\.([A-Z]\d{4,8})(?:\.|$)/i);
+  return match ? match[1].toUpperCase() : '';
+};
+const isFlowCode = (val) => val && val !== 'UNKNOWN' && /^[A-Z]\d{4,8}$/i.test(val);
 
 const FailedFiles = () => {
   const location = useLocation();
@@ -63,7 +71,11 @@ const FailedFiles = () => {
       item.events?.forEach(event => {
         if (isFailedStatus(event.Status) || isFailedStatus(event.status)) {
           failed.push({
-            flowVersion: parsed.flowVersion || 'UNKNOWN',
+            flowVersion: formatFlowVersion(
+              parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
+              (isFlowCode(item.File_ID) ? item.File_ID : '') ||
+              flowFromFileName(item.Source_FileName)
+            ) || '-',
             fileId: item.File_ID || '',
             fromMPID: parsed.fromMPID || '',
             toMPID: parsed.toMPID || '',
