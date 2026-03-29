@@ -356,32 +356,72 @@ const DataTable = ({
     }, 100);
   }, [sortedData.length]);
 
+  const buildFileContent = (row) => {
+    const v = (val) => (val !== undefined && val !== null && val !== '' && val !== 'UNKNOWN') ? val : 'N/A';
+    const lines = [];
+
+    // ── Record Details ────────────────────────────────────────────
+    lines.push('════════════════ RECORD DETAILS ════════════════');
+    lines.push(`File Name          : ${v(row.fileName || row.Source_FileName || row.fileName)}`);
+    lines.push(`File ID            : ${v(row.fileId || row.File_ID || row.id)}`);
+    lines.push(`File Path          : ${v(row.filePath || row.File_Path)}`);
+    lines.push(`Source File Name   : ${v(row.Source_FileName || row.fileName)}`);
+    lines.push(`Source Path        : ${v(row.Source_Path || row.sourcePath)}`);
+    lines.push(`Flow               : ${v(row.flowVersion)}`);
+    lines.push(`Header String      : ${v(row.Header_String)}`);
+    lines.push(`Checksum           : ${v(row.checksum)}`);
+    lines.push(`Checksum From User : ${v(row.Checksum_From_User)}`);
+    lines.push(`Status             : ${v(row.status)}`);
+    lines.push(`Change Feed Status : ${v(row.changeFeedStatus)}`);
+    lines.push(`Created Time       : ${v(row.createdTime || row.created)}`);
+    lines.push(`Last Updated At    : ${v(row.Last_Updated_At)}`);
+
+    // ── Current Event ─────────────────────────────────────────────
+    lines.push('');
+    lines.push('════════════════ CURRENT EVENT ════════════════');
+    lines.push(`Event Type         : ${v(row.eventType)}`);
+    lines.push(`Event Status       : ${v(row.status)}`);
+    lines.push(`Timestamp          : ${v(row.timestamp || row.created)}`);
+    lines.push(`Source Application : ${v(row.sourceApplication)}`);
+    lines.push(`Destination App    : ${v(row.application)}`);
+    lines.push(`From Role + MPID   : ${v(row.fromRoleMPID || (row.fromRole ? `${row.fromRole} ${row.fromMPID}` : null))}`);
+    lines.push(`To Role + MPID     : ${v(row.toRoleMPID || (row.toRole ? `${row.toRole} ${row.toMPID}` : null))}`);
+    lines.push(`Receiving App      : ${v(row.recApp)}`);
+    lines.push(`Message ID         : ${v(row.eventId)}`);
+    lines.push(`Destination Path   : ${v(row.destinationPath || row.Destination_Path)}`);
+    lines.push(`Dest File Name     : ${v(row.destinationFileName || row.Destination_fileName)}`);
+    lines.push(`Processed          : ${v(row.processed)}`);
+
+    // ── All Events ────────────────────────────────────────────────
+    const events = Array.isArray(row.events) ? row.events : [];
+    if (events.length > 0) {
+      lines.push('');
+      lines.push('════════════════ ALL EVENTS ════════════════');
+      events.forEach((evt, i) => {
+        lines.push(`  Event ${i + 1}`);
+        lines.push(`    Type        : ${v(evt.Event_Type)}`);
+        lines.push(`    Status      : ${v(evt.Status || evt.status)}`);
+        lines.push(`    Application : ${v(evt.applicationName)}`);
+        lines.push(`    Timestamp   : ${v(evt.timestamp)}`);
+        lines.push(`    Processed   : ${v(evt.processed)}`);
+        if (evt.Description) lines.push(`    Description : ${evt.Description}`);
+        if (evt.Destination_Path) lines.push(`    Dest Path   : ${evt.Destination_Path}`);
+        if (evt.Destination_fileName) lines.push(`    Dest File   : ${evt.Destination_fileName}`);
+        if (evt.id) lines.push(`    Message ID  : ${evt.id}`);
+      });
+    }
+
+    return lines.join('\n');
+  };
+
   const handleViewFile = async (row) => {
     const fileName = row.fileName || row.Source_FileName || 'file.txt';
     const fileContent = row.fileContent || row.File_Content || '';
 
-    const val = (v) => v || 'N/A';
     setFileViewModal({
       show: true,
       fileName,
-      fileContent: fileContent || [
-        `File Name        : ${val(fileName)}`,
-        `File ID          : ${val(row.fileId || row.File_ID)}`,
-        `Flow             : ${val(row.flowVersion)}`,
-        `Event Type       : ${val(row.eventType)}`,
-        `Status           : ${val(row.status)}`,
-        `Timestamp        : ${val(row.timestamp || row.created)}`,
-        `Source           : ${val(row.sourceApplication)}`,
-        `Destination      : ${val(row.application)}`,
-        `From Role+MPID   : ${val(row.fromRoleMPID || (row.fromRole ? `${row.fromRole} ${row.fromMPID}` : null))}`,
-        `To Role+MPID     : ${val(row.toRoleMPID || (row.toRole ? `${row.toRole} ${row.toMPID}` : null))}`,
-        `Receiving App    : ${val(row.recApp)}`,
-        `Message ID       : ${val(row.eventId)}`,
-        `Destination Path : ${val(row.destinationPath)}`,
-        `Dest File Name   : ${val(row.destinationFileName)}`,
-        `Processed        : ${val(row.processed)}`,
-        `Header String    : ${val(row.Header_String)}`,
-      ].join('\n'),
+      fileContent: fileContent || buildFileContent(row),
       loading: false,
       error: null,
       fileId: row.fileId || row.File_ID,
@@ -390,25 +430,7 @@ const DataTable = ({
 
   const handleDownloadFile = (row) => {
     const fileName = row.fileName || row.Source_FileName || 'download.txt';
-    const val = (v) => v || 'N/A';
-    const fileContent = row.fileContent || row.File_Content || [
-      `File Name        : ${val(fileName)}`,
-      `File ID          : ${val(row.fileId || row.File_ID)}`,
-      `Flow             : ${val(row.flowVersion)}`,
-      `Event Type       : ${val(row.eventType)}`,
-      `Status           : ${val(row.status)}`,
-      `Timestamp        : ${val(row.timestamp || row.created)}`,
-      `Source           : ${val(row.sourceApplication)}`,
-      `Destination      : ${val(row.application)}`,
-      `From Role+MPID   : ${val(row.fromRoleMPID || (row.fromRole ? `${row.fromRole} ${row.fromMPID}` : null))}`,
-      `To Role+MPID     : ${val(row.toRoleMPID || (row.toRole ? `${row.toRole} ${row.toMPID}` : null))}`,
-      `Receiving App    : ${val(row.recApp)}`,
-      `Message ID       : ${val(row.eventId)}`,
-      `Destination Path : ${val(row.destinationPath)}`,
-      `Dest File Name   : ${val(row.destinationFileName)}`,
-      `Processed        : ${val(row.processed)}`,
-      `Header String    : ${val(row.Header_String)}`,
-    ].join('\n');
+    const fileContent = row.fileContent || row.File_Content || buildFileContent(row);
 
     const blob = new Blob([fileContent], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
