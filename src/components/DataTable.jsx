@@ -557,8 +557,15 @@ const DataTable = ({
           error={fileViewModal.error}
           onClose={closeFileViewModal}
           onDownload={() => {
-            const row = paginatedData.find(r => (r.fileId || r.File_ID) === fileViewModal.fileId);
-            if (row) handleDownloadFile(row);
+            const blob = new Blob([fileViewModal.fileContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileViewModal.fileName || 'record.txt';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
           }}
         />
       )}
