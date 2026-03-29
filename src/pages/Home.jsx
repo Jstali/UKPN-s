@@ -85,6 +85,9 @@ const Home = () => {
       if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
 
       const durationSec = (end - start) / 1000;
+      // Skip anomalous durations > 1 hour (likely stale/mismatched event pairs)
+      if (durationSec > 3600) return;
+
       const appName = event1.applicationName || item.Application_Name || 'Unknown';
 
       if (!appStats.has(appName)) {
@@ -97,9 +100,12 @@ const Home = () => {
 
     return Array.from(appStats.entries()).map(([name, stats]) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
+      const fmtTime = actual >= 60
+        ? `${(actual / 60).toFixed(1)}m`
+        : `${actual.toFixed(1)}s`;
       return {
         name,
-        avgTime: `${actual.toFixed(1)}s`,
+        avgTime: fmtTime,
         actual,
         files: stats.files,
         totalDuration: stats.totalDuration,
