@@ -31,30 +31,22 @@ const handleResponse = async (res) => {
 };
 
 export const fetchDtcSubscriptions = async () => {
-  try {
-    const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
+  const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const res = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
-    clearTimeout(timeout);
+  const res = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+  clearTimeout(timeout);
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`API returned ${res.status}: ${errorText}`);
-    }
-
-    const data = await res.json();
-    // API may return { data: [...] } or a direct array
-    const result = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-    if (result.length > 0) return { data: result, isLocal: false };
-    // API returned empty — fall through to local
-    throw new Error('API returned empty data');
-  } catch (error) {
-    console.warn('[Subscriptions] API unavailable, using local data:', error.message);
-    return { data: LOCAL_SUBSCRIPTIONS, isLocal: true };
+  if (!res.ok) {
+    throw new Error(`Subscription API returned ${res.status} ${res.statusText}`);
   }
+
+  const data = await res.json();
+  // API may return { data: [...] } or a direct array
+  const result = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+  return { data: result, isLocal: false };
 };
 
 const api = {

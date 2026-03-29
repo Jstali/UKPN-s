@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, X, Eye, Download, ArrowLeft, FileJson, Server,
   Layers, CheckCircle, XCircle, Copy, ChevronRight, Search,
-  Filter, FolderOpen, FileText, Globe, Clock
+  Filter, FolderOpen, FileText, Globe
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { fetchDtcSubscriptions } from '../utils/api';
@@ -53,40 +53,37 @@ const Subscriptions = () => {
   const [existingSubscriptions, setExistingSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [isLocalData, setIsLocalData] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
 
   const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
 
-  useEffect(() => {
+  const loadSubscriptions = React.useCallback(async () => {
     let isMounted = true;
-
-    const loadSubscriptions = async () => {
-      setLoading(true);
-      setLoadError('');
-      try {
-        const { data: apiData, isLocal } = await fetchDtcSubscriptions();
-        const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
-        if (isMounted) {
-          setExistingSubscriptions(normalized);
-          setIsLocalData(isLocal);
-          setLoadError('');
-        }
-      } catch (error) {
-        console.error('[Subscriptions] Failed to load:', error);
-        if (isMounted) {
-          setLoadError(error.message || 'Failed to load subscriptions.');
-          setExistingSubscriptions([]);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
+    setLoading(true);
+    setLoadError('');
+    try {
+      const { data: apiData } = await fetchDtcSubscriptions();
+      const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
+      if (isMounted) {
+        setExistingSubscriptions(normalized);
+        setLoadError('');
       }
-    };
-
-    loadSubscriptions();
+    } catch (error) {
+      console.error('[Subscriptions] Failed to load:', error);
+      if (isMounted) {
+        setLoadError(error.message || 'Failed to load subscriptions.');
+        setExistingSubscriptions([]);
+      }
+    } finally {
+      if (isMounted) setLoading(false);
+    }
     return () => { isMounted = false; };
   }, []);
+
+  useEffect(() => {
+    loadSubscriptions();
+  }, [loadSubscriptions]);
 
   const filteredSubscriptions = existingSubscriptions.filter(app =>
     app.application.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -341,17 +338,6 @@ const Subscriptions = () => {
           Loading subscriptions from API...
         </div>
       )}
-      {!loading && isLocalData && (
-        <div style={{
-          marginBottom: '12px', padding: '10px 16px',
-          background: '#fffbeb', border: '1px solid #fcd34d',
-          borderRadius: '8px', fontSize: '13px', color: '#92400e',
-          display: 'flex', alignItems: 'center', gap: '8px'
-        }}>
-          <Clock size={14} />
-          <span>Live API unavailable — showing local subscription data.</span>
-        </div>
-      )}
       {!loading && loadError && (
         <div style={{
           marginBottom: '12px', padding: '12px 16px',
@@ -359,24 +345,9 @@ const Subscriptions = () => {
           borderRadius: '8px', fontSize: '13px', color: '#991b1b',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
         }}>
-          <span>Unable to load subscriptions. Please check your network connection and try again.</span>
+          <span>⚠️ {loadError}</span>
           <button
-            onClick={() => {
-              setLoading(true);
-              setLoadError('');
-              fetchDtcSubscriptions()
-                .then(({ data: apiData, isLocal }) => {
-                  const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
-                  setExistingSubscriptions(normalized);
-                  setIsLocalData(isLocal);
-                })
-                .catch(err => {
-                  console.error('[Subscriptions] retry failed:', err);
-                  setLoadError(err.message || 'Failed to load subscriptions.');
-                  setExistingSubscriptions([]);
-                })
-                .finally(() => setLoading(false));
-            }}
+            onClick={loadSubscriptions}
             style={{
               padding: '6px 14px', background: '#dc2626', color: '#fff',
               border: 'none', borderRadius: '6px', cursor: 'pointer',
