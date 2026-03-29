@@ -13,7 +13,7 @@ const NonDtcFailedFiles = () => {
 
   const auditData = useMemo(() => (nonDtcAuditData || []).map(item => ({
     uniqueId: item.id || '',
-    flow: item.sourceAppName || item.subscription || 'UNKNOWN',
+    flow: item.sourceAppName || item.subscription || '-',
     sourceFile: item.sourceFileName || '',
     fileId: item.id || '',
     sourcePath: item.sourcePath || '',
@@ -24,11 +24,13 @@ const NonDtcFailedFiles = () => {
     rawData: item
   })), [nonDtcAuditData]);
 
+  const isFailedStatus = (status) => {
+    const s = (status || '').toLowerCase();
+    return s.includes('failed') || s.includes('invalid') || s.includes('error') || s.includes('rejected') || s.includes('mismatch');
+  };
+
   const failedFiles = useMemo(() => {
-    let filtered = auditData.filter(row => {
-      const status = (row.status || '').toUpperCase();
-      return status.includes('INVALID') || status.includes('FAILED') || status.includes('ERROR');
-    });
+    let filtered = auditData.filter(row => isFailedStatus(row.status));
     
     // Apply flow filter
     if (flowFilter && flowFilter !== 'All') {
@@ -46,10 +48,7 @@ const NonDtcFailedFiles = () => {
   }, [auditData, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    const failed = auditData.filter(row => {
-      const status = (row.status || '').toUpperCase();
-      return status.includes('INVALID') || status.includes('FAILED') || status.includes('ERROR');
-    });
+    const failed = auditData.filter(row => isFailedStatus(row.status));
     return ['All', ...new Set(failed.map(row => row.flow).filter(Boolean))];
   }, [auditData]);
 
