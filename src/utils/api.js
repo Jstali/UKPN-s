@@ -2,6 +2,13 @@ const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net'
 const API_CODE = 'REDACTED_API_CODE=';
 const SAP_API_CODE = 'REDACTED_SAP_API_CODE=';
 
+// Local fallback subscription data
+import ADMS from '../data/ADMS_DEV_V1';
+import Electralink from '../data/Electralink_DEV_V1';
+import MPRS from '../data/MPRS_DEV_V1';
+import MSBI from '../data/application subscription';
+const LOCAL_SUBSCRIPTIONS = [ADMS, Electralink, MPRS, MSBI];
+
 const DTC_AUDIT_API = `${API_HOST}/api/dtcAuditApi?code=${API_CODE}`;
 const SAP_AUDIT_API = `${API_HOST}/api/sapAuditApi?code=${SAP_API_CODE}`;
 
@@ -27,18 +34,26 @@ export const fetchDtcSubscriptions = async () => {
   try {
     const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
 
-    const res = await fetch(apiUrl, { method: 'GET' });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+    clearTimeout(timeout);
 
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to fetch subscriptions: ${res.status} ${res.statusText} ${errorText}`);
+      throw new Error(`API returned ${res.status}: ${errorText}`);
     }
 
     const data = await res.json();
-    return Array.isArray(data?.data) ? data.data : [];
+    // API may return { data: [...] } or a direct array
+    const result = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    if (result.length > 0) return { data: result, isLocal: false };
+    // API returned empty — fall through to local
+    throw new Error('API returned empty data');
   } catch (error) {
-    console.error('Error fetching subscriptions:', error.message);
-    throw error;
+    console.warn('[Subscriptions] API unavailable, using local data:', error.message);
+    return { data: LOCAL_SUBSCRIPTIONS, isLocal: true };
   }
 };
 

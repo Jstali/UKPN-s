@@ -52,6 +52,7 @@ const Subscriptions = () => {
   const [existingSubscriptions, setExistingSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [isLocalData, setIsLocalData] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
 
@@ -64,10 +65,12 @@ const Subscriptions = () => {
       setLoading(true);
       setLoadError('');
       try {
-        const apiData = await fetchDtcSubscriptions();
+        const { data: apiData, isLocal } = await fetchDtcSubscriptions();
         const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
         if (isMounted) {
           setExistingSubscriptions(normalized);
+          setIsLocalData(isLocal);
+          setLoadError('');
         }
       } catch (error) {
         console.error('[Subscriptions] Failed to load:', error);
@@ -326,6 +329,17 @@ const Subscriptions = () => {
           Loading subscriptions from API...
         </div>
       )}
+      {!loading && isLocalData && (
+        <div style={{
+          marginBottom: '12px', padding: '10px 16px',
+          background: '#fffbeb', border: '1px solid #fcd34d',
+          borderRadius: '8px', fontSize: '13px', color: '#92400e',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }}>
+          <Clock size={14} />
+          <span>Live API unavailable — showing local subscription data.</span>
+        </div>
+      )}
       {!loading && loadError && (
         <div style={{
           marginBottom: '12px', padding: '12px 16px',
@@ -336,23 +350,20 @@ const Subscriptions = () => {
           <span>Unable to load subscriptions. Please check your network connection and try again.</span>
           <button
             onClick={() => {
-              let isMounted = true;
               setLoading(true);
               setLoadError('');
               fetchDtcSubscriptions()
-                .then(apiData => {
+                .then(({ data: apiData, isLocal }) => {
                   const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
-                  if (isMounted) setExistingSubscriptions(normalized);
+                  setExistingSubscriptions(normalized);
+                  setIsLocalData(isLocal);
                 })
                 .catch(err => {
                   console.error('[Subscriptions] retry failed:', err);
-                  if (isMounted) {
-                    setLoadError(err.message || 'Failed to load subscriptions.');
-                    setExistingSubscriptions([]);
-                  }
+                  setLoadError(err.message || 'Failed to load subscriptions.');
+                  setExistingSubscriptions([]);
                 })
-                .finally(() => { if (isMounted) setLoading(false); });
-              return () => { isMounted = false; };
+                .finally(() => setLoading(false));
             }}
             style={{
               padding: '6px 14px', background: '#dc2626', color: '#fff',
