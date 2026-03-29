@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
-import api from '../utils/api';
-import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import { useApp } from '../context/AppContext';
+import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
@@ -57,38 +57,9 @@ const flattenAuditEvents = (data) => {
 
 const DtcFailedFiles = () => {
   const navigate = useNavigate();
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
+  const { auditData, loading, fetchError } = useApp();
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setFetchError(null);
-        let allData = [];
-        let token = null;
-        do {
-          const response = await api.fetchDtcAuditData(token, 100);
-          allData = [...allData, ...(response.data || [])];
-          token = response.continuationToken || null;
-        } while (token);
-        if (allData.length === 0) {
-          setFetchError('No data returned from API. Ensure you are connected to the AVD network.');
-        }
-        setAuditData(allData);
-      } catch (error) {
-        console.error('Failed to fetch audit data:', error);
-        setFetchError(error.message || 'Failed to fetch data from API.');
-        setAuditData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();

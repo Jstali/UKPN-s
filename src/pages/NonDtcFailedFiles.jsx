@@ -1,53 +1,28 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
-import api from '../utils/api';
+import { useApp } from '../context/AppContext';
 
 const NonDtcFailedFiles = () => {
   const navigate = useNavigate();
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { nonDtcAuditData, loading } = useApp();
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        let allData = [];
-        let token = null;
-        do {
-          const response = await api.fetchNonDtcAuditData(token, 100);
-          allData = [...allData, ...(response.data || [])];
-          token = response.continuationToken || null;
-        } while (token);
-        
-        // Map SAP API fields to expected format
-        const mappedData = allData.map(item => ({
-          uniqueId: item.id || '',
-          flow: item.sourceAppName || item.subscription || 'UNKNOWN',
-          sourceFile: item.sourceFileName || '',
-          fileId: item.id || '',
-          sourcePath: item.sourcePath || '',
-          eventType: item.events?.[0]?.eventType || '',
-          startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
-          endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
-          status: item.status || '',
-          rawData: item
-        }));
-        
-        setAuditData(mappedData);
-      } catch (error) {
-        console.error('Failed to fetch non-DTC audit data:', error);
-        setAuditData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const auditData = useMemo(() => (nonDtcAuditData || []).map(item => ({
+    uniqueId: item.id || '',
+    flow: item.sourceAppName || item.subscription || 'UNKNOWN',
+    sourceFile: item.sourceFileName || '',
+    fileId: item.id || '',
+    sourcePath: item.sourcePath || '',
+    eventType: item.events?.[0]?.eventType || '',
+    startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
+    endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+    status: item.status || '',
+    rawData: item
+  })), [nonDtcAuditData]);
 
   const failedFiles = useMemo(() => {
     let filtered = auditData.filter(row => {
