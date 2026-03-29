@@ -14,7 +14,7 @@ import { parseHeader } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 
 const Home = () => {
-  const { user, autoRefresh, setAutoRefresh, auditData, nonDtcAuditData, loading, fetchAllData } = useApp();
+  const { user, autoRefresh, setAutoRefresh, auditData, nonDtcAuditData, loading, fetchError, fetchAllData } = useApp();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
@@ -230,6 +230,32 @@ const Home = () => {
               </button>
             )}
             <div style={{ color: '#92400e', fontWeight: '600', fontSize: '13px', flex: 1 }}>{infoText}</div>
+          </div>
+        )}
+
+        {/* API Error Banner */}
+        {fetchError && !loading && auditData.length === 0 && (
+          <div style={{
+            margin: '6px 24px 0',
+            padding: '10px 18px',
+            background: '#fef2f2',
+            border: '1px solid #fca5a5',
+            borderRadius: '10px',
+            display: 'flex', alignItems: 'center', gap: '12px',
+          }}>
+            <span style={{ fontSize: '13px', color: '#991b1b', fontWeight: 600, flex: 1 }}>
+              ⚠️ Could not load audit data: {fetchError}
+            </span>
+            <button
+              onClick={() => fetchAllData(true)}
+              style={{
+                padding: '6px 14px', background: '#dc2626', color: '#fff',
+                border: 'none', borderRadius: '6px', cursor: 'pointer',
+                fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap',
+              }}
+            >
+              Retry
+            </button>
           </div>
         )}
 
