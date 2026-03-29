@@ -9,6 +9,7 @@ const API_CODE = 'REDACTED_API_CODE=';
 const SAP_API_CODE = 'REDACTED_SAP_API_CODE=';
 const LOCAL_SUBSCRIPTIONS = [ADMS, Electralink, MPRS, MSBI];
 
+const SUBSCRIPTION_API_CODE = 'REDACTED_SUBSCRIPTION_API_CODE=';
 const DTC_AUDIT_API = `${API_HOST}/api/dtcAuditApi?code=${API_CODE}`;
 const SAP_AUDIT_API = `${API_HOST}/api/sapAuditApi?code=${SAP_API_CODE}`;
 
@@ -31,22 +32,28 @@ const handleResponse = async (res) => {
 };
 
 export const fetchDtcSubscriptions = async () => {
-  const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
+  try {
+    const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${SUBSCRIPTION_API_CODE}`;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
-  const res = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
-  clearTimeout(timeout);
+    const res = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+    clearTimeout(timeout);
 
-  if (!res.ok) {
-    throw new Error(`Subscription API returned ${res.status} ${res.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Subscription API returned ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    const result = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    if (result.length > 0) return { data: result, isLocal: false };
+    throw new Error('API returned empty data');
+  } catch (error) {
+    // Fall back to local data when API is unreachable or unauthorized (outside AVD)
+    console.warn('[Subscriptions] API unavailable, using local data:', error.message);
+    return { data: LOCAL_SUBSCRIPTIONS, isLocal: true, error: error.message };
   }
-
-  const data = await res.json();
-  // API may return { data: [...] } or a direct array
-  const result = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-  return { data: result, isLocal: false };
 };
 
 const api = {
