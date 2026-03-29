@@ -1,26 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const AnimatedCounter = ({ value }) => {
-  const [count, setCount] = useState(0);
+  const end = parseInt(value) || 0;
+  const prevRef = useRef(null);
+  const [count, setCount] = useState(end);
 
   useEffect(() => {
-    let start = 0;
-    const end = parseInt(value);
-    const duration = 1000;
-    const increment = end / (duration / 16);
+    const prev = prevRef.current ?? end;
+    prevRef.current = end;
+
+    // Only animate on first mount (prev === end) or when value increases/decreases
+    // Use a short animation (400ms) so it doesn't feel like "running"
+    const duration = 400;
+    const diff = end - prev;
+    if (diff === 0) return;
+
+    const increment = diff / (duration / 16);
+    let current = prev;
 
     const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
+      current += increment;
+      const done = diff > 0 ? current >= end : current <= end;
+      if (done) {
         setCount(end);
         clearInterval(timer);
       } else {
-        setCount(Math.floor(start));
+        setCount(Math.round(current));
       }
     }, 16);
 
     return () => clearInterval(timer);
-  }, [value]);
+  }, [end]);
 
   return <span>{count}</span>;
 };
