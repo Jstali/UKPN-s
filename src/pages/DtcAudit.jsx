@@ -24,6 +24,9 @@ const EVENT_TYPE_MAP = {
   'Failed': 'Failed'
 };
 
+// Pick the first non-empty, non-"UNKNOWN" value from a list of candidates
+const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -41,7 +44,7 @@ const flattenAuditEvents = (data) => {
           ...item,
           id: item.id,
           flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
-          fileId: item.File_ID || item.fileId || item.file_id || item.correlationId || '',
+          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
@@ -84,7 +87,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           ...item, // Include all original fields
           id: item.id,
           flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
-          fileId: item.File_ID || item.fileId || item.file_id || item.correlationId || '',
+          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
