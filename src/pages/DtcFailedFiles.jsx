@@ -61,7 +61,7 @@ const flattenAuditEvents = (data) => {
             flowFromFileName(item.Source_FileName) ||
             flowFromPath(event.Destination_Path) ||
             flowFromPath(item.Source_Path)
-          ) || 'UNKNOWN',
+          ) || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
@@ -121,7 +121,7 @@ const DtcFailedFiles = () => {
   const uniqueFlows = useMemo(() => {
     const flattened = flattenAuditEvents(auditData);
     const failed = flattened.filter(row => isFailedStatus(row.status));
-    return ['All', ...new Set(failed.map(row => row.flowVersion).filter(Boolean))];
+    return ['All', ...new Set(failed.map(row => row.flowVersion).filter(v => v && v !== '-'))];
   }, [auditData]);
 
   return (
