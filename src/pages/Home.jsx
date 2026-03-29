@@ -71,21 +71,18 @@ const Home = () => {
 
   const performanceItems = React.useMemo(() => {
     const appStats = new Map();
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000; // last 24 hours
 
     auditData.forEach((item) => {
       const events = Array.isArray(item.events) ? item.events : [];
-      const event1 = events.find((e) => String(e.Event_Type) === '1' && e.timestamp);
-      const event4 = events.find((e) => String(e.Event_Type) === '4' && e.timestamp);
+      const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
+      const event1 = events.find((e) => String(e.Event_Type) === '1' && getTs(e));
+      const event4 = events.find((e) => String(e.Event_Type) === '4' && getTs(e));
 
       if (!event1 || !event4) return;
 
-      const start = new Date(event1.timestamp).getTime();
-      const end = new Date(event4.timestamp).getTime();
+      const start = new Date(getTs(event1)).getTime();
+      const end = new Date(getTs(event4)).getTime();
       if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
-
-      // Only include files received within last 24 hours
-      if (start < cutoff) return;
 
       const durationSec = (end - start) / 1000;
       const appName = event1.applicationName || item.Application_Name || 'Unknown';
