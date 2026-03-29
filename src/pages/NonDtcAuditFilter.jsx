@@ -89,11 +89,7 @@ const NonDtcAuditFilter = () => {
       style={{ padding: '20px 24px' }}
     >
       {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '20px',
-      }}>
-        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Advanced Filters</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
         <button
           onClick={() => navigate('/non-dtc-audit')}
           style={{
@@ -105,6 +101,7 @@ const NonDtcAuditFilter = () => {
         >
           <ArrowLeft size={15} /> Back to Audit
         </button>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Advanced Filters</span>
       </div>
 
       {loading ? (

@@ -152,6 +152,17 @@ const NonDtcAudit = () => {
       {/* Compact Header: Breadcrumb + KPIs + Actions — all in one row */}
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', background: '#667eea', color: 'white',
+              border: 'none', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 600,
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Home
+          </button>
           <div className="dtc-breadcrumb-inline">
             <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Non DTC Audit</span>
           </div>
@@ -173,17 +184,6 @@ const NonDtcAudit = () => {
 
         {/* Action buttons */}
         <div className="dtc-header-actions">
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '6px 14px', background: '#667eea', color: 'white',
-              border: 'none', borderRadius: '8px', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 600,
-            }}
-          >
-            <ArrowLeft size={14} /> Back to Home
-          </button>
           <button
             className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}

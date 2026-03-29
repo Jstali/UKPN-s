@@ -128,12 +128,6 @@ const DtcFailedFiles = () => {
     >
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
-          <div className="dtc-breadcrumb-inline">
-            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Failed Files</span>
-          </div>
-        </div>
-
-        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
           <button
             onClick={() => navigate('/')}
             style={{
@@ -145,7 +139,12 @@ const DtcFailedFiles = () => {
           >
             <ArrowLeft size={14} /> Back to Home
           </button>
+          <div className="dtc-breadcrumb-inline">
+            <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>DTC Failed Files</span>
+          </div>
         </div>
+
+        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
       </div>
 
       {fetchError && (

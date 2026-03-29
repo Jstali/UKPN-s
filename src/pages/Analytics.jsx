@@ -28,28 +28,20 @@ const Analytics = () => {
   return (
     <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, minHeight: 0, alignSelf: 'stretch' }}>
 
-      {/* Breadcrumb + Back button row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Analytics</span>
+      {/* Back button + Title row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           onClick={() => navigate('/')}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            background: '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '7px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: '600',
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600,
           }}
         >
-          <ArrowLeft size={15} />
-          Back to Home
+          <ArrowLeft size={15} /> Back to Home
         </button>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Analytics</span>
       </div>
 
       {/* Top row: Metric card + Charts side by side */}

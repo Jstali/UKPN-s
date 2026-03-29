@@ -162,13 +162,7 @@ const NonDtcAuditDetail = () => {
       transition={{ duration: 0.3 }}
     >
       {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: '16px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Detail View</span>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <button
           onClick={() => navigate('/non-dtc-audit')}
           style={{
@@ -180,6 +174,7 @@ const NonDtcAuditDetail = () => {
         >
           <ArrowLeft size={15} /> Back to Audit
         </button>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Detail View</span>
       </div>
 
       {/* Filter Section */}

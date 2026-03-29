@@ -59,8 +59,7 @@ const PerformanceGraphPage = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{app.name} — Performance</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
         <button
           onClick={() => navigate('/performance-detail')}
           style={{
@@ -72,6 +71,7 @@ const PerformanceGraphPage = () => {
         >
           <ArrowLeft size={14} /> Back
         </button>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>{app.name} — Performance</span>
       </div>
 
       <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem' }}>
