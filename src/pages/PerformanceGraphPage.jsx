@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Gauge, Clock } from 'lucide-react';
+import { Gauge, Clock, ArrowLeft } from 'lucide-react';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const generateGraphData = (appName, range, customFrom, customTo) => {
@@ -59,8 +59,21 @@ const PerformanceGraphPage = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-        <Link to="/">Home</Link> → <Link to="/performance-detail">Performance</Link> → {app.name}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div className="breadcrumb" style={{ margin: 0 }}>
+          <Link to="/">Home</Link> → <Link to="/performance-detail">Performance</Link> → {app.name}
+        </div>
+        <button
+          onClick={() => navigate('/performance-detail')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600,
+          }}
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
       </div>
 
       <h1 className="page-title" style={{ margin: 0, paddingBottom: '0.5rem', fontSize: '1.6rem' }}>

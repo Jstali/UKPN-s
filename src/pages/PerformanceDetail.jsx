@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight } from 'lucide-react';
+import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight, ArrowLeft } from 'lucide-react';
 import { PERFORMANCE_ITEMS } from '../data/dashboardConfig';
 import api from '../utils/api';
 
@@ -111,8 +111,21 @@ const PerformanceDetail = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="breadcrumb" style={{ marginBottom: '0.75rem' }}>
-        <Link to="/">Home</Link> → Performance Detail
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div className="breadcrumb" style={{ margin: 0 }}>
+          <Link to="/">Home</Link> → Performance Detail
+        </div>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600,
+          }}
+        >
+          <ArrowLeft size={14} /> Back to Home
+        </button>
       </div>
 
       {loading ? (

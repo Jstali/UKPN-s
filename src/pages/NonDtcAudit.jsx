@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronDown, BarChart3, Activity, Filter, RotateCcw } from 'lucide-react';
+import { ChevronRight, ChevronDown, BarChart3, Activity, Filter, RotateCcw, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { FLOW_COLORS, EVENT_TYPE_COLORS } from '../components/ColorBar';
 import api from '../utils/api';
@@ -175,6 +175,17 @@ const NonDtcAudit = () => {
 
         {/* Action buttons */}
         <div className="dtc-header-actions">
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', background: '#667eea', color: 'white',
+              border: 'none', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 600,
+            }}
+          >
+            <ArrowLeft size={14} /> Back to Home
+          </button>
           <button
             className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
