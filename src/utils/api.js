@@ -116,7 +116,7 @@ const api = {
       let allAuditData = [];
       let token = null;
       do {
-        const response = await this.fetchDtcAuditData(token, 500);
+        const response = await this.fetchDtcAuditData(token, 100);
         allAuditData = [...allAuditData, ...(response.data || [])];
         token = response.continuationToken || null;
       } while (token);

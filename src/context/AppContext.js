@@ -38,12 +38,12 @@ export const AppProvider = ({ children }) => {
     try {
       // Fetch first page immediately with individual error handling
       let dtcErr = null, nonDtcErr = null;
-      const dtcPromise = api.fetchDtcAuditData(null, 200).catch(err => {
+      const dtcPromise = api.fetchDtcAuditData(null, 50).catch(err => {
         dtcErr = err.message || 'DTC API error';
         return { data: [], continuationToken: null };
       });
 
-      const nonDtcPromise = api.fetchNonDtcAuditData(null, 200).catch(err => {
+      const nonDtcPromise = api.fetchNonDtcAuditData(null, 50).catch(err => {
         nonDtcErr = err.message || 'Non-DTC API error';
         return { data: [], continuationToken: null };
       });
@@ -77,7 +77,7 @@ export const AppProvider = ({ children }) => {
         const promises = [];
         if (dtcToken) {
           promises.push(
-            api.fetchDtcAuditData(dtcToken, 500).catch(err => {
+            api.fetchDtcAuditData(dtcToken, 100).catch(err => {
               console.error('DTC pagination error:', err);
               return { data: [], continuationToken: null };
             })
@@ -85,7 +85,7 @@ export const AppProvider = ({ children }) => {
         }
         if (nonDtcToken) {
           promises.push(
-            api.fetchNonDtcAuditData(nonDtcToken, 500).catch(err => {
+            api.fetchNonDtcAuditData(nonDtcToken, 100).catch(err => {
               console.error('Non-DTC pagination error:', err);
               return { data: [], continuationToken: null };
             })
