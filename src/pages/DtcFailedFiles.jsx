@@ -145,6 +145,7 @@ const DtcFailedFiles = () => {
         </div>
 
         <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
+        </div>
       </div>
 
       {fetchError && (
