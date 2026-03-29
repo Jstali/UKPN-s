@@ -9,6 +9,13 @@ import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
+// Extract flow version from filename e.g. "BMANW7475.D0209" → "D0209"
+const flowFromFileName = (fileName) => {
+  if (!fileName) return '';
+  const match = fileName.match(/\.([A-Z]\d{4,7})$/i);
+  return match ? match[1].toUpperCase() : '';
+};
+
 const EVENT_TYPE_MAP = {
   '1': 'Received',
   '2': 'Subscribed',
@@ -29,7 +36,7 @@ const flattenAuditEvents = (data) => {
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || flowFromFileName(item.Source_FileName)) || 'UNKNOWN',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
