@@ -9,12 +9,16 @@ import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
-// Extract flow version from filename e.g. "BMANW7475.D0209" → "D0209"
+// Extract flow version from filename e.g. "BMANW7475.D0209" or "BMANW7475.D0209.txt" → "D0209"
 const flowFromFileName = (fileName) => {
   if (!fileName) return '';
-  const match = fileName.match(/\.([A-Z]\d{4,7})$/i);
+  // Match DTC flow pattern: letter + 4-8 digits, preceded by dot
+  const match = fileName.match(/\.([A-Z]\d{4,8})(?:\.|$)/i);
   return match ? match[1].toUpperCase() : '';
 };
+
+// Check if File_ID looks like a flow version (e.g. "D0225002") rather than a file UUID
+const isFlowCode = (val) => val && val !== 'UNKNOWN' && /^[A-Z]\d{4,8}$/i.test(val);
 
 const EVENT_TYPE_MAP = {
   '1': 'Received',
@@ -36,7 +40,11 @@ const flattenAuditEvents = (data) => {
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || flowFromFileName(item.Source_FileName)) || 'UNKNOWN',
+          flowVersion: formatFlowVersion(
+            parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
+            (isFlowCode(item.File_ID) ? item.File_ID : '') ||
+            flowFromFileName(item.Source_FileName)
+          ) || 'UNKNOWN',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
