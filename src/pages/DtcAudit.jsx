@@ -43,7 +43,7 @@ const flattenAuditEvents = (data) => {
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
@@ -86,7 +86,7 @@ const buildFilteredResults = (data, filtersToUse) => {
         results.push({
           ...item, // Include all original fields
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),

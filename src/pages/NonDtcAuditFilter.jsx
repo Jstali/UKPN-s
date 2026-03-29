@@ -36,7 +36,7 @@ const NonDtcAuditFilter = () => {
         // Map SAP API fields
         const mappedData = allData.map(item => ({
           uniqueId: item.id || '',
-          sourceApp: item.sourceAppName || 'UNKNOWN',
+          sourceApp: item.sourceAppName || item.subscription || '-',
           subscription: item.subscription || '',
           sourceFile: item.sourceFileName || '',
           fileId: item.id || '',
