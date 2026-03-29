@@ -70,6 +70,7 @@ const Subscriptions = () => {
           setExistingSubscriptions(normalized);
         }
       } catch (error) {
+        console.error('[Subscriptions] Failed to load:', error);
         if (isMounted) {
           setLoadError(error.message || 'Failed to load subscriptions.');
           setExistingSubscriptions([]);
@@ -325,9 +326,42 @@ const Subscriptions = () => {
           Loading subscriptions from API...
         </div>
       )}
-      {loadError && (
-        <div style={{ marginBottom: '12px', fontSize: '13px', color: '#b91c1c' }}>
-          {loadError} Showing local fallback data.
+      {!loading && loadError && (
+        <div style={{
+          marginBottom: '12px', padding: '12px 16px',
+          background: '#fef2f2', border: '1px solid #fca5a5',
+          borderRadius: '8px', fontSize: '13px', color: '#991b1b',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px'
+        }}>
+          <span>Unable to load subscriptions. Please check your network connection and try again.</span>
+          <button
+            onClick={() => {
+              let isMounted = true;
+              setLoading(true);
+              setLoadError('');
+              fetchDtcSubscriptions()
+                .then(apiData => {
+                  const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
+                  if (isMounted) setExistingSubscriptions(normalized);
+                })
+                .catch(err => {
+                  console.error('[Subscriptions] retry failed:', err);
+                  if (isMounted) {
+                    setLoadError(err.message || 'Failed to load subscriptions.');
+                    setExistingSubscriptions([]);
+                  }
+                })
+                .finally(() => { if (isMounted) setLoading(false); });
+              return () => { isMounted = false; };
+            }}
+            style={{
+              padding: '6px 14px', background: '#dc2626', color: '#fff',
+              border: 'none', borderRadius: '6px', cursor: 'pointer',
+              fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap',
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
       <div className="sp-kpi-row sp-kpi-row-overview">
@@ -421,8 +455,14 @@ const Subscriptions = () => {
               </motion.div>
             );
           })}
-          {filteredSubscriptions.length === 0 && (
-            <div className="sp-empty">No applications match your search.</div>
+          {filteredSubscriptions.length === 0 && !loading && (
+            <div className="sp-empty">
+              {loadError
+                ? 'Could not load subscriptions — see error above.'
+                : searchTerm
+                  ? 'No applications match your search.'
+                  : 'No subscriptions found.'}
+            </div>
           )}
         </div>
 

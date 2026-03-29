@@ -12,13 +12,16 @@ const generateFilename = (baseFilename) => {
 
 export const exportToCSV = (data, columns, filename) => {
   try {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      alert('No data to export.');
+      return;
+    }
     const headers = columns.map(col => col.label).join(',');
     const rows = data.map(row =>
-      columns.map(col => `"${String(row[col.key] || '').replace(/"/g, '""')}"`).join(',')
+      columns.map(col => `"${String(row[col.key] ?? '').replace(/"/g, '""')}"`).join(',')
     );
     const csv = [headers, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -31,9 +34,13 @@ export const exportToCSV = (data, columns, filename) => {
   }
 };
 
-export const exportToPDF = (data, columns, filename) => {
+export const exportToPDF = (data, columns, filename, title) => {
   try {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      alert('No data to export.');
+      return;
+    }
+    const reportTitle = title || filename?.replace(/_/g, ' ') || 'Audit Report';
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
     const headers = columns.map(col => col.label);
@@ -52,7 +59,7 @@ export const exportToPDF = (data, columns, filename) => {
       didDrawPage: () => {
         doc.setFontSize(14);
         doc.setTextColor(30, 41, 59);
-        doc.text('DTC Audit Report', 14, 14);
+        doc.text(reportTitle, 14, 14);
       },
     });
 
@@ -65,7 +72,10 @@ export const exportToPDF = (data, columns, filename) => {
 
 export const exportToExcel = (data, columns, filename) => {
   try {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      alert('No data to export.');
+      return;
+    }
     const wsData = [
       columns.map(col => col.label),
       ...data.map(row => columns.map(col => row[col.key] ?? ''))
