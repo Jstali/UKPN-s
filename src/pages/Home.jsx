@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, RefreshCw, ChevronDown } from 'lucide-react';
@@ -117,7 +117,7 @@ const Home = () => {
     pendingDelivery: Math.max(auditData.length - deliveredFiles.length, 0),
   }), [auditData.length, deliveredFiles.length]);
 
-  const showDetails = (type) => {
+  const showDetails = useCallback((type) => {
     // Calculate actual status distribution from audit data
     const statusCounts = auditData.reduce((acc, item) => {
       const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
@@ -184,12 +184,12 @@ const Home = () => {
     };
     const detail = detailsMap[type];
     if (detail) navigate('/analytics', { state: { ...detail, type } });
-  };
+  }, [auditData, fileStats, deliveredFiles, pendingFiles, navigate]);
 
-  const handleToggleAutoRefresh = () => {
-    setAutoRefresh(!autoRefresh);
+  const handleToggleAutoRefresh = useCallback(() => {
+    setAutoRefresh(prev => !prev);
     if (!autoRefresh) setDashboardUpdatedAt(new Date().toLocaleTimeString());
-  };
+  }, [autoRefresh, setAutoRefresh]);
 
   return (
     <div className="dashboard-root">

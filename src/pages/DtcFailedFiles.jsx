@@ -27,8 +27,8 @@ const flattenAuditEvents = (data) => {
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
-          fileId: item.File_ID || '',
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          fileId: item.File_ID || item.fileId || item.file_id || item.id || item.correlationId || '',
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,

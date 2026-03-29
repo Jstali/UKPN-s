@@ -450,9 +450,9 @@ const DataTable = ({
                 </div>
               )}
               <ExportDropdown
-                onExportPDF={() => handleExport(() => exportToPDF(sortedData, activeColumns, exportConfig.filename))}
-                onExportExcel={() => handleExport(() => exportToExcel(sortedData, activeColumns, exportConfig.filename))}
-                onExportCSV={() => handleExport(() => exportToCSV(sortedData, activeColumns, exportConfig.filename))}
+                onExportPDF={() => handleExport(() => exportToPDF(sortedData, columns, exportConfig.filename, exportConfig.title || exportConfig.filename?.replace(/_/g, ' ')))}
+                onExportExcel={() => handleExport(() => exportToExcel(sortedData, columns, exportConfig.filename))}
+                onExportCSV={() => handleExport(() => exportToCSV(sortedData, columns, exportConfig.filename))}
                 onSendEmail={() => setShowEmailModal(true)}
               />
             </>

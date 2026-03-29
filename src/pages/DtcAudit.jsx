@@ -40,8 +40,8 @@ const flattenAuditEvents = (data) => {
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion) || 'UNKNOWN',
-          fileId: item.File_ID || '',
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          fileId: item.File_ID || item.fileId || item.file_id || item.correlationId || '',
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
@@ -74,17 +74,17 @@ const buildFilteredResults = (data, filtersToUse) => {
     if (item.events && item.events.length > 0) {
       // Get source application from first event
       const sourceApplication = item.events[0]?.applicationName || 'Unknown';
-      
+
       // Reverse events array to show Event Type 4 → 1 (descending order)
       const reversedEvents = [...item.events].reverse();
-      
+
       reversedEvents.forEach(event => {
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion),
-          fileId: item.File_ID,
+          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || 'UNKNOWN',
+          fileId: item.File_ID || item.fileId || item.file_id || item.correlationId || '',
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
