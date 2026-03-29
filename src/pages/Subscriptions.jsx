@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, X, Eye, Download, ArrowLeft, FileJson, Server,
   Layers, CheckCircle, XCircle, Copy, ChevronRight, Search,
-  Filter, FolderOpen, FileText, Globe
+  Filter, FolderOpen, FileText, Globe, Clock
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { fetchDtcSubscriptions } from '../utils/api';
@@ -53,6 +53,7 @@ const Subscriptions = () => {
   const [existingSubscriptions, setExistingSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [isLocalData, setIsLocalData] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
 
@@ -63,10 +64,11 @@ const Subscriptions = () => {
     setLoading(true);
     setLoadError('');
     try {
-      const { data: apiData } = await fetchDtcSubscriptions();
+      const { data: apiData, isLocal } = await fetchDtcSubscriptions();
       const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
       if (isMounted) {
         setExistingSubscriptions(normalized);
+        setIsLocalData(!!isLocal);
         setLoadError('');
       }
     } catch (error) {
@@ -356,6 +358,17 @@ const Subscriptions = () => {
           >
             Retry
           </button>
+        </div>
+      )}
+      {!loading && isLocalData && (
+        <div style={{
+          marginBottom: '12px', padding: '10px 16px',
+          background: '#fffbeb', border: '1px solid #fcd34d',
+          borderRadius: '8px', fontSize: '13px', color: '#92400e',
+          display: 'flex', alignItems: 'center', gap: '8px'
+        }}>
+          <Clock size={14} />
+          <span>Live API unavailable — showing local subscription data.</span>
         </div>
       )}
       <div className="sp-kpi-row sp-kpi-row-overview">
