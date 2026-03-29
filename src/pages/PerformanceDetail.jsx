@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight, ArrowLeft } from 'lucide-react';
-import { PERFORMANCE_ITEMS } from '../data/dashboardConfig';
-import api from '../utils/api';
+import { useApp } from '../context/AppContext';
 
 // Generate mini sparkline data for each app
 const generateSparkData = (appName, actualTime) => {
@@ -46,31 +45,35 @@ const Sparkline = ({ data, color, width = 120, height = 36 }) => {
 
 const PerformanceDetail = () => {
   const navigate = useNavigate();
+  const { auditData, loading } = useApp();
   const [showFilter, setShowFilter] = useState(false);
-  const [performanceData, setPerformanceData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedApps, setSelectedApps] = useState([]);
+  const [selectedApps, setSelectedApps] = useState(null); // null = all selected
 
-  // Fetch real performance data on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const data = await api.fetchPerformanceData();
-        
-        setPerformanceData(data || []);
-        setSelectedApps((data || []).map(app => app.name));
-      } catch (error) {
-        console.error('Failed to fetch performance data:', error);
-        setPerformanceData([]);
-        setSelectedApps([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const performanceData = useMemo(() => {
+    const appStats = new Map();
+    auditData.forEach((item) => {
+      const events = Array.isArray(item.events) ? item.events : [];
+      const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
+      const event1 = events.find((e) => String(e.Event_Type) === '1' && getTs(e));
+      const event4 = events.find((e) => String(e.Event_Type) === '4' && getTs(e));
+      if (!event1 || !event4) return;
+      const start = new Date(getTs(event1)).getTime();
+      const end = new Date(getTs(event4)).getTime();
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
+      const durationSec = (end - start) / 1000;
+      if (durationSec > 3600) return;
+      const appName = event1.applicationName || item.Application_Name || 'Unknown';
+      if (!appStats.has(appName)) appStats.set(appName, { totalDuration: 0, files: 0 });
+      const cur = appStats.get(appName);
+      cur.totalDuration += durationSec;
+      cur.files += 1;
+    });
+    return Array.from(appStats.entries()).map(([name, stats]) => {
+      const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
+      const fmtTime = actual >= 60 ? `${(actual / 60).toFixed(1)}m` : `${actual.toFixed(1)}s`;
+      return { name, avgTime: fmtTime, actual, threshold: 3, files: stats.files };
+    }).sort((a, b) => b.actual - a.actual);
+  }, [auditData]);
 
   const sparkData = useMemo(() => {
     const map = {};
@@ -80,25 +83,27 @@ const PerformanceDetail = () => {
     return map;
   }, [performanceData]);
 
+  const allNames = performanceData.map(app => app.name);
+  const activeApps = selectedApps ?? allNames;
+
   const toggleApp = (name) => {
-    setSelectedApps(prev =>
-      prev.includes(name)
-        ? prev.filter(n => n !== name)
-        : [...prev, name]
-    );
+    setSelectedApps(prev => {
+      const cur = prev ?? allNames;
+      return cur.includes(name) ? cur.filter(n => n !== name) : [...cur, name];
+    });
   };
 
-  const selectAll = () => setSelectedApps(performanceData.map(app => app.name));
+  const selectAll = () => setSelectedApps(null);
   const clearAll = () => setSelectedApps([]);
 
-  const filteredItems = [...performanceData]
-    .filter(app => selectedApps.includes(app.name))
-    .sort((a, b) => b.actual - a.actual);
+  const filteredItems = performanceData.filter(app => activeApps.includes(app.name));
 
   const overallAvg = useMemo(() => {
     const totalDuration = filteredItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
     const totalFiles = filteredItems.reduce((sum, app) => sum + app.files, 0);
-    return totalFiles > 0 ? (totalDuration / totalFiles).toFixed(1) : '0.0';
+    if (totalFiles === 0) return '0.0s';
+    const avg = totalDuration / totalFiles;
+    return avg >= 60 ? `${(avg / 60).toFixed(1)}m` : `${avg.toFixed(1)}s`;
   }, [filteredItems]);
 
   // Always show green for successful operations
@@ -153,7 +158,7 @@ const PerformanceDetail = () => {
               }}
             >
               <Filter size={14} />
-              Filter {selectedApps.length < performanceData.length && `(${selectedApps.length})`}
+              Filter {selectedApps !== null && `(${activeApps.length})`}
             </button>
           </div>
 
@@ -199,13 +204,13 @@ const PerformanceDetail = () => {
                       display: 'flex', alignItems: 'center', gap: '8px',
                       padding: '8px 14px', borderRadius: '8px', cursor: 'pointer',
                       transition: 'all 0.15s ease',
-                      border: selectedApps.includes(app.name) ? '1.5px solid #c4b5fd' : '1.5px solid #e2e8f0',
-                      background: selectedApps.includes(app.name) ? '#f5f3ff' : '#ffffff',
-                      color: selectedApps.includes(app.name) ? '#7c3aed' : '#64748b',
+                      border: activeApps.includes(app.name) ? '1.5px solid #c4b5fd' : '1.5px solid #e2e8f0',
+                      background: activeApps.includes(app.name) ? '#f5f3ff' : '#ffffff',
+                      color: activeApps.includes(app.name) ? '#7c3aed' : '#64748b',
                       fontSize: '13px', fontWeight: 600, minWidth: '140px'
                     }}
                   >
-                    {selectedApps.includes(app.name)
+                    {activeApps.includes(app.name)
                       ? <CheckSquare size={15} color="#7c3aed" />
                       : <Square size={15} color="#94a3b8" />
                     }
@@ -223,7 +228,7 @@ const PerformanceDetail = () => {
       {/* Summary Stats Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '18px' }}>
         {[
-          { icon: <Gauge size={18} />, label: 'Overall Avg', value: `${overallAvg}s`, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+          { icon: <Gauge size={18} />, label: 'Overall Avg', value: overallAvg, color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
           { icon: <Activity size={18} />, label: 'Applications', value: filteredItems.length, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
         ].map((stat, i) => (
           <motion.div
