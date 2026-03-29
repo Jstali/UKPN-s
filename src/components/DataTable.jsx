@@ -360,18 +360,27 @@ const DataTable = ({
     const fileName = row.fileName || row.Source_FileName || 'file.txt';
     const fileContent = row.fileContent || row.File_Content || '';
 
+    const val = (v) => v || 'N/A';
     setFileViewModal({
       show: true,
       fileName,
       fileContent: fileContent || [
-        `File Name   : ${fileName}`,
-        `File ID     : ${row.fileId || row.File_ID || 'N/A'}`,
-        `Flow        : ${row.flowVersion || 'N/A'}`,
-        `Status      : ${row.status || 'N/A'}`,
-        `Timestamp   : ${row.timestamp || 'N/A'}`,
-        `Source      : ${row.sourceApplication || 'N/A'}`,
-        `Destination : ${row.application || 'N/A'}`,
-        `Message ID  : ${row.eventId || 'N/A'}`,
+        `File Name        : ${val(fileName)}`,
+        `File ID          : ${val(row.fileId || row.File_ID)}`,
+        `Flow             : ${val(row.flowVersion)}`,
+        `Event Type       : ${val(row.eventType)}`,
+        `Status           : ${val(row.status)}`,
+        `Timestamp        : ${val(row.timestamp || row.created)}`,
+        `Source           : ${val(row.sourceApplication)}`,
+        `Destination      : ${val(row.application)}`,
+        `From Role+MPID   : ${val(row.fromRoleMPID || (row.fromRole ? `${row.fromRole} ${row.fromMPID}` : null))}`,
+        `To Role+MPID     : ${val(row.toRoleMPID || (row.toRole ? `${row.toRole} ${row.toMPID}` : null))}`,
+        `Receiving App    : ${val(row.recApp)}`,
+        `Message ID       : ${val(row.eventId)}`,
+        `Destination Path : ${val(row.destinationPath)}`,
+        `Dest File Name   : ${val(row.destinationFileName)}`,
+        `Processed        : ${val(row.processed)}`,
+        `Header String    : ${val(row.Header_String)}`,
       ].join('\n'),
       loading: false,
       error: null,
@@ -381,15 +390,24 @@ const DataTable = ({
 
   const handleDownloadFile = (row) => {
     const fileName = row.fileName || row.Source_FileName || 'download.txt';
+    const val = (v) => v || 'N/A';
     const fileContent = row.fileContent || row.File_Content || [
-      `File Name   : ${fileName}`,
-      `File ID     : ${row.fileId || row.File_ID || 'N/A'}`,
-      `Flow        : ${row.flowVersion || 'N/A'}`,
-      `Status      : ${row.status || 'N/A'}`,
-      `Timestamp   : ${row.timestamp || 'N/A'}`,
-      `Source      : ${row.sourceApplication || 'N/A'}`,
-      `Destination : ${row.application || 'N/A'}`,
-      `Message ID  : ${row.eventId || 'N/A'}`,
+      `File Name        : ${val(fileName)}`,
+      `File ID          : ${val(row.fileId || row.File_ID)}`,
+      `Flow             : ${val(row.flowVersion)}`,
+      `Event Type       : ${val(row.eventType)}`,
+      `Status           : ${val(row.status)}`,
+      `Timestamp        : ${val(row.timestamp || row.created)}`,
+      `Source           : ${val(row.sourceApplication)}`,
+      `Destination      : ${val(row.application)}`,
+      `From Role+MPID   : ${val(row.fromRoleMPID || (row.fromRole ? `${row.fromRole} ${row.fromMPID}` : null))}`,
+      `To Role+MPID     : ${val(row.toRoleMPID || (row.toRole ? `${row.toRole} ${row.toMPID}` : null))}`,
+      `Receiving App    : ${val(row.recApp)}`,
+      `Message ID       : ${val(row.eventId)}`,
+      `Destination Path : ${val(row.destinationPath)}`,
+      `Dest File Name   : ${val(row.destinationFileName)}`,
+      `Processed        : ${val(row.processed)}`,
+      `Header String    : ${val(row.Header_String)}`,
     ].join('\n');
 
     const blob = new Blob([fileContent], { type: 'text/plain' });
