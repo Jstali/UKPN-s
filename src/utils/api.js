@@ -191,18 +191,14 @@ const api = {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-      const res = await fetch(apiUrl, { 
+      const res = await fetch(apiUrl, {
         method: 'GET',
         signal: controller.signal,
-        headers: {
-          'Accept-Encoding': 'gzip, deflate, br'
-        }
       });
 
       clearTimeout(timeout);
 
       if (!res.ok) {
-        const errorText = await res.text();
         throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText}`);
       }
 
@@ -217,11 +213,9 @@ const api = {
       };
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error('❌ Request timeout');
-      } else {
-        console.error('❌ Error fetching audit data:', error.message);
+        throw new Error('Request timed out after 15s');
       }
-      return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0 };
+      throw error; // propagate so callers can show error banners
     }
   },
 
@@ -236,17 +230,14 @@ const api = {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
 
-      const res = await fetch(apiUrl, { 
+      const res = await fetch(apiUrl, {
         method: 'GET',
         signal: controller.signal,
-        headers: {
-          'Accept-Encoding': 'gzip, deflate, br'
-        }
       });
 
       clearTimeout(timeout);
 
-      if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
+      if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status} ${res.statusText}`);
       const data = await res.json();
       return {
         data: Array.isArray(data.data) ? data.data : [],
@@ -255,11 +246,9 @@ const api = {
       };
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error('❌ Non-DTC request timeout');
-      } else {
-        console.error('❌ Error fetching non-DTC audit data:', error.message);
+        throw new Error('Request timed out after 15s');
       }
-      return { data: [], continuationToken: null, totalCount: 0 };
+      throw error; // propagate so callers can show error banners
     }
   },
 
