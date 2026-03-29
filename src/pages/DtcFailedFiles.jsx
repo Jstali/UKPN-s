@@ -12,12 +12,18 @@ const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || 
 // Extract flow version from filename e.g. "BMANW7475.D0209" or "BMANW7475.D0209.txt" → "D0209"
 const flowFromFileName = (fileName) => {
   if (!fileName) return '';
-  // Match DTC flow pattern: letter + 4-8 digits, preceded by dot
   const match = fileName.match(/\.([A-Z]\d{4,8})(?:\.|$)/i);
   return match ? match[1].toUpperCase() : '';
 };
 
-// Check if File_ID looks like a flow version (e.g. "D0225002") rather than a file UUID
+// Extract flow from Destination_Path e.g. ".../LOCUS_D0389_IN" → "D0389"
+const flowFromPath = (path) => {
+  if (!path) return '';
+  const match = path.match(/[_/]([A-Z]\d{4,8})(?:[_/]|$)/i);
+  return match ? match[1].toUpperCase() : '';
+};
+
+// Check if a value looks like a DTC flow code (e.g. "D0225002") not a UUID
 const isFlowCode = (val) => val && val !== 'UNKNOWN' && /^[A-Z]\d{4,8}$/i.test(val);
 
 const EVENT_TYPE_MAP = {
@@ -43,7 +49,9 @@ const flattenAuditEvents = (data) => {
           flowVersion: formatFlowVersion(
             parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
             (isFlowCode(item.File_ID) ? item.File_ID : '') ||
-            flowFromFileName(item.Source_FileName)
+            flowFromFileName(item.Source_FileName) ||
+            flowFromPath(event.Destination_Path) ||
+            flowFromPath(item.Source_Path)
           ) || 'UNKNOWN',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
