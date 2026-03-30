@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Download, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, ChevronRight, Eye } from 'lucide-react';
 import { formatDateTime } from '../utils/auditUtils';
 
 // Summary columns - must match DTC Audit table exactly
@@ -37,6 +37,7 @@ const AuditDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const record = location.state?.record;
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -107,6 +108,25 @@ const AuditDetails = () => {
           Back
         </button>
         <button
+          onClick={() => setShowPreview(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            background: '#0ea5e9',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 600,
+          }}
+        >
+          <Eye size={16} />
+          Preview
+        </button>
+        <button
           onClick={handleDownload}
           style={{
             display: 'flex',
@@ -126,6 +146,96 @@ const AuditDetails = () => {
           Download
         </button>
       </div>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div
+          onClick={() => setShowPreview(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              maxWidth: '900px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <div style={{
+              padding: '16px 24px',
+              borderBottom: '1px solid #e5e7eb',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#f9fafb',
+            }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>
+                Record Preview
+              </h3>
+              <button
+                onClick={() => setShowPreview(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '0',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '6px',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{
+              padding: '24px',
+              overflowY: 'auto',
+              flex: 1,
+            }}>
+              <pre style={{
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                lineHeight: '1.6',
+                overflow: 'auto',
+                margin: 0,
+                border: '1px solid #e2e8f0',
+                color: '#1e293b',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>
+                {JSON.stringify(record, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detail Card */}
       <div style={{
