@@ -411,24 +411,13 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
               />
             </div>
 
-            {/* File ID */}
+            {/* Unique ID */}
             <div>
-              <label style={labelStyle}>File ID</label>
+              <label style={labelStyle}>Unique ID</label>
               <input type="text"
                 value={filters.fileId}
                 onChange={(e) => onFilterChange('fileId', e.target.value)}
-                placeholder="File ID"
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Message ID */}
-            <div>
-              <label style={labelStyle}>Message ID</label>
-              <input type="text"
-                value={filters.msgId}
-                onChange={(e) => onFilterChange('msgId', e.target.value)}
-                placeholder="Message ID"
+                placeholder="Unique ID"
                 style={inputStyle}
               />
             </div>

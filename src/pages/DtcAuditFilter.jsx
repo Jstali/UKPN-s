@@ -697,13 +697,8 @@ const DtcAuditFilter = () => {
             </div>
 
             <div>
-              <label style={labelStyle}>File ID</label>
-              <input type="text" value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} placeholder="Enter File ID" style={inputStyle} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Message ID</label>
-              <input type="text" value={filters.msgId} onChange={(e) => handleFilterChange('msgId', e.target.value)} placeholder="Enter Message ID" style={inputStyle} />
+              <label style={labelStyle}>Unique ID</label>
+              <input type="text" value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} placeholder="Enter Unique ID" style={inputStyle} />
             </div>
           </div>
         </div>
@@ -746,7 +741,7 @@ const DtcAuditFilter = () => {
             filters.flow !== 'All' || filters.version !== 'All' || filters.receivingApp !== 'All' || 
             filters.fromRole !== 'All' || filters.fromMPID !== 'All' || filters.toRole !== 'All' || 
             filters.toMPID !== 'All' || filters.eventTimestampFrom || filters.eventTimestampTo || 
-            filters.fileCreationDate || filters.publishDate || filters.fileId || filters.msgId) && (
+            filters.fileCreationDate || filters.publishDate || filters.fileId) && (
             <div style={{
               padding: '16px 20px',
               borderBottom: '1px solid #f1f5f9',
@@ -828,12 +823,7 @@ const DtcAuditFilter = () => {
                 )}
                 {filters.fileId && (
                   <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
-                    File ID: {filters.fileId}
-                  </span>
-                )}
-                {filters.msgId && (
-                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
-                    Message ID: {filters.msgId}
+                    Unique ID: {filters.fileId}
                   </span>
                 )}
               </div>
