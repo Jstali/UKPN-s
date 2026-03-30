@@ -706,7 +706,7 @@ const DataTable = ({
                           >
                             {row[col.key]}
                           </span>
-                        ) : col.key === 'application' ? (
+                        ) : col.key === 'fileId' ? (
                           <span
                             style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}
                             onClick={() => {
@@ -714,11 +714,11 @@ const DataTable = ({
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
                               navigate(`/audit-details`, { state: { record: row, uniqueId: row.id || row.eventId } });
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
                           >
                             {row[col.key]}
                           </span>
+                        ) : col.key === 'application' ? (
+                          <span style={{ fontSize: '12px' }}>{row[col.key]}</span>
                         ) : (col.key === 'timestamp' || col.key === 'created') ? (
                           <span style={{ fontSize: '12px' }}>{formatDateTime(row[col.key])}</span>
                         ) : col.key === 'fileName' ? (
