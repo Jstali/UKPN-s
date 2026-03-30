@@ -45,7 +45,20 @@ const Home = () => {
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 
   const deliveredFiles = React.useMemo(() => {
-    const delivered = auditData.filter(item => item.events?.some(e => String(e.Event_Type) === '4'));
+    const delivered = auditData.filter(item => {
+      if (!item.events || item.events.length === 0) return false;
+      
+      // Check if file has event types 1, 2, 3, 4, or 22 (mark as processed)
+      const hasProcessedEvents = item.events.some(e => {
+        const eventType = String(e.Event_Type);
+        return ['1', '2', '3', '4', '22'].includes(eventType);
+      });
+      
+      // Check if file has event type 21 (also mark as processed)
+      const hasEvent21 = item.events.some(e => String(e.Event_Type) === '21');
+      
+      return hasProcessedEvents || hasEvent21;
+    });
     return delivered;
   }, [auditData]);
 
