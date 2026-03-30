@@ -238,6 +238,10 @@ const DtcAudit = () => {
     setFilteredResults([]);
     setAppliedFilters(null);
     setExceptionCount(0);
+    
+    // Clear saved filter state
+    sessionStorage.removeItem('dtcAuditFilters');
+    sessionStorage.removeItem('dtcAuditHasQueried');
   };
 
   const handleQuery = useCallback((filterData) => {
@@ -250,6 +254,10 @@ const DtcAudit = () => {
     setExceptionCount(0);
     setHasQueried(true);
     setShowFilters(false);
+    
+    // Save filter state to sessionStorage
+    sessionStorage.setItem('dtcAuditFilters', JSON.stringify(filtersToUse));
+    sessionStorage.setItem('dtcAuditHasQueried', 'true');
   }, [globalAuditData, filters]);
 
   // Handle incoming filters from filter page
@@ -261,16 +269,32 @@ const DtcAudit = () => {
     }
   }, [location.state]);
 
-  // Restore scroll position when returning from details page
+  // Restore filter state and scroll position when returning from details page
   useEffect(() => {
+    const savedFilters = sessionStorage.getItem('dtcAuditFilters');
+    const savedHasQueried = sessionStorage.getItem('dtcAuditHasQueried');
     const savedScrollPos = sessionStorage.getItem('dtcAuditScrollPos');
+    
+    if (savedFilters && savedHasQueried === 'true' && !location.state?.filters) {
+      const parsedFilters = JSON.parse(savedFilters);
+      setFilters(parsedFilters);
+      
+      // Wait for data to load before applying filters
+      if (globalAuditData.length > 0) {
+        const results = buildFilteredResults(globalAuditData, parsedFilters);
+        setFilteredResults(results);
+        setAppliedFilters({ ...parsedFilters });
+        setHasQueried(true);
+      }
+    }
+    
     if (savedScrollPos) {
       setTimeout(() => {
         window.scrollTo(0, parseInt(savedScrollPos));
         sessionStorage.removeItem('dtcAuditScrollPos');
       }, 100);
     }
-  }, [fetchAllData]);
+  }, [globalAuditData, location.state]);
 
   const flattenedAuditData = useMemo(() => {
     if (globalAuditData.length === 0) return [];
