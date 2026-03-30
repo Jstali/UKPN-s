@@ -4,12 +4,12 @@ import Electralink from '../data/Electralink_DEV_V1';
 import MPRS from '../data/MPRS_DEV_V1';
 import MSBI from '../data/application subscription';
 
-const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
-const API_CODE = 'REDACTED_API_CODE=';
-const SAP_API_CODE = 'REDACTED_SAP_API_CODE=';
+const API_HOST = process.env.REACT_APP_API_HOST || 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
+const API_CODE = process.env.REACT_APP_API_CODE;
+const SAP_API_CODE = process.env.REACT_APP_SAP_API_CODE;
 const LOCAL_SUBSCRIPTIONS = [ADMS, Electralink, MPRS, MSBI];
 
-const SUBSCRIPTION_API_CODE = 'REDACTED_SUBSCRIPTION_API_CODE=';
+const SUBSCRIPTION_API_CODE = process.env.REACT_APP_SUBSCRIPTION_API_CODE;
 const DTC_AUDIT_API = `${API_HOST}/api/dtcAuditApi?code=${API_CODE}`;
 const SAP_AUDIT_API = `${API_HOST}/api/sapAuditApi?code=${SAP_API_CODE}`;
 
