@@ -172,6 +172,20 @@ const buildFilteredResults = (data, filtersToUse) => {
     });
   }
 
+  // Publish Date filtering (Event Type 3 - Published)
+  if (filtersToUse.publishDate) {
+    results = results.filter(item => {
+      // Check if this event is a "Published" event (Event Type 3)
+      if (item.eventType === 'Published') {
+        const ts = item.timestamp ? new Date(item.timestamp) : null;
+        if (!ts) return false;
+        const dateStr = ts.toISOString().split('T')[0];
+        return dateStr === filtersToUse.publishDate;
+      }
+      return false;
+    });
+  }
+
   return results;
 };
 
@@ -190,6 +204,7 @@ const CRITERIA_FIELDS = [
   { label: 'Event Timestamp From', key: 'eventTimestampFrom' },
   { label: 'Event Timestamp To', key: 'eventTimestampTo' },
   { label: 'File Creation Date', key: 'fileCreationDate' },
+  { label: 'Publish Date', key: 'publishDate' },
   { label: 'File ID', key: 'fileId' },
   { label: 'Message ID', key: 'msgId' },
 ];

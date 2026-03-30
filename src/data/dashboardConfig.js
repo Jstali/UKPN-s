@@ -93,6 +93,7 @@ export const DEFAULT_FILTERS = {
   })(),
   eventTimestampTo: '',
   fileCreationDate: '',
+  publishDate: '',
   fileId: '',
   msgId: '',
   searchFileContents: '',

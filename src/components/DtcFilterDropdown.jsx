@@ -401,6 +401,16 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
               />
             </div>
 
+            {/* Publish Date */}
+            <div>
+              <label style={labelStyle}>Publish Date</label>
+              <input type="date"
+                value={filters.publishDate}
+                onChange={(e) => onFilterChange('publishDate', e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+
             {/* File ID */}
             <div>
               <label style={labelStyle}>File ID</label>

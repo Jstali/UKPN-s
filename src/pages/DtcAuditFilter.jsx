@@ -463,6 +463,23 @@ const DtcAuditFilter = () => {
         return new Date(r.timestamp) <= to;
       });
     }
+    if (f.publishDate) {
+      results = results.filter(r => {
+        // Only filter "Published" events (Event Type 3)
+        if (r.eventType === '3' || r.eventType === 3) {
+          if (!r.timestamp) return false;
+          const parts = r.timestamp.split(' ')[0]?.split('/');
+          if (parts && parts.length === 3) {
+            const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return cellDate === f.publishDate;
+          }
+          const ts = new Date(r.timestamp);
+          const dateStr = ts.toISOString().split('T')[0];
+          return dateStr === f.publishDate;
+        }
+        return false;
+      });
+    }
 
     setFilteredResults(results);
     setExceptionCount(0);
@@ -675,6 +692,11 @@ const DtcAuditFilter = () => {
             </div>
 
             <div>
+              <label style={labelStyle}>Publish Date</label>
+              <input type="date" value={filters.publishDate} onChange={(e) => handleFilterChange('publishDate', e.target.value)} style={inputStyle} />
+            </div>
+
+            <div>
               <label style={labelStyle}>File ID</label>
               <input type="text" value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} placeholder="Enter File ID" style={inputStyle} />
             </div>
@@ -724,7 +746,7 @@ const DtcAuditFilter = () => {
             filters.flow !== 'All' || filters.version !== 'All' || filters.receivingApp !== 'All' || 
             filters.fromRole !== 'All' || filters.fromMPID !== 'All' || filters.toRole !== 'All' || 
             filters.toMPID !== 'All' || filters.eventTimestampFrom || filters.eventTimestampTo || 
-            filters.fileCreationDate || filters.fileId || filters.msgId) && (
+            filters.fileCreationDate || filters.publishDate || filters.fileId || filters.msgId) && (
             <div style={{
               padding: '16px 20px',
               borderBottom: '1px solid #f1f5f9',
@@ -797,6 +819,11 @@ const DtcAuditFilter = () => {
                 {filters.fileCreationDate && (
                   <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
                     File Date: {filters.fileCreationDate}
+                  </span>
+                )}
+                {filters.publishDate && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Publish Date: {filters.publishDate}
                   </span>
                 )}
                 {filters.fileId && (
