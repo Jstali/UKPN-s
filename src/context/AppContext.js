@@ -45,7 +45,6 @@ export const AppProvider = ({ children }) => {
     setDataComplete(false);
     setFetchError(null);
     try {
-      // Fetch first page immediately with individual error handling
       let dtcErr = null, nonDtcErr = null;
       const dtcPromise = api.fetchDtcAuditData(null, 100).catch(err => {
         dtcErr = err.message || 'DTC API error';
@@ -62,22 +61,31 @@ export const AppProvider = ({ children }) => {
       const initialDtc = dtcResponse.data || [];
       const initialNonDtc = nonDtcResponse.data || [];
 
-      // Surface error if both APIs failed or returned no data
       if (initialDtc.length === 0 && initialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
         setFetchError(dtcErr || nonDtcErr);
       }
 
-      setAuditData(initialDtc);
-      setNonDtcAuditData(initialNonDtc);
-      setLoading(false);
+      // On first load show data immediately as it arrives so the skeleton clears fast.
+      // On background refresh hold off updating state until ALL pages are collected,
+      // so the counters never dip then climb again.
+      if (isFirstLoad) {
+        setAuditData(initialDtc);
+        setNonDtcAuditData(initialNonDtc);
+        setLoading(false);
+      }
       setLastFetch(Date.now());
 
-      // Load remaining in background only if there's more data
+      // No more pages — do a single commit and finish
       if (!dtcResponse.continuationToken && !nonDtcResponse.continuationToken) {
+        if (!isFirstLoad) {
+          setAuditData(initialDtc);
+          setNonDtcAuditData(initialNonDtc);
+        }
         setDataComplete(true);
         return;
       }
 
+      // Paginate remaining pages, accumulating silently
       let allDtc = [...initialDtc];
       let allNonDtc = [...initialNonDtc];
       let dtcToken = dtcResponse.continuationToken;
@@ -101,9 +109,9 @@ export const AppProvider = ({ children }) => {
             })
           );
         }
-        
+
         const results = await Promise.all(promises);
-        
+
         if (dtcToken) {
           const dtcRes = results[0];
           allDtc = [...allDtc, ...(dtcRes.data || [])];
@@ -114,7 +122,16 @@ export const AppProvider = ({ children }) => {
           allNonDtc = [...allNonDtc, ...(nonDtcRes.data || [])];
           nonDtcToken = nonDtcRes.continuationToken;
         }
-        
+
+        // On first load update progressively so data appears sooner
+        if (isFirstLoad) {
+          setAuditData([...allDtc]);
+          setNonDtcAuditData([...allNonDtc]);
+        }
+      }
+
+      // On background refresh do one single atomic update now that all pages are in
+      if (!isFirstLoad) {
         setAuditData([...allDtc]);
         setNonDtcAuditData([...allNonDtc]);
       }
