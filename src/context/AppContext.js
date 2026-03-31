@@ -3,15 +3,44 @@ import api, { fetchDtcSubscriptions } from '../utils/api';
 
 const AppContext = createContext(null);
 
+// ─── localStorage cache helpers ───────────────────────────────────────────────
+const LS_KEY = 'ukpn_audit_cache';
+const LS_TTL = 30 * 60 * 1000; // 30 minutes
+
+function readLocalCache() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const { dtc, nonDtc, ts } = JSON.parse(raw);
+    if (Date.now() - ts > LS_TTL) { localStorage.removeItem(LS_KEY); return null; }
+    return { dtc: dtc || [], nonDtc: nonDtc || [] };
+  } catch { return null; }
+}
+
+function writeLocalCache(dtc, nonDtc) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ dtc, nonDtc, ts: Date.now() }));
+  } catch {}
+}
+
+function clearLocalCache() {
+  try { localStorage.removeItem(LS_KEY); } catch {}
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [auditData, setAuditData] = useState([]);
-  const [nonDtcAuditData, setNonDtcAuditData] = useState([]);
+
+  // Seed state from localStorage so data shows instantly before first API response
+  const cached = readLocalCache();
+  const [auditData, setAuditData] = useState(cached?.dtc || []);
+  const [nonDtcAuditData, setNonDtcAuditData] = useState(cached?.nonDtc || []);
+
   const [loading, setLoading] = useState(false);
-  const [dataComplete, setDataComplete] = useState(false);
+  const [dataComplete, setDataComplete] = useState(!!cached);
   const [fetchError, setFetchError] = useState(null);
-  const [lastFetch, setLastFetch] = useState(null);
+  const [lastFetch, setLastFetch] = useState(cached ? Date.now() - 60000 : null); // treat cache as 1 min old so it refreshes
   const [subscriptionData, setSubscriptionData] = useState([]);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [isLocalSubscription, setIsLocalSubscription] = useState(false);
@@ -72,6 +101,7 @@ export const AppProvider = ({ children }) => {
         setAuditData(initialDtc);
         setNonDtcAuditData(initialNonDtc);
         setLoading(false);
+        writeLocalCache(initialDtc, initialNonDtc);
       }
       setLastFetch(Date.now());
 
@@ -127,6 +157,7 @@ export const AppProvider = ({ children }) => {
         if (isFirstLoad) {
           setAuditData([...allDtc]);
           setNonDtcAuditData([...allNonDtc]);
+          writeLocalCache(allDtc, allNonDtc);
         }
       }
 
@@ -135,6 +166,7 @@ export const AppProvider = ({ children }) => {
         setAuditData([...allDtc]);
         setNonDtcAuditData([...allNonDtc]);
       }
+      writeLocalCache(allDtc, allNonDtc);
       setDataComplete(true);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
@@ -172,6 +204,7 @@ export const AppProvider = ({ children }) => {
     setNonDtcAuditData([]);
     setSubscriptionData([]);
     setLastFetch(null);
+    clearLocalCache();
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
   };
