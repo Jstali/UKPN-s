@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api, { fetchDtcSubscriptions } from '../utils/api';
 
 const AppContext = createContext(null);
@@ -37,14 +37,29 @@ export const AppProvider = ({ children }) => {
   const [auditData, setAuditData] = useState(cached?.dtc || []);
   const [nonDtcAuditData, setNonDtcAuditData] = useState(cached?.nonDtc || []);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!cached); // show skeleton only if no cache
   const [dataComplete, setDataComplete] = useState(!!cached);
   const [fetchError, setFetchError] = useState(null);
-  const [lastFetch, setLastFetch] = useState(cached ? Date.now() - 60000 : null); // treat cache as 1 min old so it refreshes
   const [subscriptionData, setSubscriptionData] = useState([]);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [isLocalSubscription, setIsLocalSubscription] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
+
+  // Refs to avoid stale closures and prevent concurrent fetches
+  const isFetchingRef = useRef(false);
+  const lastFetchRef = useRef(cached ? Date.now() - 25000 : null); // cache = 25s old, triggers refresh soon
+  const auditDataRef = useRef(cached?.dtc || []);
+  const nonDtcDataRef = useRef(cached?.nonDtc || []);
+
+  // Keep refs in sync with state
+  const setAuditDataSync = (data) => {
+    auditDataRef.current = data;
+    setAuditData(data);
+  };
+  const setNonDtcDataSync = (data) => {
+    nonDtcDataRef.current = data;
+    setNonDtcAuditData(data);
+  };
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
@@ -58,21 +73,28 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const fetchAllData = useCallback(async (force = false) => {
-    // Skip if data exists and fetch was recent (within 5 minutes)
-    if (!force && lastFetch && (Date.now() - lastFetch < 300000)) {
-      return;
-    }
-    // If last fetch had an error, back off for 2 minutes before auto-retrying
-    if (force && fetchError && lastFetch && (Date.now() - lastFetch < 120000)) {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) return;
+
+    // Rate-limit: skip if fetched within last 30 seconds (unless forced)
+    const now = Date.now();
+    if (!force && lastFetchRef.current && (now - lastFetchRef.current < 30000)) {
       return;
     }
 
-    // Only show the loading skeleton on first load (no data yet).
-    // On background refreshes keep existing data visible (stale-while-revalidate).
-    const isFirstLoad = auditData.length === 0 && nonDtcAuditData.length === 0;
-    if (isFirstLoad) setLoading(true);
-    setDataComplete(false);
+    isFetchingRef.current = true;
+    const hasExistingData = auditDataRef.current.length > 0 || nonDtcDataRef.current.length > 0;
+
+    // Only show skeleton on true first load (no cache, no data)
+    if (!hasExistingData) {
+      setLoading(true);
+      setDataComplete(false);
+    }
+    // On refresh with existing data: keep dataComplete=true so Failed Files stay visible
+    // Don't set dataComplete=false here — only flip it when data is truly absent
+
     setFetchError(null);
+
     try {
       let dtcErr = null, nonDtcErr = null;
       const dtcPromise = api.fetchDtcAuditData(null, 100).catch(err => {
@@ -92,26 +114,33 @@ export const AppProvider = ({ children }) => {
 
       if (initialDtc.length === 0 && initialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
         setFetchError(dtcErr || nonDtcErr);
+        setLoading(false);
+        if (!hasExistingData) setDataComplete(true);
+        lastFetchRef.current = Date.now();
+        isFetchingRef.current = false;
+        return;
       }
 
-      // On first load show data immediately as it arrives so the skeleton clears fast.
-      // On background refresh hold off updating state until ALL pages are collected,
-      // so the counters never dip then climb again.
-      if (isFirstLoad) {
-        setAuditData(initialDtc);
-        setNonDtcAuditData(initialNonDtc);
+      // On first load (no existing data): show data immediately as pages arrive
+      // On background refresh: hold off until all pages collected (atomic swap)
+      if (!hasExistingData) {
+        setAuditDataSync(initialDtc);
+        setNonDtcDataSync(initialNonDtc);
         setLoading(false);
         writeLocalCache(initialDtc, initialNonDtc);
       }
-      setLastFetch(Date.now());
 
-      // No more pages — do a single commit and finish
+      lastFetchRef.current = Date.now();
+
+      // No more pages — commit and finish
       if (!dtcResponse.continuationToken && !nonDtcResponse.continuationToken) {
-        if (!isFirstLoad) {
-          setAuditData(initialDtc);
-          setNonDtcAuditData(initialNonDtc);
+        if (hasExistingData) {
+          setAuditDataSync(initialDtc);
+          setNonDtcDataSync(initialNonDtc);
+          writeLocalCache(initialDtc, initialNonDtc);
         }
         setDataComplete(true);
+        isFetchingRef.current = false;
         return;
       }
 
@@ -153,29 +182,45 @@ export const AppProvider = ({ children }) => {
           nonDtcToken = nonDtcRes.continuationToken;
         }
 
-        // On first load update progressively so data appears sooner
-        if (isFirstLoad) {
-          setAuditData([...allDtc]);
-          setNonDtcAuditData([...allNonDtc]);
+        // On first load: progressive updates so data appears sooner
+        if (!hasExistingData) {
+          setAuditDataSync([...allDtc]);
+          setNonDtcDataSync([...allNonDtc]);
           writeLocalCache(allDtc, allNonDtc);
         }
       }
 
-      // On background refresh do one single atomic update now that all pages are in
-      if (!isFirstLoad) {
-        setAuditData([...allDtc]);
-        setNonDtcAuditData([...allNonDtc]);
+      // Atomic swap for background refresh (one update, no counter flicker)
+      if (hasExistingData) {
+        setAuditDataSync([...allDtc]);
+        setNonDtcDataSync([...allNonDtc]);
       }
       writeLocalCache(allDtc, allNonDtc);
       setDataComplete(true);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setFetchError(error.message || 'Failed to load data');
-      setDataComplete(true);
       setLoading(false);
-      setLastFetch(Date.now());
+      if (!hasExistingData) setDataComplete(true);
+      lastFetchRef.current = Date.now();
+    } finally {
+      isFetchingRef.current = false;
     }
-  }, [lastFetch, fetchError]);
+  }, []); // stable — no dependencies, uses refs
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    // Fetch immediately on mount
+    fetchAllData(true);
+
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      fetchAllData(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchAllData, autoRefresh]);
 
   const fetchSubscriptions = useCallback(async () => {
     setSubscriptionLoading(true);
@@ -200,10 +245,10 @@ export const AppProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    setAuditData([]);
-    setNonDtcAuditData([]);
+    setAuditDataSync([]);
+    setNonDtcDataSync([]);
     setSubscriptionData([]);
-    setLastFetch(null);
+    lastFetchRef.current = null;
     clearLocalCache();
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');

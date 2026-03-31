@@ -30,17 +30,7 @@ const Home = () => {
     return now;
   });
 
-  React.useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
-
-  React.useEffect(() => {
-    if (!autoRefresh) return;
-    const interval = setInterval(() => {
-      fetchAllData(true); // silent refresh
-    }, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [autoRefresh, fetchAllData]);
+  // Data fetching and auto-refresh are handled by AppContext
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 

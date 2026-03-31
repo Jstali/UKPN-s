@@ -217,7 +217,7 @@ const CRITERIA_FIELDS = [
 ];
 
 const DtcAudit = () => {
-  const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading, fetchAllData } = useApp();
+  const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const [hasQueried, setHasQueried] = useState(false);
@@ -230,10 +230,7 @@ const DtcAudit = () => {
   // Pagination state
   const [totalCount, setTotalCount] = useState(0);
 
-  // Use global data
-  useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+  // Data fetching handled by AppContext
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
