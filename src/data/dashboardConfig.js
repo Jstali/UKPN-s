@@ -21,7 +21,7 @@ export const NAV_CARDS = [
   },
 ];
 
-export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0 }) => {
+export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0, duplicateChecksum = 0 }) => {
   const hasPending = pendingDelivery > 0;
   
   return [
@@ -54,6 +54,16 @@ export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, t
       bgColor: hasPending ? '#fffbeb' : '#f0fdf4',
       borderColor: hasPending ? '#fcd34d' : '#bbf7d0',
       trend: '-3%',
+    },
+    {
+      key: 'duplicate',
+      label: 'Duplicate Checksum',
+      value: duplicateChecksum,
+      iconSrc: 'DTC Audit.png',
+      color: '#8b5cf6',
+      bgColor: '#faf5ff',
+      borderColor: '#d8b4fe',
+      trend: null,
     },
   ];
 };
@@ -126,7 +136,8 @@ export const DEFAULT_COLUMNS_BUSINESS = [
 ];
 
 export const DEFAULT_COLUMNS_FULL = [
-  { key: 'flowVersion', label: 'Flow' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
   { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp' },
   { key: 'fromRoleMPID', label: 'From Role + From MPID' },

@@ -179,7 +179,6 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 };
 
 const ALL_COLUMNS = [
-  { key: 'id', label: 'Unique ID' },
   { key: 'fileId', label: 'File ID' },
   { key: 'fileName', label: 'File Name' },
   { key: 'sourcePath', label: 'Source Path' },
@@ -193,6 +192,7 @@ const ALL_COLUMNS = [
   { key: 'application', label: 'Dest Application' },
   { key: 'eventType', label: 'Event Type' },
   { key: 'status', label: 'Status' },
+  { key: 'id', label: 'Unique ID' },
   { key: 'timestamp', label: 'Timestamp' },
   { key: 'eventId', label: 'Event ID' },
   { key: 'destinationPath', label: 'Destination Path' },

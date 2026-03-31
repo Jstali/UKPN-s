@@ -23,6 +23,7 @@ const PerformanceDetail = lazy(() => import('./pages/PerformanceDetail'));
 const FailedFiles = lazy(() => import('./pages/FailedFiles'));
 const DtcFailedFiles = lazy(() => import('./pages/DtcFailedFiles'));
 const NonDtcFailedFiles = lazy(() => import('./pages/NonDtcFailedFiles'));
+const FilteredFileStatus = lazy(() => import('./pages/FilteredFileStatus'));
 const Login = lazy(() => import('./pages/Login'));
 
 const PageLoader = () => (
@@ -82,6 +83,7 @@ function AppRoutes() {
               <Route path="/failed-files" element={<FailedFiles />} />
               <Route path="/dtc-failed-files" element={<DtcFailedFiles />} />
               <Route path="/non-dtc-failed-files" element={<NonDtcFailedFiles />} />
+              <Route path="/filtered-file-status" element={<FilteredFileStatus />} />
             </Routes>
           </Suspense>
         </main>

@@ -40,10 +40,16 @@ const flattenAuditEvents = (data) => {
       const reversedEvents = [...item.events].reverse();
       
       reversedEvents.forEach(event => {
+        const rawFlowVersion = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || '';
+        const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
+        const flowVersionParts = formattedFlowVersion.split(' ');
+        
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
+          flowVersion: formattedFlowVersion,
+          flow: flowVersionParts[0] || '-',
+          version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),

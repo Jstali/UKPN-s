@@ -129,12 +129,19 @@ const Home = () => {
     });
   }, [auditData]);
 
+  const duplicateChecksumFiles = React.useMemo(() => {
+    return auditData.filter(item =>
+      item.events?.some(e => (e.Status || e.status || '').toLowerCase() === 'duplicate checksum')
+    );
+  }, [auditData]);
+
   const fileStats = React.useMemo(() => ({
     filesReceived: auditData.length,
     totalToBeDelivered: auditData.length,
     totalDelivered: deliveredFiles.length,
     pendingDelivery: Math.max(auditData.length - deliveredFiles.length, 0),
-  }), [auditData.length, deliveredFiles.length]);
+    duplicateChecksum: duplicateChecksumFiles.length,
+  }), [auditData.length, deliveredFiles.length, duplicateChecksumFiles.length]);
 
   const showDetails = useCallback((type) => {
     // Calculate actual status distribution from audit data
@@ -201,11 +208,21 @@ const Home = () => {
           values: [fileStats.pendingDelivery, fileStats.totalDelivered], 
           colors: ['#f59e0b', '#10b981'] 
         }
+      },
+      duplicate: {
+        title: 'Duplicate Checksum Files',
+        items: duplicateChecksumFiles.map(item => item.Source_FileName).slice(0, 100),
+        value: fileStats.duplicateChecksum,
+        chartData: { 
+          labels: ['Duplicate', 'Others'], 
+          values: [fileStats.duplicateChecksum, auditData.length - fileStats.duplicateChecksum], 
+          colors: ['#8b5cf6', '#e5e7eb'] 
+        }
       }
     };
     const detail = detailsMap[type];
     if (detail) navigate('/analytics', { state: { ...detail, type } });
-  }, [auditData, fileStats, deliveredFiles, pendingFiles, navigate]);
+  }, [auditData, fileStats, deliveredFiles, pendingFiles, duplicateChecksumFiles, navigate]);
 
   const handleToggleAutoRefresh = useCallback(() => {
     setAutoRefresh(prev => !prev);
