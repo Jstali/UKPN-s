@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 
-import api from '../utils/api';
+import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
 // Extract DTC flow code from filename e.g. "BMANW7475.D0209" → "D0209"
@@ -22,39 +22,8 @@ const FailedFiles = () => {
   const isDtc = type === 'dtc';
   const title = isDtc ? 'DTC Failed Files' : 'Non DTC Failed Files';
 
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch audit data (DTC or Non-DTC)
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        let allData = [];
-        let token = null;
-        if (isDtc) {
-          do {
-            const response = await api.fetchDtcAuditData(token, 100);
-            allData = [...allData, ...(response.data || [])];
-            token = response.continuationToken || null;
-          } while (token);
-        } else {
-          do {
-            const response = await api.fetchNonDtcAuditData(token, 100);
-            allData = [...allData, ...(response.data || [])];
-            token = response.continuationToken || null;
-          } while (token);
-        }
-        setAuditData(allData);
-      } catch (error) {
-        console.error('Failed to fetch audit data:', error);
-        setAuditData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [isDtc]);
+  const { auditData: dtcAuditData, nonDtcAuditData, loading } = useApp();
+  const auditData = isDtc ? dtcAuditData : nonDtcAuditData;
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();

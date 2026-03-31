@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '../utils/api';
+import api, { fetchDtcSubscriptions } from '../utils/api';
 
 const AppContext = createContext(null);
 
@@ -11,6 +11,10 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [lastFetch, setLastFetch] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState([]);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [isLocalSubscription, setIsLocalSubscription] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState(null);
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
@@ -116,6 +120,22 @@ export const AppProvider = ({ children }) => {
     }
   }, [lastFetch, fetchError]);
 
+  const fetchSubscriptions = useCallback(async () => {
+    setSubscriptionLoading(true);
+    setSubscriptionError(null);
+    try {
+      const { data, isLocal, error } = await fetchDtcSubscriptions();
+      setSubscriptionData(Array.isArray(data) ? data : []);
+      setIsLocalSubscription(!!isLocal);
+      if (error) setSubscriptionError(error);
+    } catch (err) {
+      setSubscriptionError(err.message || 'Failed to load subscriptions');
+      setSubscriptionData([]);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, []);
+
   const login = (userData) => {
     setUser(userData);
     sessionStorage.setItem('user', JSON.stringify(userData));
@@ -125,6 +145,7 @@ export const AppProvider = ({ children }) => {
     setUser(null);
     setAuditData([]);
     setNonDtcAuditData([]);
+    setSubscriptionData([]);
     setLastFetch(null);
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
@@ -141,7 +162,12 @@ export const AppProvider = ({ children }) => {
       nonDtcAuditData,
       loading,
       fetchError,
-      fetchAllData
+      fetchAllData,
+      subscriptionData,
+      subscriptionLoading,
+      isLocalSubscription,
+      subscriptionError,
+      fetchSubscriptions,
     }}>
       {children}
     </AppContext.Provider>

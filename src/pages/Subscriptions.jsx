@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,7 +7,6 @@ import {
   Filter, FolderOpen, FileText, Globe, Clock
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { fetchDtcSubscriptions } from '../utils/api';
 
 const APP_COLORS = {
   ADMS: { accent: '#6366f1', light: '#eef2ff', border: '#c7d2fe' },
@@ -42,7 +41,7 @@ const normalizeSubscription = (app) => {
 };
 
 const Subscriptions = () => {
-  const { user } = useApp();
+  const { user, subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions } = useApp();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
@@ -50,42 +49,23 @@ const Subscriptions = () => {
   const [copiedRule, setCopiedRule] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRules, setExpandedRules] = useState({});
-  const [existingSubscriptions, setExistingSubscriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [isLocalData, setIsLocalData] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
 
   const canEdit = user?.role === 'Core Support' || user?.role === 'Admin';
 
-  const loadSubscriptions = React.useCallback(async () => {
-    let isMounted = true;
-    setLoading(true);
-    setLoadError('');
-    try {
-      const { data: apiData, isLocal } = await fetchDtcSubscriptions();
-      const normalized = Array.isArray(apiData) ? apiData.map(normalizeSubscription) : [];
-      if (isMounted) {
-        setExistingSubscriptions(normalized);
-        setIsLocalData(!!isLocal);
-        setLoadError('');
-      }
-    } catch (error) {
-      console.error('[Subscriptions] Failed to load:', error);
-      if (isMounted) {
-        setLoadError(error.message || 'Failed to load subscriptions.');
-        setExistingSubscriptions([]);
-      }
-    } finally {
-      if (isMounted) setLoading(false);
-    }
-    return () => { isMounted = false; };
-  }, []);
-
   useEffect(() => {
-    loadSubscriptions();
-  }, [loadSubscriptions]);
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
+
+  const existingSubscriptions = useMemo(
+    () => (Array.isArray(subscriptionData) ? subscriptionData.map(normalizeSubscription) : []),
+    [subscriptionData]
+  );
+
+  const loading = subscriptionLoading;
+  const isLocalData = isLocalSubscription;
+  const loadError = subscriptionError || '';
 
   const filteredSubscriptions = existingSubscriptions.filter(app =>
     app.application.toLowerCase().includes(searchTerm.toLowerCase()) ||

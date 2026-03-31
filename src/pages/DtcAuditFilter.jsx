@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calendar, ArrowUp, ArrowDown, X, ChevronDown } from 'lucide-react';
 import ExportDropdown from '../components/ExportDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
-import api from '../utils/api';
+import { useApp } from '../context/AppContext';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
@@ -325,8 +325,7 @@ const DtcAuditFilter = () => {
     msgId: '',
   };
 
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { auditData, loading } = useApp();
   const [filters, setFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
   const [hasQueried, setHasQueried] = useState(true);
@@ -339,29 +338,6 @@ const DtcAuditFilter = () => {
   const [activeFilter, setActiveFilter] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const filterBtnRefs = useRef({});
-
-  // Fetch audit data from API on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        let allData = [];
-        let token = null;
-        do {
-          const response = await api.fetchDtcAuditData(token, 100);
-          allData = [...allData, ...(response.data || [])];
-          token = response.continuationToken || null;
-        } while (token);
-        setAuditData(allData);
-      } catch (error) {
-        console.error('Failed to fetch audit data:', error);
-        setAuditData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   // Auto-query on data load — use default filters (show all)
   useEffect(() => {

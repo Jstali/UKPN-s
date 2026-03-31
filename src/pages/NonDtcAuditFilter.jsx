@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft } from 'lucide-react';
-import api from '../utils/api';
+import { useApp } from '../context/AppContext';
 
 const DEFAULT_FILTERS = {
   sourceApp: 'All',
@@ -19,44 +19,21 @@ const DEFAULT_FILTERS = {
 const NonDtcAuditFilter = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-  const [auditData, setAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { nonDtcAuditData, loading } = useApp();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let allData = [];
-        let token = null;
-        do {
-          const response = await api.fetchNonDtcAuditData(token, 100);
-          allData = [...allData, ...(response.data || [])];
-          token = response.continuationToken || null;
-        } while (token);
-        
-        // Map SAP API fields
-        const mappedData = allData.map(item => ({
-          uniqueId: item.id || '',
-          sourceApp: item.sourceAppName || item.subscription || '-',
-          subscription: item.subscription || '',
-          sourceFile: item.sourceFileName || '',
-          fileId: item.id || '',
-          sourcePath: item.sourcePath || '',
-          eventType: item.events?.[0]?.eventType || '',
-          status: item.status || '',
-          timestamp: item.timestamp || '',
-          events: item.events || [],
-          rawData: item
-        }));
-        
-        setAuditData(mappedData);
-      } catch (error) {
-        console.error('Error fetching Non-DTC audit data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const auditData = useMemo(() => (nonDtcAuditData || []).map(item => ({
+    uniqueId: item.id || '',
+    sourceApp: item.sourceAppName || item.subscription || '-',
+    subscription: item.subscription || '',
+    sourceFile: item.sourceFileName || '',
+    fileId: item.id || '',
+    sourcePath: item.sourcePath || '',
+    eventType: item.events?.[0]?.eventType || '',
+    status: item.status || '',
+    timestamp: item.timestamp || '',
+    events: item.events || [],
+    rawData: item
+  })), [nonDtcAuditData]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
