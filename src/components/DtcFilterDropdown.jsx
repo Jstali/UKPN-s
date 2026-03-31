@@ -197,6 +197,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
         toRole: [],
         toMPID: [],
         receivingApp: [],
+        fileId: [],
       };
     }
 
@@ -211,6 +212,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       toRole: new Set(),
       toMPID: new Set(),
       receivingApp: new Set(),
+      fileId: new Set(),
     };
 
     auditData.forEach(item => {
@@ -226,6 +228,9 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       if (parsed.toRole) values.toRole.add(parsed.toRole);
       if (parsed.toMPID) values.toMPID.add(parsed.toMPID);
       if (parsed.recApp) values.receivingApp.add(parsed.recApp);
+      
+      // Add id values (not File_ID)
+      if (item.id) values.fileId.add(item.id);
 
       item.events?.forEach(event => {
         // Source application: from the first event (Event_Type '1' — the receiving/source app)
@@ -411,14 +416,16 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
               />
             </div>
 
-            {/* Unique ID */}
+            {/* File ID */}
             <div>
-              <label style={labelStyle}>Unique ID</label>
-              <input type="text"
+              <label style={labelStyle}>File ID</label>
+              <MultiSelectDropdown
+                label="File ID"
                 value={filters.fileId}
-                onChange={(e) => onFilterChange('fileId', e.target.value)}
-                placeholder="Unique ID"
-                style={inputStyle}
+                options={uniqueValues.fileId || []}
+                onChange={(value) => onFilterChange('fileId', value)}
+                style={selectStyle}
+                searchable={true}
               />
             </div>
           </div>

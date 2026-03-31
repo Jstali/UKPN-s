@@ -141,8 +141,9 @@ const buildFilteredResults = (data, filtersToUse) => {
     }
   });
 
-  if (filtersToUse.fileId) {
-    results = results.filter(item => item.fileId && item.fileId.includes(filtersToUse.fileId));
+  if (filtersToUse.fileId && filtersToUse.fileId !== 'All') {
+    const selectedValues = filtersToUse.fileId.split(',');
+    results = results.filter(item => item.fileId && selectedValues.includes(item.fileId));
   }
   if (filtersToUse.msgId) {
     results = results.filter(item => item.eventId && item.eventId.includes(filtersToUse.msgId));
@@ -205,7 +206,7 @@ const CRITERIA_FIELDS = [
   { label: 'Event Timestamp To', key: 'eventTimestampTo' },
   { label: 'File Creation Date', key: 'fileCreationDate' },
   { label: 'Publish Date', key: 'publishDate' },
-  { label: 'Unique ID', key: 'fileId' },
+  { label: 'File ID', key: 'fileId' },
   { label: 'Message ID', key: 'msgId' },
 ];
 

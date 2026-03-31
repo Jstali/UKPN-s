@@ -423,34 +423,20 @@ const Home = () => {
         </div>
 
         {/* Two-column layout: File Status + App Status (left) | Performance (right) */}
-        {loading ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            minHeight: '300px', flexDirection: 'column', gap: '14px',
-            color: '#64748b', fontSize: '14px', fontWeight: 500,
-          }}>
-            <div style={{
-              width: '36px', height: '36px', border: '3px solid #e2e8f0',
-              borderTopColor: '#667eea', borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-            }} />
-            Fetching dashboard data...
+        <div className="dashboard-layout">
+          <div className="dashboard-col-left">
+            <FileStatusSection
+              fileStats={fileStats}
+              dashboardUpdatedAt={dashboardUpdatedAt}
+              onShowDetails={showDetails}
+              loading={loading}
+            />
+            <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} loading={loading} />
           </div>
-        ) : (
-          <div className="dashboard-layout">
-            <div className="dashboard-col-left">
-              <FileStatusSection
-                fileStats={fileStats}
-                dashboardUpdatedAt={dashboardUpdatedAt}
-                onShowDetails={showDetails}
-              />
-              <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} />
-            </div>
-            <div className="dashboard-col-right">
-              <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} />
-            </div>
+          <div className="dashboard-col-right">
+            <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} loading={loading} />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Edit Modal */}

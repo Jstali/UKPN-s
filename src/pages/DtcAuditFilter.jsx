@@ -491,8 +491,12 @@ const DtcAuditFilter = () => {
 
   // Build dropdown options
   const flatData = [];
+  const fileIdSet = new Set();
   auditData.forEach(item => {
     const parsed = parseHeader(item.Header_String);
+    const fileId = item.File_ID || item.fileId || item.file_id || item.correlationId || item.id;
+    if (fileId && fileId !== 'UNKNOWN') fileIdSet.add(fileId);
+    
     if (item.events && item.events.length > 0) {
       item.events.forEach(event => {
         flatData.push({
@@ -518,6 +522,7 @@ const DtcAuditFilter = () => {
   const toRoleOptions = ['All', ...new Set(flatData.map(i => i.toRole).filter(Boolean))].sort();
   const toMPIDOptions = ['All', ...new Set(flatData.map(i => i.toMPID).filter(Boolean))].sort();
   const recAppOptions = ['All', ...new Set(flatData.map(i => i.recApp).filter(Boolean))].sort();
+  const fileIdOptions = ['All', ...Array.from(fileIdSet).sort()];
 
   // Search + column filters + sort + paginate
   const globalFiltered = filteredResults.filter(row =>
