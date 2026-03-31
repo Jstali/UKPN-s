@@ -110,6 +110,8 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                     const statusDisplay = isDtc
                       ? (file.events?.find(e => {
                           const s = (e.Status || e.status || '').toLowerCase();
+                          // Exclude "duplicate checksum" - it's not a failure
+                          if (s === 'duplicate checksum') return false;
                           return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
                         })?.Status || 'Failed')
                       : (file.status || file.Status || 'Failed');

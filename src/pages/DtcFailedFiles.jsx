@@ -95,6 +95,8 @@ const DtcFailedFiles = () => {
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();
+    // Exclude "duplicate checksum" - it's not a failure
+    if (s === 'duplicate checksum') return false;
     return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
   };
 

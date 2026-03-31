@@ -70,7 +70,10 @@ const Home = () => {
     const FAILED_STATUSES = ['failed', 'invalid subscription', 'checksum mismatch'];
     const isFailed = (status) => {
       if (!status) return false;
-      return FAILED_STATUSES.includes(String(status).toLowerCase());
+      const statusLower = String(status).toLowerCase();
+      // Exclude "duplicate checksum" - it's not a failure
+      if (statusLower === 'duplicate checksum') return false;
+      return FAILED_STATUSES.includes(statusLower);
     };
 
     const dtcFailed = auditData.filter(item =>
@@ -139,6 +142,8 @@ const Home = () => {
       const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
       const hasFailed = item.events?.some(e => {
         const s = (e.Status || e.status || '').toLowerCase();
+        // Exclude "duplicate checksum" - it's not a failure
+        if (s === 'duplicate checksum') return false;
         return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
       });
       const hasPending = item.events?.some(e => String(e.Event_Type) === '2');
