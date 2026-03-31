@@ -2,19 +2,29 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const AnimatedCounter = ({ value }) => {
   const end = parseInt(value) || 0;
-  const prevRef = useRef(null);
+  const prevRef = useRef(end);
   const [count, setCount] = useState(end);
+  const isFirstMount = useRef(true);
 
   useEffect(() => {
-    const prev = prevRef.current ?? end;
-    prevRef.current = end;
+    // On first mount, just set the value without animation
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      setCount(end);
+      prevRef.current = end;
+      return;
+    }
 
-    // Only animate on first mount (prev === end) or when value increases/decreases
-    // Use a short animation (400ms) so it doesn't feel like "running"
-    const duration = 400;
+    const prev = prevRef.current;
     const diff = end - prev;
+    
+    // No change, don't animate
     if (diff === 0) return;
 
+    prevRef.current = end;
+
+    // Animate from previous value to new value
+    const duration = 400;
     const increment = diff / (duration / 16);
     let current = prev;
 

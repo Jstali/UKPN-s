@@ -190,27 +190,58 @@ const AuditDetails = () => {
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>
                 Record Preview
               </h3>
-              <button
-                onClick={() => setShowPreview(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                  padding: '0',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '6px',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-              >
-                ×
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `record-${record.id || 'preview'}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  style={{
+                    background: '#10b981',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    padding: '0',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '6px',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <div style={{
               padding: '24px',
