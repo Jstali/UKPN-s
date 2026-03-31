@@ -329,7 +329,7 @@ const Subscriptions = () => {
         }}>
           <span>⚠️ {loadError}</span>
           <button
-            onClick={loadSubscriptions}
+            onClick={fetchSubscriptions}
             style={{
               padding: '6px 14px', background: '#dc2626', color: '#fff',
               border: 'none', borderRadius: '6px', cursor: 'pointer',
