@@ -5,10 +5,15 @@ import { FILE_STATUS_ITEMS } from '../../data/dashboardConfig';
 
 const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails }) => {
   const items = FILE_STATUS_ITEMS(fileStats || {});
+  const [hasAnimated, setHasAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasAnimated(true);
+  }, []);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={hasAnimated ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
       className="dashboard-section-card"
@@ -29,9 +34,9 @@ const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails }) => 
         {items.map((item, index) => (
           <motion.div
             key={item.key}
-            initial={{ opacity: 0, y: 24 }}
+            initial={hasAnimated ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + index * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
+            transition={{ delay: hasAnimated ? 0 : 0.4 + index * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
             onClick={() => onShowDetails(item.key)}
             className="metrics-card"
             style={{ border: `1.5px solid ${item.borderColor}`, background: item.bgColor }}
