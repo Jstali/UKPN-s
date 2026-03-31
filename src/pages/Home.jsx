@@ -347,17 +347,21 @@ const Home = () => {
               <ChevronDown size={14} style={{ transform: showFailedDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
             <div style={{ flex: 1 }}>
-              <span style={{ 
-                fontSize: '13px', 
-                color: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
-                  ? '#7f1d1d' 
-                  : '#374151', 
-                fontWeight: 600 
-              }}>
-                {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0) 
-                  ? 'Some files have failed processing. Click View Failed to see details.' 
-                  : 'All files are processing successfully.'}
-              </span>
+              {loading ? (
+                <div style={{ width: '260px', height: '14px', borderRadius: '4px', background: '#d1d5db', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ) : (
+                <span style={{
+                  fontSize: '13px',
+                  color: (failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0)
+                    ? '#7f1d1d'
+                    : '#374151',
+                  fontWeight: 600
+                }}>
+                  {(failedFiles.dtcFailed.length > 0 || failedFiles.nonDtcFailed.length > 0)
+                    ? 'Some files have failed processing. Click View Failed to see details.'
+                    : 'All files are processing successfully.'}
+                </span>
+              )}
             </div>
           </div>
 

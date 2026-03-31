@@ -6,7 +6,7 @@ import AnimatedCounter from '../AnimatedCounter';
 import { FILE_STATUS_ITEMS } from '../../data/dashboardConfig';
 import { useApp } from '../../context/AppContext';
 
-const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails }) => {
+const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails, loading }) => {
   const items = React.useMemo(() => FILE_STATUS_ITEMS(fileStats || {}), [fileStats]);
   const [hasAnimated, setHasAnimated] = React.useState(false);
   const { user, auditData } = useApp();
@@ -102,29 +102,45 @@ const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails }) => 
 
       {/* Cards Grid — responsive 3 cols on large, 2 on medium, 1 on small */}
       <div className="metrics-grid">
-        {items.map((item, index) => (
-          <motion.div
-            key={item.key}
-            initial={hasAnimated ? false : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: hasAnimated ? 0 : 0.4 + index * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
-            onClick={() => onShowDetails(item.key)}
-            className="metrics-card"
-            style={{ border: `1.5px solid ${item.borderColor}`, background: item.bgColor }}
-            whileHover={{ y: -3, boxShadow: '0 6px 16px rgba(0,0,0,0.1)', scale: 1.02, transition: { duration: 0.15 } }}
-            whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
-          >
-            <div className="metrics-card-icon">
-              <img src={`${process.env.PUBLIC_URL}/${item.iconSrc}`} alt={item.label} style={{ width: 30, height: 30, objectFit: 'contain' }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '17px', fontWeight: 800, color: item.color, lineHeight: 1 }}>
-                <AnimatedCounter value={item.value} />
+        {loading ? (
+          Array.from({ length: 5 }).map((_, index) => (
+            <div
+              key={index}
+              className="metrics-card"
+              style={{ border: '1.5px solid #e2e8f0', background: '#f8fafc', cursor: 'default' }}
+            >
+              <div style={{ width: 30, height: 30, borderRadius: '6px', background: '#e2e8f0', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ width: '40%', height: '18px', borderRadius: '4px', background: '#e2e8f0', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ width: '70%', height: '12px', borderRadius: '4px', background: '#e2e8f0', animation: 'pulse 1.5s ease-in-out infinite' }} />
               </div>
-              <div className="metrics-card-label">{item.label}</div>
             </div>
-          </motion.div>
-        ))}
+          ))
+        ) : (
+          items.map((item, index) => (
+            <motion.div
+              key={item.key}
+              initial={hasAnimated ? false : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: hasAnimated ? 0 : 0.4 + index * 0.08, type: 'spring', stiffness: 260, damping: 20 }}
+              onClick={() => onShowDetails(item.key)}
+              className="metrics-card"
+              style={{ border: `1.5px solid ${item.borderColor}`, background: item.bgColor }}
+              whileHover={{ y: -3, boxShadow: '0 6px 16px rgba(0,0,0,0.1)', scale: 1.02, transition: { duration: 0.15 } }}
+              whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
+            >
+              <div className="metrics-card-icon">
+                <img src={`${process.env.PUBLIC_URL}/${item.iconSrc}`} alt={item.label} style={{ width: 30, height: 30, objectFit: 'contain' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '17px', fontWeight: 800, color: item.color, lineHeight: 1 }}>
+                  <AnimatedCounter value={item.value} />
+                </div>
+                <div className="metrics-card-label">{item.label}</div>
+              </div>
+            </motion.div>
+          ))
+        )}
       </div>
     </motion.div>
 
