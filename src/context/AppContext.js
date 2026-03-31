@@ -38,18 +38,21 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
-    setLoading(true);
+    // Only show the loading skeleton on first load (no data yet).
+    // On background refreshes keep existing data visible (stale-while-revalidate).
+    const isFirstLoad = auditData.length === 0 && nonDtcAuditData.length === 0;
+    if (isFirstLoad) setLoading(true);
     setDataComplete(false);
     setFetchError(null);
     try {
       // Fetch first page immediately with individual error handling
       let dtcErr = null, nonDtcErr = null;
-      const dtcPromise = api.fetchDtcAuditData(null, 50).catch(err => {
+      const dtcPromise = api.fetchDtcAuditData(null, 100).catch(err => {
         dtcErr = err.message || 'DTC API error';
         return { data: [], continuationToken: null };
       });
 
-      const nonDtcPromise = api.fetchNonDtcAuditData(null, 50).catch(err => {
+      const nonDtcPromise = api.fetchNonDtcAuditData(null, 100).catch(err => {
         nonDtcErr = err.message || 'Non-DTC API error';
         return { data: [], continuationToken: null };
       });
