@@ -7,7 +7,7 @@ import { useApp } from '../context/AppContext';
 
 const NonDtcFailedFiles = () => {
   const navigate = useNavigate();
-  const { nonDtcAuditData, loading } = useApp();
+  const { nonDtcAuditData, loading, dataComplete } = useApp();
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
@@ -159,7 +159,7 @@ const NonDtcFailedFiles = () => {
         </div>
       </motion.div>
 
-      {loading ? (
+      {loading || !dataComplete ? (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: '300px', flexDirection: 'column', gap: '14px',
@@ -170,7 +170,7 @@ const NonDtcFailedFiles = () => {
             borderTopColor: '#667eea', borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
           }} />
-          Loading failed files data...
+          {loading ? 'Loading failed files data...' : 'Fetching all data, please wait...'}
         </div>
       ) : (
         <DataTable

@@ -22,7 +22,7 @@ const FailedFiles = () => {
   const isDtc = type === 'dtc';
   const title = isDtc ? 'DTC Failed Files' : 'Non DTC Failed Files';
 
-  const { auditData: dtcAuditData, nonDtcAuditData, loading } = useApp();
+  const { auditData: dtcAuditData, nonDtcAuditData, loading, dataComplete } = useApp();
   const auditData = isDtc ? dtcAuditData : nonDtcAuditData;
 
   const isFailedStatus = (status) => {
@@ -138,14 +138,14 @@ const FailedFiles = () => {
         </button>
       </div>
 
-      {loading ? (
+      {loading || !dataComplete ? (
         <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>
           <div style={{
             width: '40px', height: '40px', border: '3px solid #e2e8f0',
             borderTopColor: '#667eea', borderRadius: '50%',
             animation: 'spin 0.8s linear infinite', margin: '0 auto 16px'
           }} />
-          Loading failed files...
+          {loading ? 'Loading failed files...' : 'Fetching all data, please wait...'}
         </div>
       ) : (
         <>

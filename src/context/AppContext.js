@@ -9,6 +9,7 @@ export const AppProvider = ({ children }) => {
   const [auditData, setAuditData] = useState([]);
   const [nonDtcAuditData, setNonDtcAuditData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataComplete, setDataComplete] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [lastFetch, setLastFetch] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState([]);
@@ -38,6 +39,7 @@ export const AppProvider = ({ children }) => {
     }
 
     setLoading(true);
+    setDataComplete(false);
     setFetchError(null);
     try {
       // Fetch first page immediately with individual error handling
@@ -69,6 +71,7 @@ export const AppProvider = ({ children }) => {
 
       // Load remaining in background only if there's more data
       if (!dtcResponse.continuationToken && !nonDtcResponse.continuationToken) {
+        setDataComplete(true);
         return;
       }
 
@@ -112,9 +115,11 @@ export const AppProvider = ({ children }) => {
         setAuditData([...allDtc]);
         setNonDtcAuditData([...allNonDtc]);
       }
+      setDataComplete(true);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setFetchError(error.message || 'Failed to load data');
+      setDataComplete(true);
       setLoading(false);
       setLastFetch(Date.now());
     }
@@ -161,6 +166,7 @@ export const AppProvider = ({ children }) => {
       auditData,
       nonDtcAuditData,
       loading,
+      dataComplete,
       fetchError,
       fetchAllData,
       subscriptionData,
