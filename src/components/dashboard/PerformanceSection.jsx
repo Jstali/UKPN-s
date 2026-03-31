@@ -5,6 +5,11 @@ import { Gauge, Clock } from 'lucide-react';
 
 const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
+  const [hasAnimated, setHasAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasAnimated(true);
+  }, []);
   
   // Calculate correct overall average: total duration / total files
   const overallAverage = React.useMemo(() => {
@@ -20,7 +25,7 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={hasAnimated ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5 }}
       className="dashboard-section-card"

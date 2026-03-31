@@ -7,7 +7,7 @@ import { FILE_STATUS_ITEMS } from '../../data/dashboardConfig';
 import { useApp } from '../../context/AppContext';
 
 const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails }) => {
-  const items = FILE_STATUS_ITEMS(fileStats || {});
+  const items = React.useMemo(() => FILE_STATUS_ITEMS(fileStats || {}), [fileStats]);
   const [hasAnimated, setHasAnimated] = React.useState(false);
   const { user, auditData } = useApp();
   const [showFilterModal, setShowFilterModal] = React.useState(false);

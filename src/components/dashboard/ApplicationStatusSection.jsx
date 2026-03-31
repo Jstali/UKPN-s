@@ -4,9 +4,15 @@ import { Activity } from 'lucide-react';
 import { APP_STATUS_ITEMS } from '../../data/dashboardConfig';
 
 const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
+  const [hasAnimated, setHasAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasAnimated(true);
+  }, []);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={hasAnimated ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
       className="dashboard-section-card"
