@@ -34,6 +34,11 @@ const Home = () => {
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
 
+  // Debug: Log when auditData changes
+  React.useEffect(() => {
+    console.log('🏠 Home: auditData updated, length =', auditData.length);
+  }, [auditData]);
+
   const deliveredFiles = React.useMemo(() => {
     const delivered = auditData.filter(item => {
       if (!item.events || item.events.length === 0) return false;
@@ -49,6 +54,7 @@ const Home = () => {
       
       return hasProcessedEvents || hasEvent21;
     });
+    console.log('📊 Delivered files calculated:', delivered.length, 'from', auditData.length, 'total');
     return delivered;
   }, [auditData]);
 
