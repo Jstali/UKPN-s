@@ -246,6 +246,8 @@ code {
   padding: 0 2rem;
   padding-top: 20px;
   min-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
 }
 
 .breadcrumb {
@@ -412,6 +414,10 @@ code {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #758bfd;
   overflow: visible;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
 }
 
 .table-container table {
