@@ -413,12 +413,18 @@ code {
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #758bfd;
-  overflow: auto;
+  overflow: hidden;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 500px;
-  max-height: calc(100vh - 300px);
+  max-height: calc(100vh - 280px);
+}
+
+.table-container > div:first-child {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
 }
 
 .table-container table {
