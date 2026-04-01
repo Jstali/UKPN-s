@@ -111,13 +111,13 @@ export const AppProvider = ({ children }) => {
     try {
       let dtcErr = null, nonDtcErr = null;
       console.log('📡 Fetching page 1...');
-      const dtcPromise = api.fetchDtcAuditData(null, 100).catch(err => {
+      const dtcPromise = api.fetchDtcAuditData(null, 500).catch(err => {
         dtcErr = err.message || 'DTC API error';
         console.error('❌ DTC fetch failed:', dtcErr);
         return { data: [], continuationToken: null };
       });
 
-      const nonDtcPromise = api.fetchNonDtcAuditData(null, 100).catch(err => {
+      const nonDtcPromise = api.fetchNonDtcAuditData(null, 500).catch(err => {
         nonDtcErr = err.message || 'Non-DTC API error';
         console.error('❌ Non-DTC fetch failed:', nonDtcErr);
         return { data: [], continuationToken: null };
@@ -173,7 +173,7 @@ export const AppProvider = ({ children }) => {
         const promises = [];
         if (dtcToken) {
           promises.push(
-            api.fetchDtcAuditData(dtcToken, 100).catch(err => {
+            api.fetchDtcAuditData(dtcToken, 500).catch(err => {
               console.error('DTC pagination error:', err);
               return { data: [], continuationToken: null };
             })
@@ -181,7 +181,7 @@ export const AppProvider = ({ children }) => {
         }
         if (nonDtcToken) {
           promises.push(
-            api.fetchNonDtcAuditData(nonDtcToken, 100).catch(err => {
+            api.fetchNonDtcAuditData(nonDtcToken, 500).catch(err => {
               console.error('Non-DTC pagination error:', err);
               return { data: [], continuationToken: null };
             })
@@ -201,19 +201,15 @@ export const AppProvider = ({ children }) => {
           nonDtcToken = nonDtcRes.continuationToken;
         }
 
-        // On first load: progressive updates so data appears sooner
-        if (!hasExistingData) {
-          setAuditDataSync([...allDtc]);
-          setNonDtcDataSync([...allNonDtc]);
-          writeLocalCache(allDtc, allNonDtc);
-        }
-      }
-
-      // Atomic swap for background refresh (one update, no counter flicker)
-      if (hasExistingData) {
+        // Update UI progressively every page (not just on first load)
         setAuditDataSync([...allDtc]);
         setNonDtcDataSync([...allNonDtc]);
+        writeLocalCache(allDtc, allNonDtc);
       }
+
+      // Final update
+      setAuditDataSync([...allDtc]);
+      setNonDtcDataSync([...allNonDtc]);
       writeLocalCache(allDtc, allNonDtc);
       setDataComplete(true);
       

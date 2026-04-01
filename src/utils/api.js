@@ -163,7 +163,7 @@ const api = {
   },
 
   // Fetch real audit data from Azure Function App with pagination
-  async fetchDtcAuditData(continuationToken = null, pageSize = 100) {
+  async fetchDtcAuditData(continuationToken = null, pageSize = 500) {
     try {
       let apiUrl = `${DTC_AUDIT_API}&pageSize=${pageSize}`;
       if (continuationToken) {
@@ -212,7 +212,7 @@ const api = {
   },
 
   // Fetch Non-DTC audit data
-  async fetchNonDtcAuditData(continuationToken = null, pageSize = 100) {
+  async fetchNonDtcAuditData(continuationToken = null, pageSize = 500) {
     try {
       let apiUrl = `${SAP_AUDIT_API}&pageSize=${pageSize}`;
       if (continuationToken) {
