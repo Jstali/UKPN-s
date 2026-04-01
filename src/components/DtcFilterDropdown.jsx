@@ -31,17 +31,18 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Position dropdown relative to trigger
+  // Position dropdown using fixed positioning to escape overflow containers
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !triggerRef.current) return;
+    
+    const rect = triggerRef.current.getBoundingClientRect();
     setPopupStyle({
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      marginTop: '4px',
-      width: '100%',
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 180),
       minWidth: '180px',
-      zIndex: 1000,
+      zIndex: 9999,
     });
   }, [isOpen]);
 
