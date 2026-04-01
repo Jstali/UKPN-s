@@ -15,7 +15,9 @@ const EVENT_TYPE_MAP = {
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [popupStyle, setPopupStyle] = useState({});
   const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -28,6 +30,19 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Recalculate popup position on open so it escapes overflow containers
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPopupStyle({
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 180),
+      zIndex: 9999,
+    });
+  }, [isOpen]);
 
   // Focus search input when dropdown opens
   useEffect(() => {
@@ -63,6 +78,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       <div
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         role="combobox"
         aria-expanded={isOpen}
@@ -90,19 +106,13 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
           role="listbox"
           aria-multiselectable="true"
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: '4px',
+            ...popupStyle,
             background: '#fff',
             border: '1.5px solid #e2e8f0',
             borderRadius: '8px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             maxHeight: '250px',
             overflowY: 'auto',
-            zIndex: 1000,
-            minWidth: '160px',
           }}
         >
           {searchable && (
