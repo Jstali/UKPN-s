@@ -32,14 +32,18 @@ export const fetchDtcSubscriptions = async () => {
 
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to fetch subscriptions: ${res.status} ${res.statusText} ${errorText}`);
+      console.error(`❌ Subscription API Error ${res.status}:`, errorText.substring(0, 200));
+      throw new Error(`Failed to fetch subscriptions: ${res.status} ${res.statusText}`);
     }
 
     const data = await res.json();
-    return Array.isArray(data?.data) ? data.data : [];
+    const subscriptions = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    console.log(`✅ Subscriptions API: Fetched ${subscriptions.length} subscriptions`);
+    return { data: subscriptions, isLocal: false };
   } catch (error) {
-    console.error('Error fetching subscriptions:', error.message);
-    throw error;
+    console.error('❌ Subscription API Error:', error.message);
+    // Return empty data instead of throwing
+    return { data: [], isLocal: false, error: error.message };
   }
 };
 
