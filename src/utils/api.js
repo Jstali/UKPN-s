@@ -1,10 +1,10 @@
 const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
 const DTC_API_CODE = 'REDACTED_DTC_API_CODE=';
-const SAP_API_CODE = 'REDACTED_SAP_API_CODE_V2=';
+const NON_DTC_API_CODE = 'REDACTED_SAP_API_CODE=';
 const SUBSCROPTION_API = 'REDACTED_SUBSCRIPTION_CODE=';
 
 const DTC_AUDIT_API = `${API_HOST}/api/fileconnectDtcAuditData?code=${DTC_API_CODE}`;
-const SAP_AUDIT_API = `${API_HOST}/api/sapAuditApi?code=${SAP_API_CODE}`;
+const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON_DTC_API_CODE}`;
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
@@ -219,7 +219,7 @@ const api = {
   // Fetch Non-DTC audit data
   async fetchNonDtcAuditData(continuationToken = null, pageSize = 500) {
     try {
-      let apiUrl = `${SAP_AUDIT_API}&pageSize=${pageSize}`;
+      let apiUrl = `${NON_DTC_AUDIT_API}&pageSize=${pageSize}`;
       if (continuationToken) {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
