@@ -5,14 +5,20 @@ const AppContext = createContext(null);
 
 // ─── localStorage cache helpers ───────────────────────────────────────────────
 const LS_KEY = 'ukpn_audit_cache';
-const LS_TTL = 30 * 60 * 1000; // 30 minutes
+const LS_TTL = 5 * 60 * 1000; // 5 minutes (reduced from 30)
 
 function readLocalCache() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const { dtc, nonDtc, ts } = JSON.parse(raw);
-    if (Date.now() - ts > LS_TTL) { localStorage.removeItem(LS_KEY); return null; }
+    const age = Date.now() - ts;
+    if (age > LS_TTL) { 
+      console.log(`🗑️ Cache expired (${Math.round(age/1000)}s old), clearing...`);
+      localStorage.removeItem(LS_KEY); 
+      return null; 
+    }
+    console.log(`✅ Using cache (${Math.round(age/1000)}s old)`);
     return { dtc: dtc || [], nonDtc: nonDtc || [] };
   } catch { return null; }
 }
@@ -75,14 +81,19 @@ export const AppProvider = ({ children }) => {
 
   const fetchAllData = useCallback(async (force = false) => {
     // Prevent concurrent fetches
-    if (isFetchingRef.current) return;
+    if (isFetchingRef.current) {
+      console.log('⏸️ Fetch already in progress, skipping...');
+      return;
+    }
 
     // Rate-limit: skip if fetched within last 30 seconds (unless forced)
     const now = Date.now();
     if (!force && lastFetchRef.current && (now - lastFetchRef.current < 30000)) {
+      console.log('⏸️ Rate limit: Last fetch was', Math.round((now - lastFetchRef.current)/1000), 'seconds ago');
       return;
     }
 
+    console.log('🔄 Starting data fetch...');
     isFetchingRef.current = true;
     const hasExistingData = auditDataRef.current.length > 0 || nonDtcDataRef.current.length > 0;
 
@@ -99,13 +110,16 @@ export const AppProvider = ({ children }) => {
 
     try {
       let dtcErr = null, nonDtcErr = null;
+      console.log('📡 Fetching page 1...');
       const dtcPromise = api.fetchDtcAuditData(null, 100).catch(err => {
         dtcErr = err.message || 'DTC API error';
+        console.error('❌ DTC fetch failed:', dtcErr);
         return { data: [], continuationToken: null };
       });
 
       const nonDtcPromise = api.fetchNonDtcAuditData(null, 100).catch(err => {
         nonDtcErr = err.message || 'Non-DTC API error';
+        console.error('❌ Non-DTC fetch failed:', nonDtcErr);
         return { data: [], continuationToken: null };
       });
 
