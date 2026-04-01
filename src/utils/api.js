@@ -238,16 +238,32 @@ const api = {
 
       if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status} ${res.statusText}`);
       const data = await res.json();
+
+      // Handle multiple response formats: { data: [] }, { records: [] }, [] directly
+      let records = [];
+      if (Array.isArray(data?.data)) {
+        records = data.data;
+      } else if (Array.isArray(data?.records)) {
+        records = data.records;
+      } else if (Array.isArray(data?.items)) {
+        records = data.items;
+      } else if (Array.isArray(data)) {
+        records = data;
+      }
+
+      console.log(`[Non-DTC API] ${records.length} records received`, continuationToken ? `(page token: ${continuationToken.substring(0, 20)}...)` : '(first page)');
+
       return {
-        data: Array.isArray(data.data) ? data.data : [],
-        continuationToken: data.continuationToken || null,
-        totalCount: data.totalCount || 0,
+        data: records,
+        continuationToken: data?.continuationToken || null,
+        totalCount: data?.totalCount || records.length,
       };
     } catch (error) {
       if (error.name === 'AbortError') {
         throw new Error('Request timed out after 15s');
       }
-      throw error; // propagate so callers can show error banners
+      console.error('[Non-DTC API] Fetch failed:', error.message);
+      throw error;
     }
   },
 

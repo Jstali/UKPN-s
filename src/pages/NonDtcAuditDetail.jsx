@@ -27,7 +27,7 @@ const NonDtcAuditDetail = () => {
     fileId: '',
   };
 
-  const { nonDtcAuditData, loading } = useApp();
+  const { nonDtcAuditData, loading, dataComplete } = useApp();
   const [filters, setFilters] = useState({ ...defaultFilters });
   const [hasQueried, setHasQueried] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -51,10 +51,10 @@ const NonDtcAuditDetail = () => {
 
   // Initialise filteredResults when data loads (no nav-state filters)
   useEffect(() => {
-    if (!location.state?.filters && auditData.length > 0) {
+    if (!location.state?.filters && auditData.length > 0 && filteredResults.length === 0) {
       setFilteredResults(auditData);
     }
-  }, [auditData, location.state]);
+  }, [auditData, location.state, filteredResults.length]);
 
   // Apply filters from navigation state
   useEffect(() => {
@@ -217,7 +217,7 @@ const NonDtcAuditDetail = () => {
       </div>
 
       {/* Loading state */}
-      {loading && (
+      {(loading || (!dataComplete && nonDtcAuditData.length === 0)) && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: '300px', flexDirection: 'column', gap: '14px',
@@ -233,7 +233,7 @@ const NonDtcAuditDetail = () => {
       )}
 
       {/* Results Table */}
-      {!loading && hasQueried && (
+      {!loading && dataComplete && hasQueried && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

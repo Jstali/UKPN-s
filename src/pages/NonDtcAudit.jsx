@@ -22,7 +22,7 @@ const mapItem = (item) => ({
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
-  const { nonDtcAuditData, loading } = useApp();
+  const { nonDtcAuditData, loading, dataComplete } = useApp();
   const [showBars, setShowBars] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -169,7 +169,7 @@ const NonDtcAudit = () => {
         )}
       </AnimatePresence>
 
-      {loading ? (
+      {(loading || (!dataComplete && nonDtcAuditData.length === 0)) ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', flexDirection: 'column', gap: '14px', color: '#64748b', fontSize: '14px', fontWeight: 500 }}>
           <div style={{ width: '36px', height: '36px', border: '3px solid #e2e8f0', borderTopColor: '#667eea', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           Loading Non-DTC audit data...
