@@ -208,6 +208,37 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 };
 
 const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, onApply }) => {
+  const [dateError, setDateError] = React.useState('');
+
+  // Validate date range
+  const validateDateRange = () => {
+    if (filters.eventTimestampFrom && filters.eventTimestampTo) {
+      const fromDate = new Date(filters.eventTimestampFrom);
+      const toDate = new Date(filters.eventTimestampTo);
+      
+      if (fromDate > toDate) {
+        setDateError('Event From date cannot be later than Event To date');
+        return false;
+      }
+    }
+    setDateError('');
+    return true;
+  };
+
+  // Handle apply with validation
+  const handleApply = () => {
+    if (validateDateRange()) {
+      onApply();
+    }
+  };
+
+  // Clear error when dates change
+  React.useEffect(() => {
+    if (dateError && filters.eventTimestampFrom && filters.eventTimestampTo) {
+      validateDateRange();
+    }
+  }, [filters.eventTimestampFrom, filters.eventTimestampTo]);
+
   // Extract unique values dynamically from audit data
   const uniqueValues = useMemo(() => {
     if (!auditData || auditData.length === 0) {
@@ -459,28 +490,45 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
       {/* Actions */}
       <div style={{
-        display: 'flex', justifyContent: 'flex-end', gap: '8px',
+        display: 'flex', flexDirection: 'column', gap: '8px',
         padding: '8px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
         flexShrink: 0
       }}>
-        <button onClick={onReset} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '8px 16px', background: '#f1f5f9', color: '#475569',
-          border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
-          fontSize: '12px', fontWeight: 600
-        }}>
-          <RotateCcw size={13} />
-          Reset
-        </button>
-        <button onClick={onApply} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '6px 14px', background: '#667eea', color: 'white',
-          border: 'none', borderRadius: '6px', cursor: 'pointer',
-          fontSize: '12px', fontWeight: 600
-        }}>
-          <Search size={13} />
-          Apply Filters
-        </button>
+        {dateError && (
+          <div style={{
+            padding: '8px 12px',
+            background: '#fef2f2',
+            border: '1px solid #fca5a5',
+            borderRadius: '6px',
+            color: '#991b1b',
+            fontSize: '12px',
+            fontWeight: 500
+          }}>
+            ⚠️ {dateError}
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button onClick={onReset} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 16px', background: '#f1f5f9', color: '#475569',
+            border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
+            fontSize: '12px', fontWeight: 600
+          }}>
+            <RotateCcw size={13} />
+            Reset
+          </button>
+          <button onClick={handleApply} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 14px', background: '#667eea', color: 'white',
+            border: 'none', borderRadius: '6px', cursor: 'pointer',
+            fontSize: '12px', fontWeight: 600,
+            opacity: dateError ? 0.5 : 1,
+            cursor: dateError ? 'not-allowed' : 'pointer'
+          }}>
+            <Search size={13} />
+            Apply Filters
+          </button>
+        </div>
       </div>
     </motion.div>
   );
