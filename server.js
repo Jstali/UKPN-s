@@ -127,7 +127,7 @@ app.get('/api/proxy/subscriptions', async (req, res) => {
     return res.json({ ...cached, fromCache: true });
   }
   try {
-    const url = `${API_HOST}/api/dtcSubscriptionApi?code=${SUBSCRIPTION_CODE}`;
+    const url = `${API_HOST}/api/dtcSubscriptionAPI?code=${SUBSCRIPTION_CODE}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     const response = await fetch(url, { signal: controller.signal });
