@@ -25,6 +25,9 @@ const getSourceFileName = (item) =>
   item.Source_FileName || item.source_file_name || item.SourceFileName ||
   item.Source_File_Name || item.fileName || item.filename || '';
 
+// Log missing Header_String fields only once per session
+let _missingHeaderLogged = false;
+
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -379,7 +382,6 @@ const DtcAuditFilter = () => {
   const handleQuery = (filtersToUse) => {
     const f = filtersToUse || appliedFilters;
     let results = [];
-    let missingHeaderLogged = false;
     auditData.forEach(item => {
       const headerStr = getHeaderString(item);
       const parsed = parseHeader(headerStr);
@@ -388,9 +390,10 @@ const DtcAuditFilter = () => {
       const flowFromFilename = extractFlowFromFilename(fileName);
       const rawFlow = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || item.FlowVersion || flowFromFilename;
 
-      if (!headerStr && !missingHeaderLogged) {
+      if (!headerStr && !_missingHeaderLogged) {
+        _missingHeaderLogged = true;
         console.log('[DtcAuditFilter] Sample item missing Header_String — all available fields:', Object.keys(item));
-        missingHeaderLogged = true;
+        console.log('[DtcAuditFilter] Sample item values:', JSON.stringify(item, null, 2).substring(0, 2000));
       }
 
       if (item.events && item.events.length > 0) {

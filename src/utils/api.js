@@ -236,7 +236,10 @@ const api = {
 
       clearTimeout(timeout);
 
-      if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        if (res.status === 404) throw new Error(`SAP Audit API not found (404) — the Azure Function 'sapAuditApi' may not be deployed yet`);
+        throw new Error(`Failed to fetch non-DTC audit data: ${res.status} ${res.statusText}`);
+      }
       const data = await res.json();
 
       // Handle multiple response formats
