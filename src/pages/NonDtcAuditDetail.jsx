@@ -27,7 +27,7 @@ const NonDtcAuditDetail = () => {
     fileId: '',
   };
 
-  const { nonDtcAuditData, loading, dataComplete } = useApp();
+  const { nonDtcAuditData, loading, dataComplete, nonDtcFetchError } = useApp();
   const [filters, setFilters] = useState({ ...defaultFilters });
   const [hasQueried, setHasQueried] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -216,8 +216,27 @@ const NonDtcAuditDetail = () => {
         </div>
       </div>
 
+      {/* API error banner */}
+      {nonDtcFetchError && nonDtcAuditData.length === 0 && (
+        <div style={{
+          marginBottom: '16px', padding: '16px 20px', background: '#fff7ed',
+          border: '1px solid #fed7aa', borderRadius: '10px',
+          display: 'flex', alignItems: 'flex-start', gap: '12px',
+        }}>
+          <div style={{ fontSize: '22px', lineHeight: 1 }}>⚠️</div>
+          <div>
+            <div style={{ fontWeight: 700, color: '#92400e', fontSize: '14px', marginBottom: '4px' }}>
+              Non-DTC (SAP) API Unavailable
+            </div>
+            <div style={{ color: '#78350f', fontSize: '13px' }}>
+              {nonDtcFetchError} — This API may require VPN or AVD access.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Loading state */}
-      {(loading || (!dataComplete && nonDtcAuditData.length === 0)) && (
+      {(loading || (!dataComplete && nonDtcAuditData.length === 0 && !nonDtcFetchError)) && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: '300px', flexDirection: 'column', gap: '14px',

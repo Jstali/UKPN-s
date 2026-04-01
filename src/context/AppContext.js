@@ -40,6 +40,7 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(!cached); // show skeleton only if no cache
   const [dataComplete, setDataComplete] = useState(!!cached);
   const [fetchError, setFetchError] = useState(null);
+  const [nonDtcFetchError, setNonDtcFetchError] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState([]);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [isLocalSubscription, setIsLocalSubscription] = useState(false);
@@ -94,6 +95,7 @@ export const AppProvider = ({ children }) => {
     // Don't set dataComplete=false here — only flip it when data is truly absent
 
     setFetchError(null);
+    setNonDtcFetchError(null);
 
     try {
       let dtcErr = null, nonDtcErr = null;
@@ -111,6 +113,9 @@ export const AppProvider = ({ children }) => {
 
       const initialDtc = dtcResponse.data || [];
       const initialNonDtc = nonDtcResponse.data || [];
+
+      // Track Non-DTC error independently so the page can show a specific message
+      if (nonDtcErr) setNonDtcFetchError(nonDtcErr);
 
       if (initialDtc.length === 0 && initialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
         setFetchError(dtcErr || nonDtcErr);
@@ -266,6 +271,7 @@ export const AppProvider = ({ children }) => {
       loading,
       dataComplete,
       fetchError,
+      nonDtcFetchError,
       fetchAllData,
       subscriptionData,
       subscriptionLoading,
