@@ -239,24 +239,28 @@ const api = {
       if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status} ${res.statusText}`);
       const data = await res.json();
 
-      // Handle multiple response formats: { data: [] }, { records: [] }, [] directly
+      // Handle multiple response formats
       let records = [];
-      if (Array.isArray(data?.data)) {
-        records = data.data;
-      } else if (Array.isArray(data?.records)) {
-        records = data.records;
-      } else if (Array.isArray(data?.items)) {
-        records = data.items;
-      } else if (Array.isArray(data)) {
-        records = data;
-      }
+      if (Array.isArray(data?.data))         records = data.data;        // { data: [] }
+      else if (Array.isArray(data?.value))   records = data.value;       // OData/SAP: { value: [] }
+      else if (Array.isArray(data?.records)) records = data.records;     // { records: [] }
+      else if (Array.isArray(data?.items))   records = data.items;       // { items: [] }
+      else if (Array.isArray(data?.results)) records = data.results;     // { results: [] }
+      else if (Array.isArray(data))          records = data;             // bare array
 
-      console.log(`[Non-DTC API] ${records.length} records received`, continuationToken ? `(page token: ${continuationToken.substring(0, 20)}...)` : '(first page)');
+      // Log full raw response structure on first call so we can debug field names
+      console.log(`[Non-DTC API] ${records.length} records, response keys:`, Object.keys(data || {}));
+      if (records.length > 0) {
+        console.log('[Non-DTC API] First record fields:', Object.keys(records[0]));
+        if (records[0]?.events?.length > 0) {
+          console.log('[Non-DTC API] First event fields:', Object.keys(records[0].events[0]));
+        }
+      }
 
       return {
         data: records,
-        continuationToken: data?.continuationToken || null,
-        totalCount: data?.totalCount || records.length,
+        continuationToken: data?.continuationToken || data?.nextLink || null,
+        totalCount: data?.totalCount || data?.count || records.length,
       };
     } catch (error) {
       if (error.name === 'AbortError') {
