@@ -27,9 +27,22 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
         setSearchQuery('');
       }
     };
+    
+    const handleScroll = () => {
+      if (isOpen) {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('scroll', handleScroll, true); // true = capture phase, catches all scrolls
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
 
   // Position dropdown using fixed positioning to escape overflow containers
   useEffect(() => {
