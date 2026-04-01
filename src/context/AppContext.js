@@ -202,6 +202,9 @@ export const AppProvider = ({ children }) => {
       }
       writeLocalCache(allDtc, allNonDtc);
       setDataComplete(true);
+      
+      // Log total records fetched
+      console.log(`📊 Total records fetched - DTC: ${allDtc.length}, Non-DTC: ${allNonDtc.length}`);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setFetchError(error.message || 'Failed to load data');

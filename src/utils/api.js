@@ -163,7 +163,7 @@ const api = {
   },
 
   // Fetch real audit data from Azure Function App with pagination
-  async fetchDtcAuditData(continuationToken = null, pageSize = 50) {
+  async fetchDtcAuditData(continuationToken = null, pageSize = 100) {
     try {
       let apiUrl = `${DTC_AUDIT_API}&pageSize=${pageSize}`;
       if (continuationToken) {
@@ -185,30 +185,34 @@ const api = {
 
       if (!res.ok) {
         const errorText = await res.text();
+        console.error(`❌ DTC API Error ${res.status}:`, errorText.substring(0, 200));
         throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText}`);
       }
 
       const data = await res.json();
+      const records = Array.isArray(data.data) ? data.data : [];
+      
+      console.log(`✅ DTC API: Fetched ${records.length} records, hasMore: ${!!data.continuationToken}`);
 
       return {
-        data: Array.isArray(data.data) ? data.data : [],
+        data: records,
         continuationToken: data.continuationToken || null,
         totalCount: data.totalCount || 0,
         pageSize: data.pageSize || pageSize,
-        resultCount: data.resultCount || data.data?.length || 0,
+        resultCount: records.length,
       };
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error('❌ Request timeout');
+        console.error('❌ DTC API: Request timeout after 15s');
       } else {
-        console.error('❌ Error fetching audit data:', error.message);
+        console.error('❌ DTC API Error:', error.message);
       }
       return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0 };
     }
   },
 
   // Fetch Non-DTC audit data
-  async fetchNonDtcAuditData(continuationToken = null, pageSize = 50) {
+  async fetchNonDtcAuditData(continuationToken = null, pageSize = 100) {
     try {
       let apiUrl = `${SAP_AUDIT_API}&pageSize=${pageSize}`;
       if (continuationToken) {
@@ -228,18 +232,27 @@ const api = {
 
       clearTimeout(timeout);
 
-      if (!res.ok) throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`❌ Non-DTC API Error ${res.status}:`, errorText.substring(0, 200));
+        throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
+      }
+      
       const data = await res.json();
+      const records = Array.isArray(data.data) ? data.data : [];
+      
+      console.log(`✅ Non-DTC API: Fetched ${records.length} records, hasMore: ${!!data.continuationToken}`);
+      
       return {
-        data: Array.isArray(data.data) ? data.data : [],
+        data: records,
         continuationToken: data.continuationToken || null,
         totalCount: data.totalCount || 0,
       };
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error('❌ Non-DTC request timeout');
+        console.error('❌ Non-DTC API: Request timeout after 15s');
       } else {
-        console.error('❌ Error fetching non-DTC audit data:', error.message);
+        console.error('❌ Non-DTC API Error:', error.message);
       }
       return { data: [], continuationToken: null, totalCount: 0 };
     }
