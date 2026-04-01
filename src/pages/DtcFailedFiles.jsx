@@ -100,17 +100,25 @@ const DtcFailedFiles = () => {
     return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
   };
 
-  const failedFiles = useMemo(() => {
+  // Memoize flattened data once
+  const flattenedData = useMemo(() => {
     if (auditData.length === 0) return [];
-    const flattened = flattenAuditEvents(auditData);
-    let filtered = flattened.filter(row => isFailedStatus(row.status));
+    return flattenAuditEvents(auditData);
+  }, [auditData]);
 
-    // Apply flow filter
+  // Memoize failed records
+  const failedRecords = useMemo(() => {
+    return flattenedData.filter(row => isFailedStatus(row.status));
+  }, [flattenedData]);
+
+  // Apply filters
+  const failedFiles = useMemo(() => {
+    let filtered = failedRecords;
+
     if (flowFilter && flowFilter !== 'All') {
       filtered = filtered.filter(row => row.flowVersion === flowFilter);
     }
 
-    // Apply file name filter
     if (fileNameFilter) {
       filtered = filtered.filter(row =>
         row.fileName && row.fileName.toLowerCase().includes(fileNameFilter.toLowerCase())
@@ -118,13 +126,11 @@ const DtcFailedFiles = () => {
     }
 
     return filtered;
-  }, [auditData, flowFilter, fileNameFilter]);
+  }, [failedRecords, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    const flattened = flattenAuditEvents(auditData);
-    const failed = flattened.filter(row => isFailedStatus(row.status));
-    return ['All', ...new Set(failed.map(row => row.flowVersion).filter(v => v && v !== '-'))];
-  }, [auditData]);
+    return ['All', ...new Set(failedRecords.map(row => row.flowVersion).filter(v => v && v !== '-'))];
+  }, [failedRecords]);
 
   return (
     <motion.div
