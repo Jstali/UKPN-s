@@ -25,7 +25,7 @@ const handleResponse = async (res) => {
 
 export const fetchDtcSubscriptions = async () => {
   try {
-    const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
+    const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${DTC_API_CODE}`;
 
     const res = await fetch(apiUrl, { method: 'GET' });
 
