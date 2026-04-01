@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDateTime, formatFlowVersion } from '../utils/auditUtils';
+import { formatDateTime, formatFlowVersion, parseHeader } from '../utils/auditUtils';
 
 const FilteredFileStatus = () => {
   const location = useLocation();
@@ -33,11 +33,13 @@ const FilteredFileStatus = () => {
       const status = hasDuplicateChecksum ? 'Duplicate Checksum' : hasFailed ? 'Failed' : hasDelivered ? 'Delivered' : 'Pending';
       const deliveredEvent = file.events?.find(e => String(e.Event_Type) === '4');
       const application = deliveredEvent?.applicationName || file.Application_Name || '-';
-      const flow = formatFlowVersion(file.Flow_Version || file.flow_version || file.flow) || '-';
+      const parsed = parseHeader(file.Header_String);
+      const flow = formatFlowVersion(parsed.flowVersion || file.Flow_Version || file.flow_version || file.flow) || '-';
+      const createdDate = file.Created || file.events?.[0]?.timestamp || file.timestamp;
 
       return [
         file.Source_FileName || '-',
-        formatDateTime(file.Created || file.timestamp),
+        formatDateTime(createdDate),
         status,
         application,
         flow,
@@ -159,7 +161,9 @@ const FilteredFileStatus = () => {
                   
                   const deliveredEvent = file.events?.find(e => String(e.Event_Type) === '4');
                   const application = deliveredEvent?.applicationName || file.Application_Name || '-';
-                  const flow = formatFlowVersion(file.Flow_Version || file.flow_version || file.flow) || '-';
+                  const parsed = parseHeader(file.Header_String);
+                  const flow = formatFlowVersion(parsed.flowVersion || file.Flow_Version || file.flow_version || file.flow) || '-';
+                  const createdDate = file.Created || file.events?.[0]?.timestamp || file.timestamp;
 
                   return (
                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -167,7 +171,7 @@ const FilteredFileStatus = () => {
                         {file.Source_FileName || '-'}
                       </td>
                       <td style={{ padding: '12px', fontSize: '13px', color: '#64748b' }}>
-                        {formatDateTime(file.Created || file.timestamp)}
+                        {formatDateTime(createdDate) || '-'}
                       </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{
