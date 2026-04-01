@@ -2,7 +2,7 @@ const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net'
 const API_CODE = 'REDACTED_DTC_API_CODE_V2=';
 const SAP_API_CODE = 'REDACTED_SAP_API_CODE_V2=';
 
-const DTC_AUDIT_API = `${API_HOST}/api/dtcAuditAPI?code=${API_CODE}`;
+const DTC_AUDIT_API = `${API_HOST}/api/dtcAuditApi?code=${API_CODE}`;
 const SAP_AUDIT_API = `${API_HOST}/api/sapAuditApi?code=${SAP_API_CODE}`;
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
@@ -25,7 +25,7 @@ const handleResponse = async (res) => {
 
 export const fetchDtcSubscriptions = async () => {
   try {
-    const apiUrl = `${API_HOST}/api/dtcSubscriptionAPI?code=${API_CODE}`;
+    const apiUrl = `${API_HOST}/api/dtcSubscriptionApi?code=${API_CODE}`;
 
     const res = await fetch(apiUrl, { method: 'GET' });
 
