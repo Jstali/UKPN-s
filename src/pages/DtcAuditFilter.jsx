@@ -9,6 +9,22 @@ import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlow
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
+// Try to extract DTC flow code from filename (e.g. D0132001_P_X_EPN.DTC → D0132001)
+const extractFlowFromFilename = (filename) => {
+  if (!filename) return '';
+  const match = String(filename).match(/^([A-Z]\d{7})/);
+  return match ? match[1] : '';
+};
+
+// Get Header_String with case-insensitive fallbacks
+const getHeaderString = (item) =>
+  item.Header_String || item.header_string || item.HeaderString || item.header || '';
+
+// Get Source_FileName with case-insensitive fallbacks
+const getSourceFileName = (item) =>
+  item.Source_FileName || item.source_file_name || item.SourceFileName ||
+  item.Source_File_Name || item.fileName || item.filename || '';
+
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -363,32 +379,44 @@ const DtcAuditFilter = () => {
   const handleQuery = (filtersToUse) => {
     const f = filtersToUse || appliedFilters;
     let results = [];
+    let missingHeaderLogged = false;
     auditData.forEach(item => {
-      const parsed = parseHeader(item.Header_String);
+      const headerStr = getHeaderString(item);
+      const parsed = parseHeader(headerStr);
+      const fileName = getSourceFileName(item);
+      // Extract flow from filename as last resort (e.g. D0132001_P_X_EPN.DTC)
+      const flowFromFilename = extractFlowFromFilename(fileName);
+      const rawFlow = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || item.FlowVersion || flowFromFilename;
+
+      if (!headerStr && !missingHeaderLogged) {
+        console.log('[DtcAuditFilter] Sample item missing Header_String — all available fields:', Object.keys(item));
+        missingHeaderLogged = true;
+      }
+
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {
           results.push({
             id: item.id,
             fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
-            fileName: item.Source_FileName,
-            sourcePath: item.Source_Path,
-            headerString: item.Header_String,
-            flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
-            fromRole: parsed.fromRole,
-            fromMPID: parsed.fromMPID,
-            toRole: parsed.toRole,
-            toMPID: parsed.toMPID,
-            recApp: parsed.recApp,
-            sourceApp: item.Source_Application || 'Unknown',
-            application: event.applicationName || event.Destination_Application || 'Unknown',
-            eventType: event.Event_Type || 'Unknown',
-            status: event.Status || 'Unknown',
+            fileName,
+            sourcePath: item.Source_Path || item.source_path || item.SourcePath || '',
+            headerString: headerStr,
+            flowVersion: formatFlowVersion(rawFlow) || '-',
+            fromRole: parsed.fromRole || event.fromRole || event.From_Role || '',
+            fromMPID: parsed.fromMPID || event.fromMPID || event.From_MPID || '',
+            toRole: parsed.toRole || event.toRole || event.To_Role || '',
+            toMPID: parsed.toMPID || event.toMPID || event.To_MPID || '',
+            recApp: parsed.recApp || event.Receiving_Application || event.receivingApp || '',
+            sourceApp: item.Source_Application || item.source_application || item.SourceApplication || 'Unknown',
+            application: event.applicationName || event.Destination_Application || event.destinationApplication || 'Unknown',
+            eventType: event.Event_Type || event.event_type || event.eventType || 'Unknown',
+            status: event.Status || event.status || 'Unknown',
             processed: event.processed || 'false',
-            timestamp: formatDateTime(event.timestamp),
-            eventId: event.id || '',
-            destinationPath: event.Destination_Path || '',
-            destinationFileName: event.Destination_fileName || '',
-            checksum: item.Checksum_From_User || '',
+            timestamp: formatDateTime(event.timestamp || event.Timestamp || event.created || event.Created),
+            eventId: event.id || event.eventId || '',
+            destinationPath: event.Destination_Path || event.destination_path || '',
+            destinationFileName: event.Destination_fileName || event.Destination_FileName || event.destinationFileName || '',
+            checksum: item.Checksum_From_User || item.checksum || '',
             _rid: item._rid,
             _ts: item._ts,
           });
@@ -469,22 +497,26 @@ const DtcAuditFilter = () => {
   const flatData = [];
   const fileIdSet = new Set();
   auditData.forEach(item => {
-    const parsed = parseHeader(item.Header_String);
+    const headerStr = getHeaderString(item);
+    const parsed = parseHeader(headerStr);
+    const fileName = getSourceFileName(item);
+    const flowFromFilename = extractFlowFromFilename(fileName);
+    const rawFlow = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || item.FlowVersion || flowFromFilename;
     const fileId = item.File_ID || item.fileId || item.file_id || item.correlationId || item.id;
     if (fileId && fileId !== 'UNKNOWN') fileIdSet.add(fileId);
-    
+
     if (item.events && item.events.length > 0) {
       item.events.forEach(event => {
         flatData.push({
-          sourceApp: item.Source_Application || 'Unknown',
+          sourceApp: item.Source_Application || item.source_application || 'Unknown',
           application: event.applicationName || event.Destination_Application || 'Unknown',
-          eventType: event.Event_Type || 'Unknown',
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
-          fromRole: parsed.fromRole || '',
-          fromMPID: parsed.fromMPID || '',
-          toRole: parsed.toRole || '',
-          toMPID: parsed.toMPID || '',
-          recApp: parsed.recApp || '',
+          eventType: event.Event_Type || event.event_type || event.eventType || 'Unknown',
+          flowVersion: formatFlowVersion(rawFlow) || '-',
+          fromRole: parsed.fromRole || event.fromRole || event.From_Role || '',
+          fromMPID: parsed.fromMPID || event.fromMPID || event.From_MPID || '',
+          toRole: parsed.toRole || event.toRole || event.To_Role || '',
+          toMPID: parsed.toMPID || event.toMPID || event.To_MPID || '',
+          recApp: parsed.recApp || event.Receiving_Application || event.receivingApp || '',
         });
       });
     }
