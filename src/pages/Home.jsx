@@ -23,21 +23,21 @@ const Home = () => {
     return saved || 'ℹ️ System Information: Regular maintenance scheduled for this weekend   •   •   •   📊 New reports available in Non DTC Audit section';
   });
   const [dashboardUpdatedAt, setDashboardUpdatedAt] = React.useState(() => {
-    const saved = sessionStorage.getItem('dashboardUpdatedAt');
-    if (saved) return saved;
-    const now = new Date().toLocaleTimeString();
-    sessionStorage.setItem('dashboardUpdatedAt', now);
-    return now;
+    return new Date().toLocaleTimeString();
   });
+
+  // Update timestamp when auditData changes
+  React.useEffect(() => {
+    if (auditData.length > 0) {
+      const newTime = new Date().toLocaleTimeString();
+      setDashboardUpdatedAt(newTime);
+      console.log('🏠 Home: auditData updated, length =', auditData.length, 'at', newTime);
+    }
+  }, [auditData.length]); // Only trigger when length changes, not on every render
 
   // Data fetching and auto-refresh are handled by AppContext
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
-
-  // Debug: Log when auditData changes
-  React.useEffect(() => {
-    console.log('🏠 Home: auditData updated, length =', auditData.length);
-  }, [auditData]);
 
   const deliveredFiles = React.useMemo(() => {
     const delivered = auditData.filter(item => {
@@ -54,13 +54,12 @@ const Home = () => {
       
       return hasProcessedEvents || hasEvent21;
     });
-    console.log('📊 Delivered files calculated:', delivered.length, 'from', auditData.length, 'total');
     return delivered;
-  }, [auditData]);
+  }, [auditData.length]); // Only recalculate when length changes
 
   const pendingFiles = React.useMemo(() => {
     return auditData.filter(item => !item.events?.some(e => String(e.Event_Type) === '4'));
-  }, [auditData]);
+  }, [auditData.length]);
 
   const failedFiles = React.useMemo(() => {
     const FAILED_STATUSES = ['failed', 'invalid subscription', 'checksum mismatch'];
@@ -79,7 +78,7 @@ const Home = () => {
       isFailed(item.status) || isFailed(item.Status)
     );
     return { dtcFailed, nonDtcFailed };
-  }, [auditData, nonDtcAuditData]);
+  }, [auditData.length, nonDtcAuditData.length]);
 
   const performanceItems = React.useMemo(() => {
     const appStats = new Map();

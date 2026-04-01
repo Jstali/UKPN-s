@@ -201,13 +201,13 @@ export const AppProvider = ({ children }) => {
           nonDtcToken = nonDtcRes.continuationToken;
         }
 
-        // Update UI progressively every page (not just on first load)
+        // Update UI progressively every page
         setAuditDataSync([...allDtc]);
         setNonDtcDataSync([...allNonDtc]);
-        writeLocalCache(allDtc, allNonDtc);
+        // Don't write cache on every page - only at the end
       }
 
-      // Final update
+      // Final update and cache write
       setAuditDataSync([...allDtc]);
       setNonDtcDataSync([...allNonDtc]);
       writeLocalCache(allDtc, allNonDtc);
