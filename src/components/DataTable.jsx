@@ -417,32 +417,13 @@ const DataTable = ({
     return lines.join('\n');
   };
 
-  const handleViewFile = async (row) => {
-    const fileName = row.fileName || row.Source_FileName || 'file.txt';
-    const fileContent = row.fileContent || row.File_Content || '';
-
-    setFileViewModal({
-      show: true,
-      fileName,
-      fileContent: fileContent || buildFileContent(row),
-      loading: false,
-      error: null,
-      fileId: row.fileId || row.File_ID,
-    });
-  };
-
-  const handleDownloadFile = async (row) => {
-    if (typeof onDownload === 'function') {
-      onDownload(row);
-      return;
-    }
-
-    const fallbackFileName = row.fileName || row.Source_FileName || row.destinationFileName || row.Destination_fileName || 'download.txt';
+  const getArchivePathCandidates = (row) => {
     const sourceFileName = row.fileName || row.Source_FileName || '';
     const destinationFileName = row.destinationFileName || row.Destination_fileName || '';
     const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
     const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
     const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
+
     const joinPath = (base, name) => {
       const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
       const cleanName = String(name || '').trim().replace(/^[\\/]+/, '');
@@ -466,7 +447,69 @@ const DataTable = ({
       .filter(Boolean)
       .filter(isArchivePath);
 
-    const candidatePaths = normalizedCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
+    return normalizedCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
+  };
+
+  const handleViewFile = async (row) => {
+    const fallbackFileName = row.fileName || row.Source_FileName || 'file.txt';
+    const candidatePaths = getArchivePathCandidates(row);
+    setFileViewModal({
+      show: true,
+      fileName: fallbackFileName,
+      fileContent: '',
+      loading: true,
+      error: null,
+      fileId: row.fileId || row.File_ID,
+    });
+
+    if (candidatePaths.length === 0) {
+      setFileViewModal({
+        show: true,
+        fileName: fallbackFileName,
+        fileContent: '',
+        loading: false,
+        error: 'Preview is not available in archive for this record.',
+        fileId: row.fileId || row.File_ID,
+      });
+      return;
+    }
+
+    let lastError = null;
+    for (const path of candidatePaths) {
+      try {
+        const { content, filename } = await api.viewBlobFileByPath(path);
+        setFileViewModal({
+          show: true,
+          fileName: filename || fallbackFileName,
+          fileContent: content || '',
+          loading: false,
+          error: null,
+          fileId: row.fileId || row.File_ID,
+        });
+        return;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    setFileViewModal({
+      show: true,
+      fileName: fallbackFileName,
+      fileContent: '',
+      loading: false,
+      error: lastError?.message || 'Failed to load preview content.',
+      fileId: row.fileId || row.File_ID,
+    });
+  };
+
+  const handleDownloadFile = async (row) => {
+    if (typeof onDownload === 'function') {
+      onDownload(row);
+      return;
+    }
+
+    const fallbackFileName = row.fileName || row.Source_FileName || row.destinationFileName || row.Destination_fileName || 'download.txt';
+    const candidatePaths = getArchivePathCandidates(row);
 
     try {
       if (candidatePaths.length === 0) {
@@ -515,29 +558,7 @@ const DataTable = ({
   };
 
   const hasArchiveDownloadPath = (row) => {
-    const sourceFileName = row.fileName || row.Source_FileName || '';
-    const destinationFileName = row.destinationFileName || row.Destination_fileName || '';
-    const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
-    const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
-    const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
-    const joinPath = (base, name) => {
-      const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
-      const cleanName = String(name || '').trim().replace(/^[\\/]+/, '');
-      if (!cleanBase || !cleanName) return '';
-      return `${cleanBase}/${cleanName}`;
-    };
-    const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/').trim();
-    const isArchivePath = (value) => /^DTC_File\/Archive\//i.test(toForwardSlashes(value));
-
-    const candidates = [
-      blobFileName,
-      joinPath(blobArchiveLocation, sourceFileName),
-      joinPath(blobArchiveLocation, destinationFileName),
-      joinPath(blobLocation, sourceFileName),
-      joinPath(blobLocation, destinationFileName),
-    ].map((v) => toForwardSlashes(v)).filter(Boolean);
-
-    return candidates.some(isArchivePath);
+    return getArchivePathCandidates(row).length > 0;
   };
 
   return (
@@ -822,9 +843,19 @@ const DataTable = ({
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button
                             className="table-action-btn"
+                            disabled={!hasArchiveDownloadPath(row)}
                             onClick={() => handleViewFile(row)}
-                            title="View file"
-                            style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            title={hasArchiveDownloadPath(row) ? 'View file' : 'Preview not available in archive'}
+                            style={{
+                              padding: '4px 8px',
+                              background: '#f1f5f9',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '4px',
+                              cursor: hasArchiveDownloadPath(row) ? 'pointer' : 'not-allowed',
+                              opacity: hasArchiveDownloadPath(row) ? 1 : 0.45,
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
                           >
                             <Eye size={14} color="#475569" />
                           </button>
