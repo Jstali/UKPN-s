@@ -24,6 +24,8 @@ const EVENT_TYPE_MAP = {
   'Failed': 'Failed'
 };
 
+const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+
 // Pick the first non-empty, non-"UNKNOWN" value from a list of candidates
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
@@ -130,26 +132,38 @@ const buildFilteredResults = (data, filtersToUse) => {
 
   // Handle multi-select for source and destination applications
   if (filtersToUse.sourceApplication && filtersToUse.sourceApplication !== 'All') {
-    const selectedApps = filtersToUse.sourceApplication.split(',');
-    results = results.filter(item => selectedApps.includes(item.sourceApplication));
+    const selectedApps = filtersToUse.sourceApplication
+      .split(',')
+      .map(normalizeFilterValue)
+      .filter(Boolean);
+    results = results.filter(item => selectedApps.includes(normalizeFilterValue(item.sourceApplication)));
   }
 
   if (filtersToUse.destinationApplication && filtersToUse.destinationApplication !== 'All') {
-    const selectedApps = filtersToUse.destinationApplication.split(',');
-    results = results.filter(item => selectedApps.includes(item.application));
+    const selectedApps = filtersToUse.destinationApplication
+      .split(',')
+      .map(normalizeFilterValue)
+      .filter(Boolean);
+    results = results.filter(item => selectedApps.includes(normalizeFilterValue(item.application)));
   }
 
   // Handle other filters (support comma-separated multi-select values)
   Object.entries(filterMap).forEach(([filterKey, dataKey]) => {
     if (filtersToUse[filterKey] && filtersToUse[filterKey] !== 'All') {
-      const selectedValues = filtersToUse[filterKey].split(',');
-      results = results.filter(item => selectedValues.includes(item[dataKey]));
+      const selectedValues = filtersToUse[filterKey]
+        .split(',')
+        .map(normalizeFilterValue)
+        .filter(Boolean);
+      results = results.filter(item => selectedValues.includes(normalizeFilterValue(item[dataKey])));
     }
   });
 
   if (filtersToUse.fileId && filtersToUse.fileId !== 'All') {
-    const selectedValues = filtersToUse.fileId.split(',');
-    results = results.filter(item => item.fileId && selectedValues.includes(item.fileId));
+    const selectedValues = filtersToUse.fileId
+      .split(',')
+      .map(normalizeFilterValue)
+      .filter(Boolean);
+    results = results.filter(item => item.fileId && selectedValues.includes(normalizeFilterValue(item.fileId)));
   }
   if (filtersToUse.msgId) {
     results = results.filter(item => item.eventId && item.eventId.includes(filtersToUse.msgId));
