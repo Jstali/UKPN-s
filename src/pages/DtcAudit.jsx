@@ -322,6 +322,27 @@ const DtcAudit = () => {
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
   const columns = hasQueried ? FILTERED_COLUMNS : defaultColumns;
+  const shouldSplitRoleColumnsForExport = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
+
+  const exportColumns = useMemo(() => {
+    if (!shouldSplitRoleColumnsForExport) return columns;
+
+    return columns.flatMap((col) => {
+      if (col.key === 'fromRoleMPID') {
+        return [
+          { key: 'fromRole', label: 'From Role' },
+          { key: 'fromMPID', label: 'From MPID' },
+        ];
+      }
+      if (col.key === 'toRoleMPID') {
+        return [
+          { key: 'toRole', label: 'To Role' },
+          { key: 'toMPID', label: 'To MPID' },
+        ];
+      }
+      return [col];
+    });
+  }, [columns, shouldSplitRoleColumnsForExport]);
 
   const tableData = hasQueried ? filteredResults : flattenedAuditData;
 
@@ -523,6 +544,7 @@ const DtcAudit = () => {
         <DataTable
           data={hasQueried ? filteredResults : flattenedAuditData}
           columns={columns}
+          exportColumns={exportColumns}
           compactColumns={[
             { key: 'flowVersion', label: 'Flow' },
             { key: 'fileId', label: 'File ID' },

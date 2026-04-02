@@ -177,6 +177,7 @@ const DataTable = ({
   data, 
   columns, 
   compactColumns, 
+  exportColumns,
   onDownload, 
   exportConfig, 
   onViewDetail,
@@ -226,6 +227,7 @@ const DataTable = ({
   const [exporting, setExporting] = useState(false);
 
   const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
+  const columnsForExport = exportColumns?.length ? exportColumns : columns;
 
   const handleResizeStart = useCallback((colKey, e) => {
     e.preventDefault();
@@ -490,9 +492,9 @@ const DataTable = ({
                 </div>
               )}
               <ExportDropdown
-                onExportPDF={() => handleExport(() => exportToPDF(sortedData, columns, exportConfig.filename, exportConfig.title || exportConfig.filename?.replace(/_/g, ' ')))}
-                onExportExcel={() => handleExport(() => exportToExcel(sortedData, columns, exportConfig.filename))}
-                onExportCSV={() => handleExport(() => exportToCSV(sortedData, columns, exportConfig.filename))}
+                onExportPDF={() => handleExport(() => exportToPDF(sortedData, columnsForExport, exportConfig.filename, exportConfig.title || exportConfig.filename?.replace(/_/g, ' ')))}
+                onExportExcel={() => handleExport(() => exportToExcel(sortedData, columnsForExport, exportConfig.filename))}
+                onExportCSV={() => handleExport(() => exportToCSV(sortedData, columnsForExport, exportConfig.filename))}
                 onSendEmail={() => setShowEmailModal(true)}
               />
             </>
