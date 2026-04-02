@@ -356,6 +356,7 @@ const DtcAuditFilter = () => {
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [dateError, setDateError] = useState('');
   const filterBtnRefs = useRef({});
 
   // Auto-query on data load — use default filters (show all)
@@ -367,12 +368,27 @@ const DtcAuditFilter = () => {
   }, [auditData.length]);
 
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+    setFilters(prev => {
+      const next = { ...prev, [field]: value };
+      if (next.eventTimestampFrom && next.eventTimestampTo) {
+        const fromDate = new Date(next.eventTimestampFrom);
+        const toDate = new Date(next.eventTimestampTo);
+        if (fromDate > toDate) {
+          setDateError('Event From date cannot be later than Event To date');
+        } else {
+          setDateError('');
+        }
+      } else {
+        setDateError('');
+      }
+      return next;
+    });
   };
 
   const handleReset = () => {
     setFilters({ ...defaultFilters });
     setAppliedFilters({ ...defaultFilters });
+    setDateError('');
     setSearchTerm('');
     setColumnFilters({});
     setSortConfig({ key: null, direction: 'asc' });
@@ -381,6 +397,15 @@ const DtcAuditFilter = () => {
 
   const handleQuery = (filtersToUse) => {
     const f = filtersToUse || appliedFilters;
+    if (f.eventTimestampFrom && f.eventTimestampTo) {
+      const fromDate = new Date(f.eventTimestampFrom);
+      const toDate = new Date(f.eventTimestampTo);
+      if (fromDate > toDate) {
+        setDateError('Event From date cannot be later than Event To date');
+        return false;
+      }
+    }
+    setDateError('');
     let results = [];
     auditData.forEach(item => {
       const headerStr = getHeaderString(item);
@@ -492,6 +517,7 @@ const DtcAuditFilter = () => {
     setExceptionCount(0);
     setHasQueried(true);
     setCurrentPage(1);
+    return true;
   };
 
 
@@ -720,9 +746,26 @@ const DtcAuditFilter = () => {
         </div>
 
         <div style={{
-          display: 'flex', justifyContent: 'flex-end', gap: '10px',
+          display: 'flex', justifyContent: 'space-between', gap: '10px',
           padding: '12px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc'
         }}>
+          {dateError ? (
+            <div style={{
+              alignSelf: 'center',
+              padding: '6px 10px',
+              background: '#fef2f2',
+              border: '1px solid #fca5a5',
+              borderRadius: '6px',
+              color: '#991b1b',
+              fontSize: '12px',
+              fontWeight: 600,
+            }}>
+              {dateError}
+            </div>
+          ) : (
+            <div />
+          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
           <button onClick={handleReset} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', background: '#f1f5f9', color: '#475569',

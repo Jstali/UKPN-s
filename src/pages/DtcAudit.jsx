@@ -265,6 +265,15 @@ const DtcAudit = () => {
   const handleQuery = useCallback((filterData) => {
     const filtersToUse = filterData || filters;
     if (!filtersToUse) return;
+
+    if (filtersToUse.eventTimestampFrom && filtersToUse.eventTimestampTo) {
+      const fromDate = new Date(filtersToUse.eventTimestampFrom);
+      const toDate = new Date(filtersToUse.eventTimestampTo);
+      if (fromDate > toDate) {
+        alert('Event From date cannot be later than Event To date');
+        return;
+      }
+    }
     
     const results = buildFilteredResults(globalAuditData, filtersToUse);
     setFilteredResults(results);
