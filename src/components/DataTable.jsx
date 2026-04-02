@@ -437,28 +437,51 @@ const DataTable = ({
       return;
     }
 
-    const fallbackFileName = row.fileName || row.Source_FileName || row.destinationFileName || 'download.txt';
-    const downloadPath = [
+    const fallbackFileName = row.fileName || row.Source_FileName || row.destinationFileName || row.Destination_fileName || 'download.txt';
+    const sourceFileName = row.fileName || row.Source_FileName || '';
+    const destinationFileName = row.destinationFileName || row.Destination_fileName || '';
+    const basePaths = [
       row.filePath,
       row.File_Path,
       row.destinationPath,
       row.Destination_Path,
       row.sourcePath,
       row.Source_Path,
-    ].find((val) => typeof val === 'string' && val.trim());
+    ].filter((val) => typeof val === 'string' && val.trim());
+
+    const joinPath = (base, name) => {
+      const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
+      const cleanName = String(name || '').trim().replace(/^[\\/]+/, '');
+      if (!cleanBase || !cleanName) return '';
+      return `${cleanBase}/${cleanName}`;
+    };
+
+    const candidatePaths = [
+      ...basePaths.map((p) => p.trim()),
+      ...basePaths.map((p) => joinPath(p, sourceFileName)).filter(Boolean),
+      ...basePaths.map((p) => joinPath(p, destinationFileName)).filter(Boolean),
+    ].filter((val, idx, arr) => val && arr.indexOf(val) === idx);
 
     try {
-      if (downloadPath) {
-        const { blob, filename } = await api.downloadFileByPath(downloadPath);
-        const objectUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = filename || fallbackFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(objectUrl);
-        return;
+      if (candidatePaths.length > 0) {
+        let lastError = null;
+        for (const path of candidatePaths) {
+          try {
+            const { blob, filename } = await api.downloadFileByPath(path);
+            const objectUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = filename || fallbackFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(objectUrl);
+            return;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        if (lastError) throw lastError;
       }
 
       const fileContent = row.fileContent || row.File_Content || buildFileContent(row);
