@@ -774,14 +774,17 @@ const DtcAuditFilter = () => {
           }}>
             <RotateCcw size={14} /> Reset
           </button>
-          <button onClick={() => { setAppliedFilters({ ...filters }); handleQuery(filters); }} style={{
+          <button onClick={() => { if (handleQuery(filters)) setAppliedFilters({ ...filters }); }} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', background: '#667eea', color: 'white',
             border: 'none', borderRadius: '8px', cursor: 'pointer',
             fontSize: '13px', fontWeight: 600,
+            opacity: dateError ? 0.6 : 1,
+            cursor: dateError ? 'not-allowed' : 'pointer',
           }}>
             <Search size={14} /> Apply Filters
           </button>
+          </div>
         </div>
       </div>
 
