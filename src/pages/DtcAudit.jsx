@@ -76,6 +76,10 @@ const flattenAuditEvents = (data) => {
         const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
         const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
         const flowVersionParts = formattedFlowVersion.split(' ');
+        const resolvedFromRole = parsed.fromRole || item.From_Role || item.from_role || item.fromRole || event.fromRole || event.From_Role || '';
+        const resolvedFromMPID = parsed.fromMPID || item.From_MPID || item.from_mpid || item.fromMPID || event.fromMPID || event.From_MPID || '';
+        const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
+        const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
         flatData.push({
           ...item,
@@ -84,12 +88,12 @@ const flattenAuditEvents = (data) => {
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
-          fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
-          toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
-          fromRole: parsed.fromRole,
-          fromMPID: parsed.fromMPID,
-          toRole: parsed.toRole,
-          toMPID: parsed.toMPID,
+          fromRoleMPID: formatFromRoleMPID(resolvedFromRole, resolvedFromMPID),
+          toRoleMPID: formatToRoleMPID(resolvedToRole, resolvedToMPID),
+          fromRole: resolvedFromRole,
+          fromMPID: resolvedFromMPID,
+          toRole: resolvedToRole,
+          toMPID: resolvedToMPID,
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
@@ -122,18 +126,22 @@ const buildFilteredResults = (data, filtersToUse) => {
 
       reversedEvents.forEach(event => {
         const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
+        const resolvedFromRole = parsed.fromRole || item.From_Role || item.from_role || item.fromRole || event.fromRole || event.From_Role || '';
+        const resolvedFromMPID = parsed.fromMPID || item.From_MPID || item.from_mpid || item.fromMPID || event.fromMPID || event.From_MPID || '';
+        const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
+        const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
           id: item.id,
           flowVersion: formatFlowVersion(rawFlowVersion) || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
-          fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
-          toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
-          fromRole: parsed.fromRole,
-          fromMPID: parsed.fromMPID,
-          toRole: parsed.toRole,
-          toMPID: parsed.toMPID,
+          fromRoleMPID: formatFromRoleMPID(resolvedFromRole, resolvedFromMPID),
+          toRoleMPID: formatToRoleMPID(resolvedToRole, resolvedToMPID),
+          fromRole: resolvedFromRole,
+          fromMPID: resolvedFromMPID,
+          toRole: resolvedToRole,
+          toMPID: resolvedToMPID,
           created: formatDateTime(event.timestamp),
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
