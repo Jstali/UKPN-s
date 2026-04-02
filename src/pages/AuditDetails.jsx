@@ -2,14 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronRight, Eye } from 'lucide-react';
 import { formatDateTime } from '../utils/auditUtils';
+import { useApp } from '../context/AppContext';
 
 // Summary columns - must match DTC Audit table exactly
-const SUMMARY_FIELDS = [
+const SUMMARY_FIELDS_COMBINED = [
   { key: 'flowVersion', label: 'Flow' },
   { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp', format: 'datetime' },
   { key: 'fromRoleMPID', label: 'From Role + From MPID' },
   { key: 'toRoleMPID', label: 'To Role + To MPID' },
+  { key: 'sourceApplication', label: 'Source' },
+  { key: 'application', label: 'Destination' },
+  { key: 'status', label: 'Status' },
+  { key: 'fileName', label: 'Source File Name' },
+  { key: 'eventId', label: 'Message ID' },
+];
+
+const SUMMARY_FIELDS_SPLIT = [
+  { key: 'flowVersion', label: 'Flow' },
+  { key: 'fileId', label: 'File ID' },
+  { key: 'timestamp', label: 'Event Timestamp', format: 'datetime' },
+  { key: 'fromRole', label: 'From Role' },
+  { key: 'fromMPID', label: 'From MPID' },
+  { key: 'toRole', label: 'To Role' },
+  { key: 'toMPID', label: 'To MPID' },
   { key: 'sourceApplication', label: 'Source' },
   { key: 'application', label: 'Destination' },
   { key: 'status', label: 'Status' },
@@ -36,8 +52,11 @@ const DETAIL_FIELDS = [
 const AuditDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useApp();
   const record = location.state?.record;
   const [showPreview, setShowPreview] = useState(false);
+  const splitRoleMpid = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
+  const summaryFields = splitRoleMpid ? SUMMARY_FIELDS_SPLIT : SUMMARY_FIELDS_COMBINED;
 
   useEffect(() => {
     return () => {
@@ -299,7 +318,7 @@ const AuditDetails = () => {
             Summary Information
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
-            {SUMMARY_FIELDS.map(({ key, label, format }) => (
+            {summaryFields.map(({ key, label, format }) => (
               <div key={key} style={{
                 display: 'flex',
                 padding: '10px 12px',
