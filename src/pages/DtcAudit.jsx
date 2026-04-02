@@ -270,6 +270,51 @@ const CRITERIA_FIELDS = [
   { label: 'Message ID', key: 'msgId' },
 ];
 
+const FILTERED_COLUMNS_FULL = [
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
+  { key: 'fileId', label: 'File ID' },
+  { key: 'timestamp', label: 'Event Timestamp' },
+  { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+  { key: 'toRoleMPID', label: 'To Role + To MPID' },
+  { key: 'sourceApplication', label: 'Source' },
+  { key: 'application', label: 'Destination' },
+  { key: 'status', label: 'Status' },
+  { key: 'fileName', label: 'Source File Name' },
+  { key: 'eventId', label: 'Message ID' },
+];
+
+const COMPACT_COLUMNS_BUSINESS = [
+  { key: 'flowVersion', label: 'Flow' },
+  { key: 'fileId', label: 'File ID' },
+  { key: 'timestamp', label: 'Event Timestamp' },
+  { key: 'fromRole', label: 'From Role' },
+  { key: 'fromMPID', label: 'From MID' },
+  { key: 'toRole', label: 'To Role' },
+  { key: 'toMPID', label: 'To MPID' },
+  { key: 'sourceApplication', label: 'Source' },
+  { key: 'application', label: 'Destination' },
+  { key: 'status', label: 'Status' },
+  { key: 'fileName', label: 'Source File Name' },
+  { key: 'eventId', label: 'Message ID' },
+];
+
+const COMPACT_COLUMNS_FULL = [
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
+  { key: 'fileId', label: 'File ID' },
+  { key: 'timestamp', label: 'Event Timestamp' },
+  { key: 'fromRole', label: 'From Role' },
+  { key: 'fromMPID', label: 'From MID' },
+  { key: 'toRole', label: 'To Role' },
+  { key: 'toMPID', label: 'To MPID' },
+  { key: 'sourceApplication', label: 'Source' },
+  { key: 'application', label: 'Destination' },
+  { key: 'status', label: 'Status' },
+  { key: 'fileName', label: 'Source File Name' },
+  { key: 'eventId', label: 'Message ID' },
+];
+
 const DtcAudit = () => {
   const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading } = useApp();
   const location = useLocation();
@@ -370,7 +415,9 @@ const DtcAudit = () => {
   
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
-  const columns = hasQueried ? FILTERED_COLUMNS : defaultColumns;
+  const filteredColumns = isBusiness ? FILTERED_COLUMNS : FILTERED_COLUMNS_FULL;
+  const columns = hasQueried ? filteredColumns : defaultColumns;
+  const compactColumns = isBusiness ? COMPACT_COLUMNS_BUSINESS : COMPACT_COLUMNS_FULL;
   const shouldSplitRoleColumnsForExport = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
 
   const exportColumns = useMemo(() => {
@@ -600,20 +647,7 @@ const DtcAudit = () => {
           data={hasQueried ? filteredResults : flattenedAuditData}
           columns={columns}
           exportColumns={exportColumns}
-          compactColumns={[
-            { key: 'flowVersion', label: 'Flow' },
-            { key: 'fileId', label: 'File ID' },
-            { key: 'timestamp', label: 'Event Timestamp' },
-            { key: 'fromRole', label: 'From Role' },
-            { key: 'fromMPID', label: 'From MID' },
-            { key: 'toRole', label: 'To Role' },
-            { key: 'toMPID', label: 'To MPID' },
-            { key: 'sourceApplication', label: 'Source' },
-            { key: 'application', label: 'Destination' },
-            { key: 'status', label: 'Status' },
-            { key: 'fileName', label: 'Source File Name' },
-            { key: 'eventId', label: 'Message ID' },
-          ]}
+          compactColumns={compactColumns}
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={50}
           groupByKey="eventId"
