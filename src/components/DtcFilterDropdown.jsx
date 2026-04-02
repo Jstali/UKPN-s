@@ -28,8 +28,16 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
       }
     };
     
-    const handleScroll = () => {
+    const handleScroll = (e) => {
       if (isOpen) {
+        // Keep dropdown open when user scrolls within the dropdown itself.
+        if (
+          dropdownRef.current &&
+          e.target instanceof Node &&
+          dropdownRef.current.contains(e.target)
+        ) {
+          return;
+        }
         setIsOpen(false);
         setSearchQuery('');
       }
