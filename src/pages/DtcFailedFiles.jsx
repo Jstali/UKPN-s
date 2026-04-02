@@ -52,16 +52,21 @@ const flattenAuditEvents = (data) => {
       const reversedEvents = [...item.events].reverse();
       
       reversedEvents.forEach(event => {
+        const formattedFlowVersion = formatFlowVersion(
+          parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
+          (isFlowCode(item.File_ID) ? item.File_ID : '') ||
+          flowFromFileName(item.Source_FileName) ||
+          flowFromPath(event.Destination_Path) ||
+          flowFromPath(item.Source_Path)
+        ) || '-';
+        const flowVersionParts = formattedFlowVersion.split(' ');
+
         flatData.push({
           ...item,
           id: item.id,
-          flowVersion: formatFlowVersion(
-            parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
-            (isFlowCode(item.File_ID) ? item.File_ID : '') ||
-            flowFromFileName(item.Source_FileName) ||
-            flowFromPath(event.Destination_Path) ||
-            flowFromPath(item.Source_Path)
-          ) || '-',
+          flowVersion: formattedFlowVersion,
+          flow: flowVersionParts[0] || '-',
+          version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
@@ -89,9 +94,10 @@ const flattenAuditEvents = (data) => {
 
 const DtcFailedFiles = () => {
   const navigate = useNavigate();
-  const { auditData, loading, dataComplete, fetchError } = useApp();
+  const { user, auditData, loading, dataComplete, fetchError } = useApp();
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
+  const splitFlowByRole = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();
@@ -252,8 +258,31 @@ const DtcFailedFiles = () => {
       ) : (
         <DataTable
           data={failedFiles}
-          columns={DEFAULT_COLUMNS_FULL}
-          compactColumns={[
+          columns={splitFlowByRole ? DEFAULT_COLUMNS_FULL : [
+            { key: 'flowVersion', label: 'Flow' },
+            { key: 'fileId', label: 'File ID' },
+            { key: 'timestamp', label: 'Event Timestamp' },
+            { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+            { key: 'toRoleMPID', label: 'To Role + To MPID' },
+            { key: 'sourceApplication', label: 'Source' },
+            { key: 'application', label: 'Destination' },
+            { key: 'status', label: 'Status' },
+            { key: 'fileName', label: 'Source File Name' },
+            { key: 'eventId', label: 'Message ID' },
+          ]}
+          compactColumns={splitFlowByRole ? [
+            { key: 'flow', label: 'Flow' },
+            { key: 'version', label: 'Version' },
+            { key: 'fileId', label: 'File ID' },
+            { key: 'timestamp', label: 'Event Timestamp' },
+            { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+            { key: 'toRoleMPID', label: 'To Role + To MPID' },
+            { key: 'sourceApplication', label: 'Source' },
+            { key: 'application', label: 'Destination' },
+            { key: 'status', label: 'Status' },
+            { key: 'fileName', label: 'Source File Name' },
+            { key: 'eventId', label: 'Message ID' },
+          ] : [
             { key: 'flowVersion', label: 'Flow' },
             { key: 'fileId', label: 'File ID' },
             { key: 'timestamp', label: 'Event Timestamp' },
