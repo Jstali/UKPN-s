@@ -6,13 +6,29 @@ import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, EVENT_TYPE_LABELS } from '../utils/auditUtils';
 
-// Extract DTC flow code from filename e.g. "BMANW7475.D0209" → "D0209"
-const flowFromFileName = (fileName) => {
-  if (!fileName) return '';
-  const match = fileName.match(/\.([A-Z]\d{4,8})(?:\.|$)/i);
-  return match ? match[1].toUpperCase() : '';
+const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
 };
-const isFlowCode = (val) => val && val !== 'UNKNOWN' && /^[A-Z]\d{4,8}$/i.test(val);
+
+const deriveFlowVersion = (item, parsedFlowVersion) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    '';
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+
+  return '';
+};
 
 const FailedFiles = () => {
   const location = useLocation();
@@ -41,12 +57,9 @@ const FailedFiles = () => {
 
       item.events?.forEach(event => {
         if (isFailedStatus(event.Status) || isFailedStatus(event.status)) {
+          const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
           failed.push({
-            flowVersion: formatFlowVersion(
-              parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
-              (isFlowCode(item.File_ID) ? item.File_ID : '') ||
-              flowFromFileName(item.Source_FileName)
-            ) || '-',
+            flowVersion: formatFlowVersion(rawFlowVersion) || '-',
             fileId: item.File_ID || '',
             fromMPID: parsed.fromMPID || '',
             toMPID: parsed.toMPID || '',

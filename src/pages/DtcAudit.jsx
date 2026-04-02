@@ -29,13 +29,6 @@ const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase()
 // Pick the first non-empty, non-"UNKNOWN" value from a list of candidates
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
-// Extract DTC flow code from source filename, e.g. "D0381_R_X_SMAR.DTC" -> "D0381"
-const extractFlowFromFilename = (fileName) => {
-  const name = String(fileName || '').toUpperCase();
-  const match = name.match(/([A-Z]\d{4,8})/);
-  return match ? match[1] : '';
-};
-
 const normalizeVersion = (value) => {
   const str = String(value || '').trim();
   if (!str) return '';
@@ -57,7 +50,7 @@ const deriveFlowVersion = (item, parsedFlowVersion) => {
   if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
   if (flowOnly) return flowOnly;
 
-  return extractFlowFromFilename(item.Source_FileName) || '';
+  return '';
 };
 
 // Flatten audit data to create one row per event

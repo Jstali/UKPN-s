@@ -8,23 +8,6 @@ import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } 
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
-// Extract flow version from filename e.g. "BMANW7475.D0209" or "BMANW7475.D0209.txt" → "D0209"
-const flowFromFileName = (fileName) => {
-  if (!fileName) return '';
-  const match = fileName.match(/\.([A-Z]\d{4,8})(?:\.|$)/i);
-  return match ? match[1].toUpperCase() : '';
-};
-
-// Extract flow from Destination_Path e.g. ".../LOCUS_D0389_IN" → "D0389"
-const flowFromPath = (path) => {
-  if (!path) return '';
-  const match = path.match(/[_/]([A-Z]\d{4,8})(?:[_/]|$)/i);
-  return match ? match[1].toUpperCase() : '';
-};
-
-// Check if a value looks like a DTC flow code (e.g. "D0225002") not a UUID
-const isFlowCode = (val) => val && val !== 'UNKNOWN' && /^[A-Z]\d{4,8}$/i.test(val);
-
 const EVENT_TYPE_MAP = {
   '1': 'Received',
   '2': 'Subscribed',
@@ -33,14 +16,36 @@ const EVENT_TYPE_MAP = {
   'Failed': 'Failed'
 };
 
+const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+const deriveFlowVersion = (item, parsedFlowVersion, event) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    '';
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+
+  return '';
+};
+
 const flattenAuditEvents = (data) => {
   const flatData = [];
   // Log first UNKNOWN-flow item so we can see what fields the API returns
   const firstUnknown = data.find(item =>
     !parseHeader(item.Header_String).flowVersion &&
-    !item.Flow_Version && !item.flow_version && !item.flow &&
-    !isFlowCode(item.File_ID) &&
-    !flowFromFileName(item.Source_FileName)
+    !item.Flow_Version && !item.flow_version && !item.flow && !item.Flow
   );
   if (firstUnknown) console.log('[DtcFailedFiles] Sample UNKNOWN-flow record:', firstUnknown);
 
@@ -51,13 +56,8 @@ const flattenAuditEvents = (data) => {
       const reversedEvents = [...item.events].reverse();
       
       reversedEvents.forEach(event => {
-        const formattedFlowVersion = formatFlowVersion(
-          parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow ||
-          (isFlowCode(item.File_ID) ? item.File_ID : '') ||
-          flowFromFileName(item.Source_FileName) ||
-          flowFromPath(event.Destination_Path) ||
-          flowFromPath(item.Source_Path)
-        ) || '-';
+        const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion, event);
+        const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
         const flowVersionParts = formattedFlowVersion.split(' ');
 
         flatData.push({
