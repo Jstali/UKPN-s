@@ -36,6 +36,30 @@ const extractFlowFromFilename = (fileName) => {
   return match ? match[1] : '';
 };
 
+const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+const deriveFlowVersion = (item, parsedFlowVersion) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    '';
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+
+  return extractFlowFromFilename(item.Source_FileName) || '';
+};
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -49,13 +73,7 @@ const flattenAuditEvents = (data) => {
       const reversedEvents = [...item.events].reverse();
       
       reversedEvents.forEach(event => {
-        const rawFlowVersion =
-          parsed.flowVersion ||
-          item.Flow_Version ||
-          item.flow_version ||
-          item.flow ||
-          extractFlowFromFilename(item.Source_FileName) ||
-          '';
+        const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
         const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
         const flowVersionParts = formattedFlowVersion.split(' ');
         
@@ -103,13 +121,7 @@ const buildFilteredResults = (data, filtersToUse) => {
       const reversedEvents = [...item.events].reverse();
 
       reversedEvents.forEach(event => {
-        const rawFlowVersion =
-          parsed.flowVersion ||
-          item.Flow_Version ||
-          item.flow_version ||
-          item.flow ||
-          extractFlowFromFilename(item.Source_FileName) ||
-          '';
+        const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
