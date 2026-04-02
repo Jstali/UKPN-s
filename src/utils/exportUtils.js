@@ -52,8 +52,13 @@ export const exportToPDF = (data, columns, filename, title) => {
       head: [headers],
       body: rows,
       startY: 20,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [76, 78, 189], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 7, cellPadding: 2, overflow: 'ellipsize' },
+      headStyles: {
+        fillColor: [76, 78, 189],
+        textColor: 255,
+        fontStyle: 'bold',
+        overflow: 'ellipsize',
+      },
       alternateRowStyles: { fillColor: [245, 247, 250] },
       margin: { top: 20, left: 10, right: 10 },
       didDrawPage: () => {
