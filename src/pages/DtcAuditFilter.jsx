@@ -917,7 +917,13 @@ const DtcAuditFilter = () => {
                 }}
               />
               <ExportDropdown
-                onExportPDF={() => exportToPDF(searchedResults, ALL_COLUMNS, 'DTC_Audit_Detail')}
+                onExportPDF={() => exportToPDF(searchedResults, ALL_COLUMNS, 'DTC_Audit_Detail', 'DTC Audit Detail', {
+                  fontSize: 7,
+                  overflow: 'linebreak',
+                  horizontalPageBreak: true,
+                  horizontalPageBreakRepeat: [0, 1, 2],
+                  minCellWidth: 14,
+                })}
                 onExportExcel={() => exportToExcel(searchedResults, ALL_COLUMNS, 'DTC_Audit_Detail')}
                 onExportCSV={() => exportToCSV(searchedResults, ALL_COLUMNS, 'DTC_Audit_Detail')}
                 onSendEmail={() => {}}

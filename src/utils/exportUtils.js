@@ -34,7 +34,7 @@ export const exportToCSV = (data, columns, filename) => {
   }
 };
 
-export const exportToPDF = (data, columns, filename, title) => {
+export const exportToPDF = (data, columns, filename, title, options = {}) => {
   try {
     if (!data || data.length === 0) {
       alert('No data to export.');
@@ -47,19 +47,29 @@ export const exportToPDF = (data, columns, filename, title) => {
     const rows = data.map(row =>
       columns.map(col => String(row[col.key] ?? ''))
     );
+    const {
+      fontSize = 6,
+      overflow = 'linebreak',
+      horizontalPageBreak = false,
+      horizontalPageBreakRepeat = undefined,
+      repeatHeaderEveryPage = true,
+      minCellWidth = undefined,
+    } = options;
 
     autoTable(doc, {
       head: [headers],
       body: rows,
       startY: 20,
-      styles: { fontSize: 6, cellPadding: 2, overflow: 'linebreak' },
+      styles: { fontSize, cellPadding: 2, overflow, minCellWidth },
       headStyles: {
         fillColor: [76, 78, 189],
         textColor: 255,
         fontStyle: 'bold',
-        overflow: 'linebreak',
+        overflow,
       },
-      showHead: 'everyPage',
+      horizontalPageBreak,
+      horizontalPageBreakRepeat,
+      showHead: repeatHeaderEveryPage ? 'everyPage' : 'firstPage',
       alternateRowStyles: { fillColor: [245, 247, 250] },
       margin: { top: 20, left: 10, right: 10 },
       didDrawPage: () => {
