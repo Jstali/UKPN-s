@@ -29,6 +29,13 @@ const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase()
 // Pick the first non-empty, non-"UNKNOWN" value from a list of candidates
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
+// Extract DTC flow code from source filename, e.g. "D0381_R_X_SMAR.DTC" -> "D0381"
+const extractFlowFromFilename = (fileName) => {
+  const name = String(fileName || '').toUpperCase();
+  const match = name.match(/([A-Z]\d{4,8})/);
+  return match ? match[1] : '';
+};
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -42,7 +49,13 @@ const flattenAuditEvents = (data) => {
       const reversedEvents = [...item.events].reverse();
       
       reversedEvents.forEach(event => {
-        const rawFlowVersion = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || '';
+        const rawFlowVersion =
+          parsed.flowVersion ||
+          item.Flow_Version ||
+          item.flow_version ||
+          item.flow ||
+          extractFlowFromFilename(item.Source_FileName) ||
+          '';
         const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
         const flowVersionParts = formattedFlowVersion.split(' ');
         
@@ -90,11 +103,18 @@ const buildFilteredResults = (data, filtersToUse) => {
       const reversedEvents = [...item.events].reverse();
 
       reversedEvents.forEach(event => {
+        const rawFlowVersion =
+          parsed.flowVersion ||
+          item.Flow_Version ||
+          item.flow_version ||
+          item.flow ||
+          extractFlowFromFilename(item.Source_FileName) ||
+          '';
         const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
           id: item.id,
-          flowVersion: formatFlowVersion(parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow) || '-',
+          flowVersion: formatFlowVersion(rawFlowVersion) || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
@@ -467,7 +487,13 @@ const DtcAudit = () => {
       {/* Collapsible Filter Section */}
       <AnimatePresence>
         {showFilters && (
-          <div style={{ marginBottom: '8px' }}>
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ marginBottom: '8px', overflow: 'hidden' }}
+          >
             <DtcFilterDropdown
               filters={filters}
               auditData={globalAuditData}
@@ -475,7 +501,7 @@ const DtcAudit = () => {
               onReset={handleReset}
               onApply={() => handleQuery()}
             />
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
