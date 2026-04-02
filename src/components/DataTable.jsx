@@ -440,6 +440,9 @@ const DataTable = ({
     const fallbackFileName = row.fileName || row.Source_FileName || row.destinationFileName || row.Destination_fileName || 'download.txt';
     const sourceFileName = row.fileName || row.Source_FileName || '';
     const destinationFileName = row.destinationFileName || row.Destination_fileName || '';
+    const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
+    const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
+    const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
     const basePaths = [
       row.filePath,
       row.File_Path,
@@ -456,15 +459,43 @@ const DataTable = ({
       return `${cleanBase}/${cleanName}`;
     };
 
-    const candidatePaths = [
+    const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/');
+    const toUncBackslashes = (value) => {
+      const normalized = toForwardSlashes(value).replace(/^\/+/, '');
+      return normalized ? `\\\\${normalized.replace(/\//g, '\\')}` : '';
+    };
+
+    const looksLikeUnc = (value) => /^[/\\]{2}[^/\\]+[/\\][^/\\]+/.test(String(value || ''));
+
+    const rawCandidates = [
+      blobFileName,
+      joinPath(blobArchiveLocation, sourceFileName),
+      joinPath(blobArchiveLocation, destinationFileName),
+      joinPath(blobLocation, sourceFileName),
+      joinPath(blobLocation, destinationFileName),
       ...basePaths.map((p) => p.trim()),
       ...basePaths.map((p) => joinPath(p, sourceFileName)).filter(Boolean),
       ...basePaths.map((p) => joinPath(p, destinationFileName)).filter(Boolean),
-    ].filter((val, idx, arr) => val && arr.indexOf(val) === idx);
+    ];
+
+    const normalizedCandidates = rawCandidates.flatMap((path) => {
+      const cleaned = String(path || '').trim();
+      if (!cleaned) return [];
+      const forward = toForwardSlashes(cleaned);
+      if (looksLikeUnc(cleaned)) {
+        const unc = toUncBackslashes(cleaned);
+        const uncFromForward = toUncBackslashes(forward);
+        return [cleaned, forward, unc, uncFromForward].filter(Boolean);
+      }
+      return [cleaned, forward].filter(Boolean);
+    });
+
+    const candidatePaths = normalizedCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
 
     try {
       if (candidatePaths.length > 0) {
         let lastError = null;
+        const failedPaths = [];
         for (const path of candidatePaths) {
           try {
             const { blob, filename } = await api.downloadFileByPath(path);
@@ -479,7 +510,11 @@ const DataTable = ({
             return;
           } catch (err) {
             lastError = err;
+            failedPaths.push(path);
           }
+        }
+        if (failedPaths.length > 0) {
+          console.warn('Download failed for all attempted paths:', failedPaths);
         }
         if (lastError) throw lastError;
       }
