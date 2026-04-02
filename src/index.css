@@ -417,14 +417,16 @@ code {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: 0;
   max-height: calc(100vh - 280px);
 }
 
-.table-container > div:first-child {
+.table-scroll-container {
   flex: 1;
   overflow: auto;
   min-height: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .table-container table {
@@ -466,6 +468,7 @@ code {
 
 .table-controls {
   display: flex;
+  flex: 0 0 auto;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;

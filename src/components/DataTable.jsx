@@ -570,7 +570,7 @@ const DataTable = ({
         />
       )}
 
-      <div style={{ maxHeight: '500px', overflowY: 'auto', overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div className="table-scroll-container">
         <table
           className="data-table"
           style={Object.keys(colWidths).length > 0 ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : undefined}
