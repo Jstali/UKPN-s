@@ -7,6 +7,7 @@ import FileViewModal from './FileViewModal';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { wildcardMatch, formatDateTime } from '../utils/auditUtils';
 import useDebounce from '../hooks/useDebounce';
+import api from '../utils/api';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
 const MAX_FILTER_SUGGESTIONS = 50;
@@ -430,19 +431,50 @@ const DataTable = ({
     });
   };
 
-  const handleDownloadFile = (row) => {
-    const fileName = row.fileName || row.Source_FileName || 'download.txt';
-    const fileContent = row.fileContent || row.File_Content || buildFileContent(row);
+  const handleDownloadFile = async (row) => {
+    if (typeof onDownload === 'function') {
+      onDownload(row);
+      return;
+    }
 
-    const blob = new Blob([fileContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const fallbackFileName = row.fileName || row.Source_FileName || row.destinationFileName || 'download.txt';
+    const downloadPath = [
+      row.filePath,
+      row.File_Path,
+      row.destinationPath,
+      row.Destination_Path,
+      row.sourcePath,
+      row.Source_Path,
+    ].find((val) => typeof val === 'string' && val.trim());
+
+    try {
+      if (downloadPath) {
+        const { blob, filename } = await api.downloadFileByPath(downloadPath);
+        const objectUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename || fallbackFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(objectUrl);
+        return;
+      }
+
+      const fileContent = row.fileContent || row.File_Content || buildFileContent(row);
+      const blob = new Blob([fileContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fallbackFileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('File download failed. Please try again.');
+    }
   };
 
   const closeFileViewModal = () => {

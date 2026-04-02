@@ -2,6 +2,7 @@ const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net'
 const DTC_API_CODE = 'REDACTED_DTC_API_CODE=';
 const NON_DTC_API_CODE = 'REDACTED_SAP_API_CODE=';
 const SUBSCROPTION_API = 'REDACTED_SUBSCRIPTION_CODE=';
+const DOWNLOAD_FILE_API = `${API_HOST}/api/fileConnectDownloadFileByID`;
 
 const DTC_AUDIT_API = `${API_HOST}/api/fileconnectDtcAuditData?code=${DTC_API_CODE}`;
 const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON_DTC_API_CODE}`;
@@ -261,6 +262,30 @@ const api = {
       }
       return { data: [], continuationToken: null, totalCount: 0 };
     }
+  },
+
+  async downloadFileByPath(path) {
+    const cleanPath = String(path || '').trim();
+    if (!cleanPath) {
+      throw new Error('Missing file path');
+    }
+
+    const configuredCode = process.env.REACT_APP_DTC_DOWNLOAD_API_CODE;
+    const code = configuredCode || DTC_API_CODE;
+    const url = `${DOWNLOAD_FILE_API}?path=${encodeURIComponent(cleanPath)}${code ? `&code=${encodeURIComponent(code)}` : ''}`;
+
+    const res = await fetch(url, { method: 'GET' });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(errText || `Download failed with status ${res.status}`);
+    }
+
+    const blob = await res.blob();
+    const disposition = res.headers.get('content-disposition') || '';
+    const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^";\n]+)/i);
+    const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/"/g, '')) : null;
+
+    return { blob, filename };
   },
 
   // Fetch subscription data from Azure Function App
