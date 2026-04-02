@@ -5,7 +5,6 @@ import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
-import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
@@ -98,6 +97,7 @@ const DtcFailedFiles = () => {
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
   const splitFlowByRole = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
+  const splitFromRoleByRole = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();
@@ -258,7 +258,20 @@ const DtcFailedFiles = () => {
       ) : (
         <DataTable
           data={failedFiles}
-          columns={splitFlowByRole ? DEFAULT_COLUMNS_FULL : [
+          columns={(splitFlowByRole || splitFromRoleByRole) ? [
+            { key: 'flow', label: 'Flow' },
+            { key: 'version', label: 'Version' },
+            { key: 'fileId', label: 'File ID' },
+            { key: 'timestamp', label: 'Event Timestamp' },
+            { key: 'fromRole', label: 'From Role' },
+            { key: 'fromMPID', label: 'From MPID' },
+            { key: 'toRoleMPID', label: 'To Role + To MPID' },
+            { key: 'sourceApplication', label: 'Source' },
+            { key: 'application', label: 'Destination' },
+            { key: 'status', label: 'Status' },
+            { key: 'fileName', label: 'Source File Name' },
+            { key: 'eventId', label: 'Message ID' },
+          ] : [
             { key: 'flowVersion', label: 'Flow' },
             { key: 'fileId', label: 'File ID' },
             { key: 'timestamp', label: 'Event Timestamp' },
@@ -270,12 +283,13 @@ const DtcFailedFiles = () => {
             { key: 'fileName', label: 'Source File Name' },
             { key: 'eventId', label: 'Message ID' },
           ]}
-          compactColumns={splitFlowByRole ? [
+          compactColumns={(splitFlowByRole || splitFromRoleByRole) ? [
             { key: 'flow', label: 'Flow' },
             { key: 'version', label: 'Version' },
             { key: 'fileId', label: 'File ID' },
             { key: 'timestamp', label: 'Event Timestamp' },
-            { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+            { key: 'fromRole', label: 'From Role' },
+            { key: 'fromMPID', label: 'From MPID' },
             { key: 'toRoleMPID', label: 'To Role + To MPID' },
             { key: 'sourceApplication', label: 'Source' },
             { key: 'application', label: 'Destination' },
