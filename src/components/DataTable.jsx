@@ -443,15 +443,6 @@ const DataTable = ({
     const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
     const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
     const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
-    const basePaths = [
-      row.filePath,
-      row.File_Path,
-      row.destinationPath,
-      row.Destination_Path,
-      row.sourcePath,
-      row.Source_Path,
-    ].filter((val) => typeof val === 'string' && val.trim());
-
     const joinPath = (base, name) => {
       const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
       const cleanName = String(name || '').trim().replace(/^[\\/]+/, '');
@@ -459,13 +450,8 @@ const DataTable = ({
       return `${cleanBase}/${cleanName}`;
     };
 
-    const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/');
-    const toUncBackslashes = (value) => {
-      const normalized = toForwardSlashes(value).replace(/^\/+/, '');
-      return normalized ? `\\\\${normalized.replace(/\//g, '\\')}` : '';
-    };
-
-    const looksLikeUnc = (value) => /^[/\\]{2}[^/\\]+[/\\][^/\\]+/.test(String(value || ''));
+    const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/').trim();
+    const isArchivePath = (value) => /^DTC_File\/Archive\//i.test(toForwardSlashes(value));
 
     const rawCandidates = [
       blobFileName,
@@ -473,62 +459,44 @@ const DataTable = ({
       joinPath(blobArchiveLocation, destinationFileName),
       joinPath(blobLocation, sourceFileName),
       joinPath(blobLocation, destinationFileName),
-      ...basePaths.map((p) => p.trim()),
-      ...basePaths.map((p) => joinPath(p, sourceFileName)).filter(Boolean),
-      ...basePaths.map((p) => joinPath(p, destinationFileName)).filter(Boolean),
     ];
 
-    const normalizedCandidates = rawCandidates.flatMap((path) => {
-      const cleaned = String(path || '').trim();
-      if (!cleaned) return [];
-      const forward = toForwardSlashes(cleaned);
-      if (looksLikeUnc(cleaned)) {
-        const unc = toUncBackslashes(cleaned);
-        const uncFromForward = toUncBackslashes(forward);
-        return [cleaned, forward, unc, uncFromForward].filter(Boolean);
-      }
-      return [cleaned, forward].filter(Boolean);
-    });
+    const normalizedCandidates = rawCandidates
+      .map((path) => toForwardSlashes(path))
+      .filter(Boolean)
+      .filter(isArchivePath);
 
     const candidatePaths = normalizedCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
 
     try {
-      if (candidatePaths.length > 0) {
-        let lastError = null;
-        const failedPaths = [];
-        for (const path of candidatePaths) {
-          try {
-            const { blob, filename } = await api.downloadFileByPath(path);
-            const objectUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = objectUrl;
-            a.download = filename || fallbackFileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(objectUrl);
-            return;
-          } catch (err) {
-            lastError = err;
-            failedPaths.push(path);
-          }
-        }
-        if (failedPaths.length > 0) {
-          console.warn('Download failed for all attempted paths:', failedPaths);
-        }
-        if (lastError) throw lastError;
+      if (candidatePaths.length === 0) {
+        alert('File is not available in archive for download yet.');
+        return;
       }
 
-      const fileContent = row.fileContent || row.File_Content || buildFileContent(row);
-      const blob = new Blob([fileContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fallbackFileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      let lastError = null;
+      const failedPaths = [];
+      for (const path of candidatePaths) {
+        try {
+          const { blob, filename } = await api.downloadFileByPath(path);
+          const objectUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = objectUrl;
+          a.download = filename || fallbackFileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(objectUrl);
+          return;
+        } catch (err) {
+          lastError = err;
+          failedPaths.push(path);
+        }
+      }
+      if (failedPaths.length > 0) {
+        console.warn('Download failed for archive paths:', failedPaths);
+      }
+      if (lastError) throw lastError;
     } catch (error) {
       console.error('Download failed:', error);
       alert('File download failed. Please try again.');
@@ -544,6 +512,32 @@ const DataTable = ({
       error: null,
       fileId: null,
     });
+  };
+
+  const hasArchiveDownloadPath = (row) => {
+    const sourceFileName = row.fileName || row.Source_FileName || '';
+    const destinationFileName = row.destinationFileName || row.Destination_fileName || '';
+    const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
+    const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
+    const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
+    const joinPath = (base, name) => {
+      const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
+      const cleanName = String(name || '').trim().replace(/^[\\/]+/, '');
+      if (!cleanBase || !cleanName) return '';
+      return `${cleanBase}/${cleanName}`;
+    };
+    const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/').trim();
+    const isArchivePath = (value) => /^DTC_File\/Archive\//i.test(toForwardSlashes(value));
+
+    const candidates = [
+      blobFileName,
+      joinPath(blobArchiveLocation, sourceFileName),
+      joinPath(blobArchiveLocation, destinationFileName),
+      joinPath(blobLocation, sourceFileName),
+      joinPath(blobLocation, destinationFileName),
+    ].map((v) => toForwardSlashes(v)).filter(Boolean);
+
+    return candidates.some(isArchivePath);
   };
 
   return (
@@ -836,9 +830,14 @@ const DataTable = ({
                           </button>
                           <button
                             className="table-download-btn"
+                            disabled={!hasArchiveDownloadPath(row)}
                             onClick={() => handleDownloadFile(row)}
-                            title="Download file"
-                            style={{ padding: '4px 8px' }}
+                            title={hasArchiveDownloadPath(row) ? 'Download file' : 'File not available in archive'}
+                            style={{
+                              padding: '4px 8px',
+                              opacity: hasArchiveDownloadPath(row) ? 1 : 0.45,
+                              cursor: hasArchiveDownloadPath(row) ? 'pointer' : 'not-allowed',
+                            }}
                           >
                             <Download size={14} />
                           </button>
