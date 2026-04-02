@@ -20,42 +20,8 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   const triggerRef = useRef(null);
   const searchRef = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-    
-    const handleScroll = (e) => {
-      if (isOpen) {
-        // Keep dropdown open when user scrolls within the dropdown itself.
-        if (
-          dropdownRef.current &&
-          e.target instanceof Node &&
-          dropdownRef.current.contains(e.target)
-        ) {
-          return;
-        }
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true); // true = capture phase, catches all scrolls
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', handleScroll, true);
-    };
-  }, [isOpen]);
-
-  // Position dropdown using fixed positioning to escape overflow containers
-  useEffect(() => {
-    if (!isOpen || !triggerRef.current) return;
-    
+  const updatePopupPosition = () => {
+    if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     setPopupStyle({
       position: 'fixed',
@@ -65,6 +31,40 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
       minWidth: '180px',
       zIndex: 9999,
     });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Position dropdown using fixed positioning to escape overflow containers
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updatePopupPosition();
+
+    const handleViewportChange = () => {
+      updatePopupPosition();
+    };
+
+    window.addEventListener('scroll', handleViewportChange, true);
+    window.addEventListener('resize', handleViewportChange);
+
+    return () => {
+      window.removeEventListener('scroll', handleViewportChange, true);
+      window.removeEventListener('resize', handleViewportChange);
+    };
   }, [isOpen]);
 
   // Focus search input when dropdown opens
