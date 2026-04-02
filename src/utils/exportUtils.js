@@ -59,8 +59,7 @@ export const exportToPDF = (data, columns, filename, title) => {
         fontStyle: 'bold',
         overflow: 'linebreak',
       },
-      horizontalPageBreak: true,
-      horizontalPageBreakRepeat: [0, 1, 2],
+      showHead: 'everyPage',
       alternateRowStyles: { fillColor: [245, 247, 250] },
       margin: { top: 20, left: 10, right: 10 },
       didDrawPage: () => {
