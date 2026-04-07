@@ -96,37 +96,22 @@ const DtcFailedFilesDetail = () => {
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
-  const isBusiness = user?.role === 'Business';
-  
-  // Full columns matching DTC Audit exactly
-  const columns = isBusiness
-    ? [
-        { key: 'flowVersion', label: 'Flow' },
-        { key: 'fileId', label: 'File ID' },
-        { key: 'timestamp', label: 'Event Timestamp' },
-        { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-        { key: 'toRoleMPID', label: 'To Role + To MPID' },
-        { key: 'sourceApplication', label: 'Source' },
-        { key: 'application', label: 'Destination' },
-        { key: 'status', label: 'Status' },
-        { key: 'fileName', label: 'Source File Name' },
-        { key: 'eventId', label: 'Message ID' },
-      ]
-    : [
-        { key: 'flow', label: 'Flow' },
-        { key: 'version', label: 'Version' },
-        { key: 'fileId', label: 'File ID' },
-        { key: 'timestamp', label: 'Event Timestamp' },
-        { key: 'fromRole', label: 'From Role' },
-        { key: 'fromMPID', label: 'From MPID' },
-        { key: 'toRole', label: 'To Role' },
-        { key: 'toMPID', label: 'To MPID' },
-        { key: 'sourceApplication', label: 'Source' },
-        { key: 'application', label: 'Destination' },
-        { key: 'status', label: 'Status' },
-        { key: 'fileName', label: 'Source File Name' },
-        { key: 'eventId', label: 'Message ID' },
-      ];
+  // Full columns matching DTC Audit exactly - with split Role/MPID columns
+  const columns = [
+    { key: 'flow', label: 'Flow' },
+    { key: 'version', label: 'Version' },
+    { key: 'fileId', label: 'File ID' },
+    { key: 'timestamp', label: 'Event Timestamp' },
+    { key: 'fromRole', label: 'From Role' },
+    { key: 'fromMPID', label: 'From MPID' },
+    { key: 'toRole', label: 'To Role' },
+    { key: 'toMPID', label: 'To MPID' },
+    { key: 'sourceApplication', label: 'Source' },
+    { key: 'application', label: 'Destination' },
+    { key: 'status', label: 'Status' },
+    { key: 'fileName', label: 'Source File Name' },
+    { key: 'eventId', label: 'Message ID' },
+  ];
 
   // Memoize flattened data
   const flattenedData = useMemo(() => {
