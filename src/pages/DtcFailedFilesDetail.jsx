@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Activity, ChevronDown } from 'lucide-react';
+import { ArrowLeft, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
-import ColorBar, { APP_COLORS } from '../components/ColorBar';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 
@@ -94,9 +93,6 @@ const flattenAuditEvents = (data) => {
 const DtcFailedFilesDetail = () => {
   const navigate = useNavigate();
   const { user, auditData, loading, dataComplete, fetchError } = useApp();
-  const [showApps, setShowApps] = useState(false);
-  const [flowFilter, setFlowFilter] = useState('All');
-  const [fileNameFilter, setFileNameFilter] = useState('');
 
   const splitRoleColumns = ['Testing Team', 'Core Support', 'Admin', 'Business'].includes(user?.role);
 
@@ -111,44 +107,11 @@ const DtcFailedFilesDetail = () => {
     return flattenedData.filter(row => isFailedStatus(row.status));
   }, [flattenedData]);
 
-  // Apply filters
-  const filteredRecords = useMemo(() => {
-    let filtered = failedRecords;
-
-    if (flowFilter && flowFilter !== 'All') {
-      filtered = filtered.filter(row => row.flowVersion === flowFilter);
-    }
-
-    if (fileNameFilter) {
-      filtered = filtered.filter(row =>
-        row.fileName && row.fileName.toLowerCase().includes(fileNameFilter.toLowerCase())
-      );
-    }
-
-    return filtered;
-  }, [failedRecords, flowFilter, fileNameFilter]);
-
-  const uniqueFlows = useMemo(() => {
-    return ['All', ...new Set(failedRecords.map(row => row.flowVersion).filter(v => v && v !== '-'))];
-  }, [failedRecords]);
-
   const uniqueFlowCount = useMemo(() => {
-    if (filteredRecords.length === 0) return 0;
-    const flows = new Set(filteredRecords.map(r => r.flowVersion).filter(Boolean));
+    if (failedRecords.length === 0) return 0;
+    const flows = new Set(failedRecords.map(r => r.flowVersion).filter(Boolean));
     return flows.size;
-  }, [filteredRecords]);
-
-  const appCounts = useMemo(() => {
-    if (filteredRecords.length === 0) return [];
-    const counts = {};
-    filteredRecords.forEach(row => {
-      const app = row.application || 'Unknown';
-      counts[app] = (counts[app] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [filteredRecords]);
+  }, [failedRecords]);
 
   // Define columns matching DTC Audit structure
   const columns = splitRoleColumns ? [
@@ -236,43 +199,17 @@ const DtcFailedFilesDetail = () => {
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <BarChart3 size={13} color="#dc2626" />
             <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Failed Events</span>
-            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{filteredRecords.length.toLocaleString()}</span>
+            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{failedRecords.length.toLocaleString()}</span>
           </div>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <Activity size={13} color="#0ea5e9" />
             <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Flows</span>
             <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{uniqueFlowCount}</span>
           </div>
-          <button
-            className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
-            onClick={() => setShowApps(!showApps)}
-            style={{ padding: '6px 14px', fontSize: '13px' }}
-          >
-            Charts
-            <ChevronDown size={11} style={{
-              transform: showApps ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease'
-            }} />
-          </button>
         </div>
       </div>
 
-      {/* Collapsible Applications bar */}
-      <AnimatePresence>
-        {showApps && appCounts.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="dtc-apps-bar"
-          >
-            <ColorBar data={appCounts} label="Applications" colors={APP_COLORS} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Failed Files Info Banner with Filters */}
+      {/* Failed Files Info Banner */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -283,50 +220,8 @@ const DtcFailedFilesDetail = () => {
           boxShadow: '0 1px 2px rgba(239, 68, 68, 0.04)'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
-            Showing <span style={{ fontWeight: 700 }}>{filteredRecords.length}</span> failed file{filteredRecords.length !== 1 ? 's' : ''}
-          </div>
-
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#7f1d1d', marginRight: '4px' }}>Flow:</label>
-              <select
-                value={flowFilter}
-                onChange={(e) => setFlowFilter(e.target.value)}
-                style={{
-                  padding: '4px 8px',
-                  border: '1px solid #fca5a5',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  background: '#fff',
-                  cursor: 'pointer'
-                }}
-              >
-                {uniqueFlows.map(flow => (
-                  <option key={flow} value={flow}>{flow}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#7f1d1d', marginRight: '4px' }}>File Name:</label>
-              <input
-                type="text"
-                value={fileNameFilter}
-                onChange={(e) => setFileNameFilter(e.target.value)}
-                placeholder="Search file name..."
-                style={{
-                  padding: '4px 8px',
-                  border: '1px solid #fca5a5',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  width: '200px'
-                }}
-              />
-            </div>
-          </div>
+        <div style={{ fontSize: '12px', color: '#7f1d1d' }}>
+          Showing <span style={{ fontWeight: 700 }}>{failedRecords.length}</span> failed file{failedRecords.length !== 1 ? 's' : ''}
         </div>
       </motion.div>
 
@@ -355,7 +250,7 @@ const DtcFailedFilesDetail = () => {
         </div>
       ) : (
         <DataTable
-          data={filteredRecords}
+          data={failedRecords}
           columns={columns}
           compactColumns={compactColumns}
           detailPagePath="/dtc-failed-files-detail"
