@@ -174,15 +174,16 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
   );
 };
 
-const DataTable = ({ 
-  data, 
-  columns, 
-  compactColumns, 
+const DataTable = ({
+  data,
+  columns,
+  compactColumns,
   exportColumns,
-  onDownload, 
-  exportConfig, 
+  onDownload,
+  exportConfig,
   onViewDetail,
   hideViewDetail = false,
+  detailPagePath = '/audit-details',
   defaultSort = null,
   defaultPageSize = 50,
   groupByKey = null
@@ -808,7 +809,7 @@ const DataTable = ({
                             onClick={() => {
                               sessionStorage.setItem('dataTablePage', String(currentPage));
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
-                              navigate(`/audit-details`, { state: { record: row } });
+                              navigate(detailPagePath, { state: { record: row } });
                             }}
                           >
                             {row[col.key]}
@@ -820,7 +821,7 @@ const DataTable = ({
                               sessionStorage.setItem('dataTablePage', String(currentPage));
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
                               sessionStorage.setItem('dtcAuditScrollPos', String(window.scrollY));
-                              navigate(`/audit-details`, { state: { record: row, uniqueId: row.id || row.eventId, returnPath: window.location.pathname } });
+                              navigate(detailPagePath, { state: { record: row, uniqueId: row.id || row.eventId, returnPath: window.location.pathname } });
                             }}
                           >
                             {row[col.key]}
