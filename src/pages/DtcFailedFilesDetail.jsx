@@ -5,6 +5,7 @@ import { ArrowLeft, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import { DEFAULT_COLUMNS_BUSINESS, DEFAULT_COLUMNS_FULL, FILTERED_COLUMNS } from '../data/dashboardConfig';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
@@ -96,7 +97,39 @@ const DtcFailedFilesDetail = () => {
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
-  const splitRoleColumns = ['Testing Team', 'Core Support', 'Admin', 'Business'].includes(user?.role);
+  const isBusiness = user?.role === 'Business';
+  const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
+  const columns = defaultColumns;
+  const compactColumns = isBusiness
+    ? [
+        { key: 'flowVersion', label: 'Flow' },
+        { key: 'fileId', label: 'File ID' },
+        { key: 'timestamp', label: 'Event Timestamp' },
+        { key: 'fromRole', label: 'From Role' },
+        { key: 'fromMPID', label: 'From MID' },
+        { key: 'toRole', label: 'To Role' },
+        { key: 'toMPID', label: 'To MPID' },
+        { key: 'sourceApplication', label: 'Source' },
+        { key: 'application', label: 'Destination' },
+        { key: 'status', label: 'Status' },
+        { key: 'fileName', label: 'Source File Name' },
+        { key: 'eventId', label: 'Message ID' },
+      ]
+    : [
+        { key: 'flow', label: 'Flow' },
+        { key: 'version', label: 'Version' },
+        { key: 'fileId', label: 'File ID' },
+        { key: 'timestamp', label: 'Event Timestamp' },
+        { key: 'fromRole', label: 'From Role' },
+        { key: 'fromMPID', label: 'From MID' },
+        { key: 'toRole', label: 'To Role' },
+        { key: 'toMPID', label: 'To MPID' },
+        { key: 'sourceApplication', label: 'Source' },
+        { key: 'application', label: 'Destination' },
+        { key: 'status', label: 'Status' },
+        { key: 'fileName', label: 'Source File Name' },
+        { key: 'eventId', label: 'Message ID' },
+      ];
 
   // Memoize flattened data
   const flattenedData = useMemo(() => {
@@ -135,61 +168,6 @@ const DtcFailedFilesDetail = () => {
     const flows = new Set(filteredRecords.map(r => r.flowVersion).filter(Boolean));
     return flows.size;
   }, [filteredRecords]);
-
-  // Define columns matching DTC Audit structure
-  const columns = splitRoleColumns ? [
-    { key: 'flow', label: 'Flow' },
-    { key: 'version', label: 'Version' },
-    { key: 'fileId', label: 'File ID' },
-    { key: 'timestamp', label: 'Event Timestamp' },
-    { key: 'fromRole', label: 'From Role' },
-    { key: 'fromMPID', label: 'From MPID' },
-    { key: 'toRole', label: 'To Role' },
-    { key: 'toMPID', label: 'To MPID' },
-    { key: 'sourceApplication', label: 'Source' },
-    { key: 'application', label: 'Destination' },
-    { key: 'status', label: 'Status' },
-    { key: 'fileName', label: 'Source File Name' },
-    { key: 'eventId', label: 'Message ID' },
-  ] : [
-    { key: 'flowVersion', label: 'Flow' },
-    { key: 'fileId', label: 'File ID' },
-    { key: 'timestamp', label: 'Event Timestamp' },
-    { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-    { key: 'toRoleMPID', label: 'To Role + To MPID' },
-    { key: 'sourceApplication', label: 'Source' },
-    { key: 'application', label: 'Destination' },
-    { key: 'status', label: 'Status' },
-    { key: 'fileName', label: 'Source File Name' },
-    { key: 'eventId', label: 'Message ID' },
-  ];
-
-  const compactColumns = splitRoleColumns ? [
-    { key: 'flow', label: 'Flow' },
-    { key: 'version', label: 'Version' },
-    { key: 'fileId', label: 'File ID' },
-    { key: 'timestamp', label: 'Event Timestamp' },
-    { key: 'fromRole', label: 'From Role' },
-    { key: 'fromMPID', label: 'From MPID' },
-    { key: 'toRole', label: 'To Role' },
-    { key: 'toMPID', label: 'To MPID' },
-    { key: 'sourceApplication', label: 'Source' },
-    { key: 'application', label: 'Destination' },
-    { key: 'status', label: 'Status' },
-    { key: 'fileName', label: 'Source File Name' },
-    { key: 'eventId', label: 'Message ID' },
-  ] : [
-    { key: 'flowVersion', label: 'Flow' },
-    { key: 'fileId', label: 'File ID' },
-    { key: 'timestamp', label: 'Event Timestamp' },
-    { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-    { key: 'toRoleMPID', label: 'To Role + To MPID' },
-    { key: 'sourceApplication', label: 'Source' },
-    { key: 'application', label: 'Destination' },
-    { key: 'status', label: 'Status' },
-    { key: 'fileName', label: 'Source File Name' },
-    { key: 'eventId', label: 'Message ID' },
-  ];
 
   return (
     <motion.div
