@@ -5,7 +5,6 @@ import { ArrowLeft, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
-import { DEFAULT_COLUMNS_BUSINESS, DEFAULT_COLUMNS_FULL, FILTERED_COLUMNS } from '../data/dashboardConfig';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
@@ -98,7 +97,36 @@ const DtcFailedFilesDetail = () => {
   const [fileNameFilter, setFileNameFilter] = useState('');
 
   const isBusiness = user?.role === 'Business';
-  const columns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
+  
+  // Full columns matching DTC Audit exactly
+  const columns = isBusiness
+    ? [
+        { key: 'flowVersion', label: 'Flow' },
+        { key: 'fileId', label: 'File ID' },
+        { key: 'timestamp', label: 'Event Timestamp' },
+        { key: 'fromRoleMPID', label: 'From Role + From MPID' },
+        { key: 'toRoleMPID', label: 'To Role + To MPID' },
+        { key: 'sourceApplication', label: 'Source' },
+        { key: 'application', label: 'Destination' },
+        { key: 'status', label: 'Status' },
+        { key: 'fileName', label: 'Source File Name' },
+        { key: 'eventId', label: 'Message ID' },
+      ]
+    : [
+        { key: 'flow', label: 'Flow' },
+        { key: 'version', label: 'Version' },
+        { key: 'fileId', label: 'File ID' },
+        { key: 'timestamp', label: 'Event Timestamp' },
+        { key: 'fromRole', label: 'From Role' },
+        { key: 'fromMPID', label: 'From MPID' },
+        { key: 'toRole', label: 'To Role' },
+        { key: 'toMPID', label: 'To MPID' },
+        { key: 'sourceApplication', label: 'Source' },
+        { key: 'application', label: 'Destination' },
+        { key: 'status', label: 'Status' },
+        { key: 'fileName', label: 'Source File Name' },
+        { key: 'eventId', label: 'Message ID' },
+      ];
 
   // Memoize flattened data
   const flattenedData = useMemo(() => {
