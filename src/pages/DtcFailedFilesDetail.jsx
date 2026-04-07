@@ -98,38 +98,7 @@ const DtcFailedFilesDetail = () => {
   const [fileNameFilter, setFileNameFilter] = useState('');
 
   const isBusiness = user?.role === 'Business';
-  const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
-  const columns = defaultColumns;
-  const compactColumns = isBusiness
-    ? [
-        { key: 'flowVersion', label: 'Flow' },
-        { key: 'fileId', label: 'File ID' },
-        { key: 'timestamp', label: 'Event Timestamp' },
-        { key: 'fromRole', label: 'From Role' },
-        { key: 'fromMPID', label: 'From MID' },
-        { key: 'toRole', label: 'To Role' },
-        { key: 'toMPID', label: 'To MPID' },
-        { key: 'sourceApplication', label: 'Source' },
-        { key: 'application', label: 'Destination' },
-        { key: 'status', label: 'Status' },
-        { key: 'fileName', label: 'Source File Name' },
-        { key: 'eventId', label: 'Message ID' },
-      ]
-    : [
-        { key: 'flow', label: 'Flow' },
-        { key: 'version', label: 'Version' },
-        { key: 'fileId', label: 'File ID' },
-        { key: 'timestamp', label: 'Event Timestamp' },
-        { key: 'fromRole', label: 'From Role' },
-        { key: 'fromMPID', label: 'From MID' },
-        { key: 'toRole', label: 'To Role' },
-        { key: 'toMPID', label: 'To MPID' },
-        { key: 'sourceApplication', label: 'Source' },
-        { key: 'application', label: 'Destination' },
-        { key: 'status', label: 'Status' },
-        { key: 'fileName', label: 'Source File Name' },
-        { key: 'eventId', label: 'Message ID' },
-      ];
+  const columns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
 
   // Memoize flattened data
   const flattenedData = useMemo(() => {
@@ -295,7 +264,6 @@ const DtcFailedFilesDetail = () => {
         <DataTable
           data={filteredRecords}
           columns={columns}
-          compactColumns={compactColumns}
           detailPagePath="/dtc-failed-files-detail"
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={50}
