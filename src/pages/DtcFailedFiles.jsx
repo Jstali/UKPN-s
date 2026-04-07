@@ -96,8 +96,8 @@ const DtcFailedFiles = () => {
   const { user, auditData, loading, dataComplete, fetchError } = useApp();
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
-  const splitFlowByRole = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
-  const splitFromRoleByRole = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
+  const isBusiness = user?.role === 'Business';
+  const splitRoleColumns = ['Testing Team', 'Core Support', 'Admin', 'Business'].includes(user?.role);
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();
@@ -258,7 +258,7 @@ const DtcFailedFiles = () => {
       ) : (
         <DataTable
           data={failedFiles}
-          columns={(splitFlowByRole || splitFromRoleByRole) ? [
+          columns={splitRoleColumns ? [
             { key: 'flow', label: 'Flow' },
             { key: 'version', label: 'Version' },
             { key: 'fileId', label: 'File ID' },
@@ -284,7 +284,7 @@ const DtcFailedFiles = () => {
             { key: 'fileName', label: 'Source File Name' },
             { key: 'eventId', label: 'Message ID' },
           ]}
-          compactColumns={(splitFlowByRole || splitFromRoleByRole) ? [
+          compactColumns={splitRoleColumns ? [
             { key: 'flow', label: 'Flow' },
             { key: 'version', label: 'Version' },
             { key: 'fileId', label: 'File ID' },
