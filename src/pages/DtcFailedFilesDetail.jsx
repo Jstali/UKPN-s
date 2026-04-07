@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BarChart3, Activity, ChevronDown } from 'lucide-react';
+import { ArrowLeft, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
-import ColorBar, { APP_COLORS } from '../components/ColorBar';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 
@@ -94,7 +93,6 @@ const flattenAuditEvents = (data) => {
 const DtcFailedFilesDetail = () => {
   const navigate = useNavigate();
   const { user, auditData, loading, dataComplete, fetchError } = useApp();
-  const [showApps, setShowApps] = useState(false);
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
@@ -136,18 +134,6 @@ const DtcFailedFilesDetail = () => {
     if (filteredRecords.length === 0) return 0;
     const flows = new Set(filteredRecords.map(r => r.flowVersion).filter(Boolean));
     return flows.size;
-  }, [filteredRecords]);
-
-  const appCounts = useMemo(() => {
-    if (filteredRecords.length === 0) return [];
-    const counts = {};
-    filteredRecords.forEach(row => {
-      const app = row.application || 'Unknown';
-      counts[app] = (counts[app] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
   }, [filteredRecords]);
 
   // Define columns matching DTC Audit structure
@@ -243,34 +229,8 @@ const DtcFailedFilesDetail = () => {
             <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Flows</span>
             <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{uniqueFlowCount}</span>
           </div>
-          <button
-            className={`dtc-apps-toggle ${showApps ? 'active' : ''}`}
-            onClick={() => setShowApps(!showApps)}
-            style={{ padding: '6px 14px', fontSize: '13px' }}
-          >
-            Charts
-            <ChevronDown size={11} style={{
-              transform: showApps ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease'
-            }} />
-          </button>
         </div>
       </div>
-
-      {/* Collapsible Applications bar */}
-      <AnimatePresence>
-        {showApps && appCounts.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="dtc-apps-bar"
-          >
-            <ColorBar data={appCounts} label="Applications" colors={APP_COLORS} />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Failed Files Info Banner with Filters */}
       <motion.div
