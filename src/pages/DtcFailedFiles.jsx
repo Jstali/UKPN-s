@@ -314,10 +314,8 @@ const DtcFailedFiles = () => {
           defaultPageSize={50}
           groupByKey="eventId"
           onDownload={true}
-          onViewDetail={() => navigate('/dtc-failed-files-detail')}
-          detailPagePath="/dtc-failed-files-detail"
           exportConfig={{ filename: 'DTC_Failed_Files_Export' }}
-          hideViewDetail={false}
+          hideViewDetail={true}
         />
       )}
     </motion.div>
