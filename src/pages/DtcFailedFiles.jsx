@@ -316,6 +316,7 @@ const DtcFailedFiles = () => {
           onDownload={true}
           detailPagePath="/dtc-failed-files-detail"
           exportConfig={{ filename: 'DTC_Failed_Files_Export' }}
+          hideViewDetail={false}
         />
       )}
     </motion.div>
