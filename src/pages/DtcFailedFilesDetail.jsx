@@ -66,6 +66,9 @@ const flattenAuditEvents = (data) => {
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+          fileName: item.Source_FileName || item.fileName || item.file_name || '',
+          sourcePath: item.Source_Path || item.sourcePath || item.source_path || '',
+          headerString: item.Header_String || item.headerString || item.header_string || '',
           fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
           toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
@@ -73,7 +76,6 @@ const flattenAuditEvents = (data) => {
           toRole: parsed.toRole,
           toMPID: parsed.toMPID,
           recApp: parsed.recApp,
-          fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
@@ -81,8 +83,9 @@ const flattenAuditEvents = (data) => {
           processed: event.processed || 'false',
           timestamp: event.timestamp || '',
           eventId: event.id || '',
-          destinationPath: event.Destination_Path || '',
-          destinationFileName: event.Destination_fileName || '',
+          destinationPath: event.Destination_Path || event.destinationPath || event.destination_path || '',
+          destinationFileName: event.Destination_fileName || event.destinationFileName || event.destination_fileName || '',
+          checksum: event.Checksum || event.checksum || item.Checksum || item.checksum || '',
         });
       });
     }
@@ -96,21 +99,28 @@ const DtcFailedFilesDetail = () => {
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
-  // Full columns matching DTC Audit exactly - with split Role/MPID columns
+  // Full columns matching DTC Audit exactly - all 20 columns
   const columns = [
-    { key: 'flow', label: 'Flow' },
-    { key: 'version', label: 'Version' },
     { key: 'fileId', label: 'File ID' },
-    { key: 'timestamp', label: 'Event Timestamp' },
+    { key: 'fileName', label: 'File Name' },
+    { key: 'sourcePath', label: 'Source Path' },
+    { key: 'headerString', label: 'Header String' },
+    { key: 'flowVersion', label: 'Flow Version' },
     { key: 'fromRole', label: 'From Role' },
     { key: 'fromMPID', label: 'From MPID' },
     { key: 'toRole', label: 'To Role' },
     { key: 'toMPID', label: 'To MPID' },
-    { key: 'sourceApplication', label: 'Source' },
-    { key: 'application', label: 'Destination' },
+    { key: 'recApp', label: 'Receiving App' },
+    { key: 'application', label: 'Destination Application' },
+    { key: 'eventType', label: 'Event Type' },
     { key: 'status', label: 'Status' },
-    { key: 'fileName', label: 'Source File Name' },
-    { key: 'eventId', label: 'Message ID' },
+    { key: 'id', label: 'Unique ID' },
+    { key: 'timestamp', label: 'Timestamp' },
+    { key: 'eventId', label: 'Event ID' },
+    { key: 'destinationPath', label: 'Destination Path' },
+    { key: 'destinationFileName', label: 'Destination File' },
+    { key: 'checksum', label: 'Checksum' },
+    { key: 'processed', label: 'Processed' },
   ];
 
   // Memoize flattened data
