@@ -99,12 +99,14 @@ const DtcFailedFilesDetail = () => {
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
-  // Full columns matching DTC Audit exactly - all 20 columns
+  // Full columns - all 22 columns
   const columns = [
     { key: 'fileId', label: 'File ID' },
     { key: 'fileName', label: 'File Name' },
     { key: 'sourcePath', label: 'Source Path' },
     { key: 'headerString', label: 'Header String' },
+    { key: 'flow', label: 'Flow' },
+    { key: 'version', label: 'Version' },
     { key: 'flowVersion', label: 'Flow Version' },
     { key: 'fromRole', label: 'From Role' },
     { key: 'fromMPID', label: 'From MPID' },
