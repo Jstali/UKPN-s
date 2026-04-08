@@ -26,6 +26,8 @@ const EVENT_TYPE_MAP = {
   '2': 'Subscribed',
   '3': 'Published',
   '4': 'Delivered',
+  '21': 'Invalid Flow',
+  '22': 'File Transferred',
   'Failed': 'Failed'
 };
 
