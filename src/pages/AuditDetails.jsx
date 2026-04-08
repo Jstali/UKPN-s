@@ -26,7 +26,6 @@ const DETAIL_FIELDS = [
   { key: 'Header_String', label: 'Header String' },
   { key: 'Source_Path', label: 'Source Path' },
   { key: 'File_ID', label: 'Original File ID' },
-  { key: 'processed', label: 'Processed' },
   { key: 'eventType', label: 'Event Type' },
 ];
 
