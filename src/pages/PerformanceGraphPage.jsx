@@ -4,6 +4,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Gauge, Clock, ArrowLeft } from 'lucide-react';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
+const formatDurationHMS = (seconds) => {
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+  const secs = String(safeSeconds % 60).padStart(2, '0');
+  return `${hours}:${minutes}:${secs}`;
+};
+
 const generateGraphData = (appName, range, customFrom, customTo) => {
   const data = [];
   const baseTime = { ADMS: 1.8, Electralink: 2.1, MPRS: 1.5, MSBI: 2.4, 'SAP PI': 2.8 };
@@ -46,6 +54,13 @@ const PerformanceGraphPage = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const graphData = useMemo(() => app ? generateGraphData(app.name, range, customFrom, customTo) : [], [app, range, customFrom, customTo]);
+  const averageTimeDisplay = useMemo(() => {
+    if (!app) return '00:00:00';
+    if (Number.isFinite(Number(app.actual))) {
+      return formatDurationHMS(app.actual);
+    }
+    return app.avgTime || '00:00:00';
+  }, [app]);
 
   if (!app) {
     navigate('/');
@@ -118,7 +133,7 @@ const PerformanceGraphPage = () => {
               borderRadius: '10px', border: '1px solid #bbf7d0'
             }}>
               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Average Time</div>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: '#16a34a' }}>{app.avgTime}</div>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: '#16a34a' }}>{averageTimeDisplay}</div>
             </div>
             <div style={{
               
