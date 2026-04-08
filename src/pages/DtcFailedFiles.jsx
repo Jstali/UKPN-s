@@ -315,7 +315,7 @@ const DtcFailedFiles = () => {
           groupByKey="eventId"
           onDownload={true}
           onViewDetail={() => navigate('/dtc-failed-files-detail')}
-          detailPagePath="/dtc-failed-files-detail"
+          detailPagePath="/audit-details"
           exportConfig={{ filename: 'DTC_Failed_Files_Export' }}
           hideViewDetail={false}
         />

@@ -289,7 +289,7 @@ const DtcFailedFilesDetail = () => {
         <DataTable
           data={filteredRecords}
           columns={columns}
-          detailPagePath="/dtc-failed-files-detail"
+          detailPagePath="/audit-details"
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={50}
           groupByKey="eventId"
