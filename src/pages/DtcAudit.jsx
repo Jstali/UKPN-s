@@ -53,6 +53,22 @@ const deriveFlowVersion = (item, parsedFlowVersion) => {
   return '';
 };
 
+const resolveProcessedValue = (...candidates) => {
+  for (const candidate of candidates) {
+    if (candidate === true || candidate === false) {
+      return String(candidate);
+    }
+    if (candidate === null || candidate === undefined) {
+      continue;
+    }
+    const normalized = String(candidate).trim();
+    if (normalized && normalized.toLowerCase() !== 'unknown') {
+      return normalized;
+    }
+  }
+  return '';
+};
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -93,7 +109,7 @@ const flattenAuditEvents = (data) => {
           application: event.applicationName || event.Destination_Application || 'Unknown',
           eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
           status: event.Status || 'Unknown',
-          processed: event.processed || 'false',
+          processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           timestamp: event.timestamp || '',
           eventId: event.id || '',
           destinationPath: event.Destination_Path || '',
@@ -143,6 +159,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           application: event.applicationName || event.Destination_Application || 'Unknown',
           timestamp: event.timestamp || '',
           status: event.Status || 'Unknown',
+          processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           eventId: event.id || '',
           destinationPath: event.Destination_Path || '',
           destinationFileName: event.Destination_fileName || '',

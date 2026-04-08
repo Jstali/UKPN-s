@@ -61,6 +61,17 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
     onClose();
   };
 
+  const handleClearFilter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLocalVal('');
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      delete next[col.key];
+      return next;
+    });
+  };
+
   // Pre-compute unique values once, then filter — capped at MAX_FILTER_SUGGESTIONS
   const uniqueValues = useMemo(() => {
     return [...new Set(allData.map(row => String(row[col.key] || '')).filter(Boolean))].sort();
@@ -160,7 +171,12 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
       )}
       {localVal && (
         <button
-          onClick={() => { handleChange(''); handleSelect(''); }}
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={handleClearFilter}
           style={{
             marginTop: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: 600,
             background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0',

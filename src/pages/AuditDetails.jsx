@@ -2,23 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronRight, Eye } from 'lucide-react';
 import { formatDateTime } from '../utils/auditUtils';
-import { useApp } from '../context/AppContext';
 
 // Summary columns - must match DTC Audit table exactly
-const SUMMARY_FIELDS_COMBINED = [
-  { key: 'flowVersion', label: 'Flow' },
-  { key: 'fileId', label: 'File ID' },
-  { key: 'timestamp', label: 'Event Timestamp', format: 'datetime' },
-  { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-  { key: 'toRoleMPID', label: 'To Role + To MPID' },
-  { key: 'sourceApplication', label: 'Source' },
-  { key: 'application', label: 'Destination' },
-  { key: 'status', label: 'Status' },
-  { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
-];
-
-const SUMMARY_FIELDS_SPLIT = [
+const SUMMARY_FIELDS = [
   { key: 'flowVersion', label: 'Flow' },
   { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp', format: 'datetime' },
@@ -33,7 +19,7 @@ const SUMMARY_FIELDS_SPLIT = [
   { key: 'eventId', label: 'Message ID' },
 ];
 
-// Additional detail fields
+// Additional detail fields (exclude From Role/To Role as they're in Summary)
 const DETAIL_FIELDS = [
   { key: 'destinationPath', label: 'Destination Path' },
   { key: 'destinationFileName', label: 'Destination File Name' },
@@ -42,21 +28,15 @@ const DETAIL_FIELDS = [
   { key: 'File_ID', label: 'Original File ID' },
   { key: 'processed', label: 'Processed' },
   { key: 'eventType', label: 'Event Type' },
-  { key: 'fromRole', label: 'From Role' },
-  { key: 'fromMPID', label: 'From MPID' },
-  { key: 'toRole', label: 'To Role' },
-  { key: 'toMPID', label: 'To MPID' },
   { key: 'recApp', label: 'Receiving App' },
 ];
 
 const AuditDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useApp();
   const record = location.state?.record;
   const [showPreview, setShowPreview] = useState(false);
-  const splitRoleMpid = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
-  const summaryFields = splitRoleMpid ? SUMMARY_FIELDS_SPLIT : SUMMARY_FIELDS_COMBINED;
+  const summaryFields = SUMMARY_FIELDS;
 
   useEffect(() => {
     return () => {
@@ -80,8 +60,13 @@ const AuditDetails = () => {
   };
 
   const formatValue = (value, format) => {
-    if (!value) return '-';
+    const isEmpty = value === null || value === undefined || String(value).trim() === '';
+    if (isEmpty) return '-';
     if (format === 'datetime') return formatDateTime(value);
+    if (format === 'processed') {
+      const processedVal = String(value).toLowerCase();
+      return processedVal === 'true' ? 'Yes' : (processedVal === 'false' ? 'No' : String(value));
+    }
     return String(value);
   };
 
@@ -363,7 +348,8 @@ const AuditDetails = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
             {DETAIL_FIELDS.map(({ key, label }) => {
               const value = record[key];
-              if (!value) return null;
+              const isEmpty = value === null || value === undefined || String(value).trim() === '';
+              if (isEmpty) return null;
               return (
                 <div key={key} style={{
                   display: 'flex',
@@ -387,7 +373,7 @@ const AuditDetails = () => {
                     wordBreak: 'break-word',
                     flex: 1,
                   }}>
-                    {String(value)}
+                    {formatValue(value, key === 'processed' ? 'processed' : undefined)}
                   </span>
                 </div>
               );
