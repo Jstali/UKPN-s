@@ -262,7 +262,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
         fromMPID: [],
         toRole: [],
         toMPID: [],
-        receivingApp: [],
         fileId: [],
       };
     }
@@ -277,7 +276,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       fromMPID: new Set(),
       toRole: new Set(),
       toMPID: new Set(),
-      receivingApp: new Set(),
       fileId: new Set(),
     };
 
@@ -293,8 +291,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
       if (parsed.fromMPID) values.fromMPID.add(parsed.fromMPID);
       if (parsed.toRole) values.toRole.add(parsed.toRole);
       if (parsed.toMPID) values.toMPID.add(parsed.toMPID);
-      if (parsed.recApp) values.receivingApp.add(parsed.recApp);
-      
       // Add id values (not File_ID)
       if (item.id) values.fileId.add(item.id);
 
@@ -344,7 +340,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     { label: 'Source Application', field: 'sourceApplication' },
     { label: 'Destination Application', field: 'destinationApplication' },
     { label: 'Event Type', field: 'eventType' },
-    { label: 'Receiving App', field: 'receivingApp' },
   ];
 
   const labelStyle = { fontSize: '10px', fontWeight: 600, color: '#64748b', marginBottom: '3px', display: 'block' };

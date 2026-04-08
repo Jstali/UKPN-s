@@ -38,9 +38,31 @@ const Home = () => {
   // Data fetching and auto-refresh are handled by AppContext
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
+  const FAILED_STATUSES = ['failed', 'invalid subscription', 'checksum mismatch'];
+  const NON_DTC_DELIVERED_STATUSES = ['success', 'succeeded', 'delivered', 'file transferred', 'completed', 'complete', 'processed'];
 
-  const deliveredFiles = React.useMemo(() => {
-    const delivered = auditData.filter(item => {
+  const isFailedStatus = (status) => {
+    if (!status) return false;
+    const statusLower = String(status).toLowerCase().trim();
+    // Exclude "duplicate checksum" - it's not a failure
+    if (statusLower === 'duplicate checksum') return false;
+    return FAILED_STATUSES.includes(statusLower);
+  };
+
+  const isNonDtcDelivered = (item) => {
+    const rootStatus = String(item?.status || item?.Status || '').toLowerCase().trim();
+    if (NON_DTC_DELIVERED_STATUSES.includes(rootStatus)) return true;
+
+    const events = Array.isArray(item?.events) ? item.events : [];
+    if (events.some((e) => String(e?.Event_Type || e?.eventType || '') === '4')) return true;
+    return events.some((e) => {
+      const s = String(e?.Status || e?.status || '').toLowerCase().trim();
+      return NON_DTC_DELIVERED_STATUSES.includes(s);
+    });
+  };
+
+  const dtcDeliveredFiles = React.useMemo(() => {
+    return auditData.filter(item => {
       if (!item.events || item.events.length === 0) return false;
       
       // Check if file has event types 1, 2, 3, 4, or 22 (mark as processed)
@@ -54,31 +76,21 @@ const Home = () => {
       
       return hasProcessedEvents || hasEvent21;
     });
-    return delivered;
-  }, [auditData.length]); // Only recalculate when length changes
+  }, [auditData]);
 
   const pendingFiles = React.useMemo(() => {
     return auditData.filter(item => !item.events?.some(e => String(e.Event_Type) === '4'));
-  }, [auditData.length]);
+  }, [auditData]);
 
   const failedFiles = React.useMemo(() => {
-    const FAILED_STATUSES = ['failed', 'invalid subscription', 'checksum mismatch'];
-    const isFailed = (status) => {
-      if (!status) return false;
-      const statusLower = String(status).toLowerCase();
-      // Exclude "duplicate checksum" - it's not a failure
-      if (statusLower === 'duplicate checksum') return false;
-      return FAILED_STATUSES.includes(statusLower);
-    };
-
     const dtcFailed = auditData.filter(item =>
-      item.events?.some(e => isFailed(e.Status) || isFailed(e.status))
+      item.events?.some(e => isFailedStatus(e.Status) || isFailedStatus(e.status))
     );
     const nonDtcFailed = nonDtcAuditData.filter(item =>
-      isFailed(item.status) || isFailed(item.Status)
+      isFailedStatus(item.status) || isFailedStatus(item.Status)
     );
     return { dtcFailed, nonDtcFailed };
-  }, [auditData.length, nonDtcAuditData.length]);
+  }, [auditData, nonDtcAuditData]);
 
   const performanceItems = React.useMemo(() => {
     const formatDurationHMS = (seconds) => {
@@ -135,17 +147,26 @@ const Home = () => {
     );
   }, [auditData]);
 
+  const nonDtcDuplicateChecksumCount = React.useMemo(() => {
+    return nonDtcAuditData.filter((item) => {
+      const rootStatus = String(item?.status || item?.Status || '').toLowerCase().trim();
+      if (rootStatus === 'duplicate checksum') return true;
+      const events = Array.isArray(item?.events) ? item.events : [];
+      return events.some((e) => String(e?.Status || e?.status || '').toLowerCase().trim() === 'duplicate checksum');
+    }).length;
+  }, [nonDtcAuditData]);
+
   const fileStats = React.useMemo(() => ({
-    filesReceived: auditData.length,
-    totalToBeDelivered: auditData.length,
-    totalDelivered: deliveredFiles.length,
-    pendingDelivery: Math.max(auditData.length - deliveredFiles.length, 0),
-    duplicateChecksum: duplicateChecksumFiles.length,
-  }), [auditData.length, deliveredFiles.length, duplicateChecksumFiles.length]);
+    filesReceived: auditData.length + nonDtcAuditData.length,
+    totalToBeDelivered: auditData.length + nonDtcAuditData.length,
+    totalDelivered: dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length,
+    pendingDelivery: Math.max((auditData.length + nonDtcAuditData.length) - (dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length), 0),
+    duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
+  }), [auditData.length, nonDtcAuditData, dtcDeliveredFiles.length, duplicateChecksumFiles.length, nonDtcDuplicateChecksumCount]);
 
   const showDetails = useCallback((type) => {
-    // Calculate actual status distribution from audit data
-    const statusCounts = auditData.reduce((acc, item) => {
+    // Calculate actual status distribution from combined DTC and Non-DTC audit data
+    const dtcStatusCounts = auditData.reduce((acc, item) => {
       const hasDelivered = item.events?.some(e => String(e.Event_Type) === '4');
       const hasFailed = item.events?.some(e => {
         const s = (e.Status || e.status || '').toLowerCase();
@@ -168,10 +189,30 @@ const Home = () => {
       return acc;
     }, { valid: 0, invalid: 0, pending: 0 });
 
+    const nonDtcStatusCounts = nonDtcAuditData.reduce((acc, item) => {
+      if (isFailedStatus(item.status) || isFailedStatus(item.Status)) {
+        acc.invalid += 1;
+      } else if (isNonDtcDelivered(item)) {
+        acc.valid += 1;
+      } else {
+        acc.pending += 1;
+      }
+      return acc;
+    }, { valid: 0, invalid: 0, pending: 0 });
+
+    const statusCounts = {
+      valid: dtcStatusCounts.valid + nonDtcStatusCounts.valid,
+      invalid: dtcStatusCounts.invalid + nonDtcStatusCounts.invalid,
+      pending: dtcStatusCounts.pending + nonDtcStatusCounts.pending,
+    };
+
     const detailsMap = {
       files: {
         title: 'Files Received',
-        items: auditData.map(item => item.Source_FileName).slice(0, 100),
+        items: [
+          ...auditData.map(item => item.Source_FileName),
+          ...nonDtcAuditData.map(item => item.sourceFileName || item.Source_FileName || item.id)
+        ].filter(Boolean).slice(0, 100),
         value: fileStats.filesReceived,
         chartData: { 
           labels: ['Valid', 'Invalid', 'Pending'], 
@@ -181,7 +222,10 @@ const Home = () => {
       },
       subscriptions: {
         title: 'Total Files Subscribed',
-        items: auditData.map(item => item.Source_FileName).filter(Boolean).slice(0, 100),
+        items: [
+          ...auditData.map(item => item.Source_FileName),
+          ...nonDtcAuditData.map(item => item.sourceFileName || item.Source_FileName || item.id)
+        ].filter(Boolean).slice(0, 100),
         value: fileStats.totalToBeDelivered,
         chartData: { 
           labels: ['Delivered', 'Pending'], 
@@ -191,7 +235,10 @@ const Home = () => {
       },
       deliveries: {
         title: 'Total Deliveries',
-        items: deliveredFiles.map(item => item.Source_FileName).slice(0, 100),
+        items: [
+          ...dtcDeliveredFiles.map(item => item.Source_FileName),
+          ...nonDtcAuditData.filter(isNonDtcDelivered).map(item => item.sourceFileName || item.Source_FileName || item.id)
+        ].filter(Boolean).slice(0, 100),
         value: fileStats.totalDelivered,
         chartData: { 
           labels: ['Delivered', 'Pending'], 
@@ -211,18 +258,23 @@ const Home = () => {
       },
       duplicate: {
         title: 'Duplicate Checksum Files',
-        items: duplicateChecksumFiles.map(item => item.Source_FileName).slice(0, 100),
+        items: [
+          ...duplicateChecksumFiles.map(item => item.Source_FileName),
+          ...nonDtcAuditData
+            .filter((item) => String(item?.status || item?.Status || '').toLowerCase().trim() === 'duplicate checksum')
+            .map(item => item.sourceFileName || item.Source_FileName || item.id)
+        ].filter(Boolean).slice(0, 100),
         value: fileStats.duplicateChecksum,
         chartData: { 
           labels: ['Duplicate', 'Others'], 
-          values: [fileStats.duplicateChecksum, auditData.length - fileStats.duplicateChecksum], 
+          values: [fileStats.duplicateChecksum, fileStats.totalToBeDelivered - fileStats.duplicateChecksum], 
           colors: ['#8b5cf6', '#e5e7eb'] 
         }
       }
     };
     const detail = detailsMap[type];
     if (detail) navigate('/analytics', { state: { ...detail, type } });
-  }, [auditData, fileStats, deliveredFiles, pendingFiles, duplicateChecksumFiles, navigate]);
+  }, [auditData, nonDtcAuditData, fileStats, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, isFailedStatus, navigate]);
 
   const handleToggleAutoRefresh = useCallback(() => {
     setAutoRefresh(prev => !prev);

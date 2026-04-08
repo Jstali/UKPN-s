@@ -184,7 +184,6 @@ const buildFilteredResults = (data, filtersToUse) => {
     fromMPID: 'fromMPID',
     toRole: 'toRole',
     toMPID: 'toMPID',
-    receivingApp: 'recApp',
   };
 
   // Handle multi-select for source and destination applications
@@ -278,7 +277,6 @@ const CRITERIA_FIELDS = [
   { label: 'Source Application', key: 'sourceApplication' },
   { label: 'Destination Application', key: 'destinationApplication' },
   { label: 'Event Type', key: 'eventType' },
-  { label: 'Receiving App', key: 'receivingApp' },
   { label: 'Event Timestamp From', key: 'eventTimestampFrom' },
   { label: 'Event Timestamp To', key: 'eventTimestampTo' },
   { label: 'File Creation Date', key: 'fileCreationDate' },

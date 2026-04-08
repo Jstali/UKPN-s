@@ -337,7 +337,6 @@ const DtcAuditFilter = () => {
     fromMPID: 'All',
     toRole: 'All',
     toMPID: 'All',
-    receivingApp: 'All',
     eventTimestampFrom: '',
     eventTimestampTo: '',
     fileCreationDate: '',
@@ -468,7 +467,6 @@ const DtcAuditFilter = () => {
     if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(','); results = results.filter(r => v.includes(r.fromMPID)); }
     if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(','); results = results.filter(r => v.includes(r.toRole)); }
     if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(','); results = results.filter(r => v.includes(r.toMPID)); }
-    if (f.receivingApp && f.receivingApp !== 'All') { const v = f.receivingApp.split(','); results = results.filter(r => v.includes(r.recApp)); }
     if (f.fileId) results = results.filter(r => r.fileId && r.fileId.includes(f.fileId));
     if (f.msgId) results = results.filter(r => r.eventId && r.eventId.includes(f.msgId));
     if (f.version && f.version !== 'All') { const v = f.version.split(','); results = results.filter(r => v.includes(r.flowVersion)); }
@@ -559,7 +557,6 @@ const DtcAuditFilter = () => {
   const fromMPIDOptions = ['All', ...new Set(flatData.map(i => i.fromMPID).filter(Boolean))].sort();
   const toRoleOptions = ['All', ...new Set(flatData.map(i => i.toRole).filter(Boolean))].sort();
   const toMPIDOptions = ['All', ...new Set(flatData.map(i => i.toMPID).filter(Boolean))].sort();
-  const recAppOptions = ['All', ...new Set(flatData.map(i => i.recApp).filter(Boolean))].sort();
   const fileIdOptions = ['All', ...Array.from(fileIdSet).sort()];
 
   // Search + column filters + sort + paginate
@@ -623,7 +620,6 @@ const DtcAuditFilter = () => {
     { label: 'Event Type', field: 'eventType', options: eventTypeOptions },
     { label: 'Flow', field: 'flow', options: flowOptions },
     { label: 'Version', field: 'version', options: flowOptions },
-    { label: 'Receiving App', field: 'receivingApp', options: recAppOptions },
     { label: 'From Role', field: 'fromRole', options: fromRoleOptions },
     { label: 'From MPID', field: 'fromMPID', options: fromMPIDOptions },
     { label: 'To Role', field: 'toRole', options: toRoleOptions },
@@ -801,7 +797,7 @@ const DtcAuditFilter = () => {
         >
           {/* Selection Criteria - only show if any filter is applied */}
           {(filters.sourceApp !== 'All' || filters.destinationApp !== 'All' || filters.eventType !== 'All' || 
-            filters.flow !== 'All' || filters.version !== 'All' || filters.receivingApp !== 'All' || 
+            filters.flow !== 'All' || filters.version !== 'All' || 
             filters.fromRole !== 'All' || filters.fromMPID !== 'All' || filters.toRole !== 'All' || 
             filters.toMPID !== 'All' || filters.eventTimestampFrom || filters.eventTimestampTo || 
             filters.fileCreationDate || filters.publishDate || filters.fileId) && (
@@ -837,11 +833,6 @@ const DtcAuditFilter = () => {
                 {filters.version !== 'All' && (
                   <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
                     Version: {filters.version}
-                  </span>
-                )}
-                {filters.receivingApp !== 'All' && (
-                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
-                    Receiving App: {filters.receivingApp}
                   </span>
                 )}
                 {filters.fromRole !== 'All' && (
