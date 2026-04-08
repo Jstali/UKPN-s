@@ -28,7 +28,6 @@ const DETAIL_FIELDS = [
   { key: 'File_ID', label: 'Original File ID' },
   { key: 'processed', label: 'Processed' },
   { key: 'eventType', label: 'Event Type' },
-  { key: 'recApp', label: 'Receiving App' },
 ];
 
 const AuditDetails = () => {
