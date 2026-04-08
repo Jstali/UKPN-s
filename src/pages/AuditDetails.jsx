@@ -2,30 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronRight, Eye } from 'lucide-react';
 import { formatDateTime } from '../utils/auditUtils';
+import { DTC_AUDIT_DETAIL_SUMMARY_FIELDS } from '../data/dtcSummaryColumns';
 
 // Summary columns - must match DTC Audit table exactly
-const SUMMARY_FIELDS = [
-  { key: 'flowVersion', label: 'Flow' },
-  { key: 'fileId', label: 'File ID' },
-  { key: 'timestamp', label: 'Event Timestamp', format: 'datetime' },
-  { key: 'fromRole', label: 'From Role' },
-  { key: 'fromMPID', label: 'From MPID' },
-  { key: 'toRole', label: 'To Role' },
-  { key: 'toMPID', label: 'To MPID' },
-  { key: 'sourceApplication', label: 'Source' },
-  { key: 'application', label: 'Destination' },
-  { key: 'status', label: 'Status' },
-  { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
-];
-
 // Additional detail fields (exclude From Role/To Role as they're in Summary)
 const DETAIL_FIELDS = [
   { key: 'destinationPath', label: 'Destination Path' },
   { key: 'destinationFileName', label: 'Destination File Name' },
   { key: 'Header_String', label: 'Header String' },
   { key: 'Source_Path', label: 'Source Path' },
-  { key: 'File_ID', label: 'Original File ID' },
   { key: 'eventType', label: 'Event Type' },
 ];
 
@@ -34,7 +19,7 @@ const AuditDetails = () => {
   const navigate = useNavigate();
   const record = location.state?.record;
   const [showPreview, setShowPreview] = useState(false);
-  const summaryFields = SUMMARY_FIELDS;
+  const summaryFields = DTC_AUDIT_DETAIL_SUMMARY_FIELDS;
 
   useEffect(() => {
     return () => {

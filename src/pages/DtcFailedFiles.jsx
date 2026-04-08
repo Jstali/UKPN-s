@@ -5,6 +5,10 @@ import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import {
+  DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
+  DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
+} from '../data/dtcSummaryColumns';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
@@ -258,58 +262,8 @@ const DtcFailedFiles = () => {
       ) : (
         <DataTable
           data={failedFiles}
-          columns={splitRoleColumns ? [
-            { key: 'flow', label: 'Flow' },
-            { key: 'version', label: 'Version' },
-            { key: 'fileId', label: 'File ID' },
-            { key: 'timestamp', label: 'Event Timestamp' },
-            { key: 'fromRole', label: 'From Role' },
-            { key: 'fromMPID', label: 'From MPID' },
-            { key: 'toRole', label: 'To Role' },
-            { key: 'toMPID', label: 'To MPID' },
-            { key: 'sourceApplication', label: 'Source' },
-            { key: 'application', label: 'Destination' },
-            { key: 'status', label: 'Status' },
-            { key: 'fileName', label: 'Source File Name' },
-            { key: 'eventId', label: 'Message ID' },
-          ] : [
-            { key: 'flowVersion', label: 'Flow' },
-            { key: 'fileId', label: 'File ID' },
-            { key: 'timestamp', label: 'Event Timestamp' },
-            { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-            { key: 'toRoleMPID', label: 'To Role + To MPID' },
-            { key: 'sourceApplication', label: 'Source' },
-            { key: 'application', label: 'Destination' },
-            { key: 'status', label: 'Status' },
-            { key: 'fileName', label: 'Source File Name' },
-            { key: 'eventId', label: 'Message ID' },
-          ]}
-          compactColumns={splitRoleColumns ? [
-            { key: 'flow', label: 'Flow' },
-            { key: 'version', label: 'Version' },
-            { key: 'fileId', label: 'File ID' },
-            { key: 'timestamp', label: 'Event Timestamp' },
-            { key: 'fromRole', label: 'From Role' },
-            { key: 'fromMPID', label: 'From MPID' },
-            { key: 'toRole', label: 'To Role' },
-            { key: 'toMPID', label: 'To MPID' },
-            { key: 'sourceApplication', label: 'Source' },
-            { key: 'application', label: 'Destination' },
-            { key: 'status', label: 'Status' },
-            { key: 'fileName', label: 'Source File Name' },
-            { key: 'eventId', label: 'Message ID' },
-          ] : [
-            { key: 'flowVersion', label: 'Flow' },
-            { key: 'fileId', label: 'File ID' },
-            { key: 'timestamp', label: 'Event Timestamp' },
-            { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-            { key: 'toRoleMPID', label: 'To Role + To MPID' },
-            { key: 'sourceApplication', label: 'Source' },
-            { key: 'application', label: 'Destination' },
-            { key: 'status', label: 'Status' },
-            { key: 'fileName', label: 'Source File Name' },
-            { key: 'eventId', label: 'Message ID' },
-          ]}
+          columns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_COMBINED_FLOW}
+          compactColumns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_COMBINED_FLOW}
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={50}
           groupByKey="eventId"

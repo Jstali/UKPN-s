@@ -81,6 +81,14 @@ const Home = () => {
   }, [auditData.length, nonDtcAuditData.length]);
 
   const performanceItems = React.useMemo(() => {
+    const formatDurationHMS = (seconds) => {
+      const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+      const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+      const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+      const secs = String(safeSeconds % 60).padStart(2, '0');
+      return `${hours}:${minutes}:${secs}`;
+    };
+
     const appStats = new Map();
 
     auditData.forEach((item) => {
@@ -111,12 +119,9 @@ const Home = () => {
 
     return Array.from(appStats.entries()).map(([name, stats]) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
-      const fmtTime = actual >= 60
-        ? `${(actual / 60).toFixed(1)}m`
-        : `${actual.toFixed(1)}s`;
       return {
         name,
-        avgTime: fmtTime,
+        avgTime: formatDurationHMS(actual),
         actual,
         files: stats.files,
         totalDuration: stats.totalDuration,

@@ -3,6 +3,14 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Clock } from 'lucide-react';
 
+const formatDurationHMS = (seconds) => {
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+  const secs = String(safeSeconds % 60).padStart(2, '0');
+  return `${hours}:${minutes}:${secs}`;
+};
+
 const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
   const [hasAnimated, setHasAnimated] = React.useState(false);
@@ -13,14 +21,14 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   
   // Calculate correct overall average: total duration / total files
   const overallAverage = React.useMemo(() => {
-    if (performanceItems.length === 0) return '0.0';
+    if (performanceItems.length === 0) return '00:00:00';
     
     const totalDuration = performanceItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
     const totalFiles = performanceItems.reduce((sum, app) => sum + app.files, 0);
     
-    if (totalFiles === 0) return '0.0s';
+    if (totalFiles === 0) return '00:00:00';
     const avg = totalDuration / totalFiles;
-    return avg >= 60 ? `${(avg / 60).toFixed(1)}m` : `${avg.toFixed(1)}s`;
+    return formatDurationHMS(avg);
   }, [performanceItems]);
 
   return (

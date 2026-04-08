@@ -8,12 +8,17 @@ import api from '../utils/api';
 import ColorBar, { FLOW_COLORS, APP_COLORS } from '../components/ColorBar';
 import {
   DEFAULT_FILTERS,
-  FILTERED_COLUMNS,
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
 import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
+import {
+  DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
+  DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION,
+  DTC_SUMMARY_COLUMNS_SPLIT_FLOW,
+  DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
+} from '../data/dtcSummaryColumns';
 
 // Event Type mapping
 const EVENT_TYPE_MAP = {
@@ -280,51 +285,6 @@ const CRITERIA_FIELDS = [
   { label: 'Message ID', key: 'msgId' },
 ];
 
-const FILTERED_COLUMNS_FULL = [
-  { key: 'flow', label: 'Flow' },
-  { key: 'version', label: 'Version' },
-  { key: 'fileId', label: 'File ID' },
-  { key: 'timestamp', label: 'Event Timestamp' },
-  { key: 'fromRoleMPID', label: 'From Role + From MPID' },
-  { key: 'toRoleMPID', label: 'To Role + To MPID' },
-  { key: 'sourceApplication', label: 'Source' },
-  { key: 'application', label: 'Destination' },
-  { key: 'status', label: 'Status' },
-  { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
-];
-
-const COMPACT_COLUMNS_BUSINESS = [
-  { key: 'flowVersion', label: 'Flow' },
-  { key: 'fileId', label: 'File ID' },
-  { key: 'timestamp', label: 'Event Timestamp' },
-  { key: 'fromRole', label: 'From Role' },
-  { key: 'fromMPID', label: 'From MID' },
-  { key: 'toRole', label: 'To Role' },
-  { key: 'toMPID', label: 'To MPID' },
-  { key: 'sourceApplication', label: 'Source' },
-  { key: 'application', label: 'Destination' },
-  { key: 'status', label: 'Status' },
-  { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
-];
-
-const COMPACT_COLUMNS_FULL = [
-  { key: 'flow', label: 'Flow' },
-  { key: 'version', label: 'Version' },
-  { key: 'fileId', label: 'File ID' },
-  { key: 'timestamp', label: 'Event Timestamp' },
-  { key: 'fromRole', label: 'From Role' },
-  { key: 'fromMPID', label: 'From MID' },
-  { key: 'toRole', label: 'To Role' },
-  { key: 'toMPID', label: 'To MPID' },
-  { key: 'sourceApplication', label: 'Source' },
-  { key: 'application', label: 'Destination' },
-  { key: 'status', label: 'Status' },
-  { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
-];
-
 const DtcAudit = () => {
   const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading } = useApp();
   const location = useLocation();
@@ -425,9 +385,9 @@ const DtcAudit = () => {
   
   const isBusiness = user?.role === 'Business';
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
-  const filteredColumns = isBusiness ? FILTERED_COLUMNS : FILTERED_COLUMNS_FULL;
+  const filteredColumns = isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION;
   const columns = hasQueried ? filteredColumns : defaultColumns;
-  const compactColumns = isBusiness ? COMPACT_COLUMNS_BUSINESS : COMPACT_COLUMNS_FULL;
+  const compactColumns = isBusiness ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION;
   const shouldSplitRoleColumnsForExport = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
 
   const exportColumns = useMemo(() => {
