@@ -285,7 +285,7 @@ const AuditDetails = () => {
           }}>
             Summary Information
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
             {summaryFields.map(({ key, label, format }) => (
               <div key={key} style={{
                 display: 'flex',
@@ -293,12 +293,13 @@ const AuditDetails = () => {
                 background: '#f9fafb',
                 borderRadius: '6px',
                 border: '1px solid #e5e7eb',
+                maxWidth: ['fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key) ? '240px' : 'none',
               }}>
                 <span style={{ 
                   fontWeight: 600, 
                   color: '#64748b', 
                   fontSize: '13px',
-                  minWidth: '140px',
+                  minWidth: ['fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key) ? '90px' : '140px',
                   flexShrink: 0,
                 }}>
                   {label}:

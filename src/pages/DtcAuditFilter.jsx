@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calendar, ArrowUp, ArrowDown, X, ChevronDown } from 'lucide-react';
 import ExportDropdown from '../components/ExportDropdown';
+import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { useApp } from '../context/AppContext';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
@@ -340,6 +341,7 @@ const DtcAuditFilter = () => {
     eventTimestampFrom: '',
     eventTimestampTo: '',
     fileCreationDate: '',
+    publishDate: '',
     fileId: '',
     msgId: '',
   };
@@ -383,6 +385,35 @@ const DtcAuditFilter = () => {
       }
       return next;
     });
+  };
+
+  const dropdownFilters = useMemo(() => ({
+    ...filters,
+    sourceApplication: filters.sourceApp,
+    destinationApplication: filters.destinationApp,
+  }), [filters]);
+
+  const mapDropdownFieldToInternal = (field) => {
+    if (field === 'sourceApplication') return 'sourceApp';
+    if (field === 'destinationApplication') return 'destinationApp';
+    return field;
+  };
+
+  const mapDropdownFiltersToInternal = (nextFilters) => ({
+    ...nextFilters,
+    sourceApp: nextFilters.sourceApplication ?? nextFilters.sourceApp ?? 'All',
+    destinationApp: nextFilters.destinationApplication ?? nextFilters.destinationApp ?? 'All',
+  });
+
+  const handleDropdownFilterChange = (field, value) => {
+    handleFilterChange(mapDropdownFieldToInternal(field), value);
+  };
+
+  const handleDropdownApply = (nextFilters) => {
+    const mappedFilters = mapDropdownFiltersToInternal(nextFilters);
+    if (handleQuery(mappedFilters)) {
+      setAppliedFilters({ ...mappedFilters });
+    }
   };
 
   const handleReset = () => {
@@ -519,46 +550,6 @@ const DtcAuditFilter = () => {
     return true;
   };
 
-
-
-  // Build dropdown options
-  const flatData = [];
-  const fileIdSet = new Set();
-  auditData.forEach(item => {
-    const headerStr = getHeaderString(item);
-    const parsed = parseHeader(headerStr);
-    const fileName = getSourceFileName(item);
-    const flowFromFilename = extractFlowFromFilename(fileName);
-    const rawFlow = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || item.FlowVersion || flowFromFilename;
-    const fileId = item.File_ID || item.fileId || item.file_id || item.correlationId || item.id;
-    if (fileId && fileId !== 'UNKNOWN') fileIdSet.add(fileId);
-
-    if (item.events && item.events.length > 0) {
-      item.events.forEach(event => {
-        flatData.push({
-          sourceApp: item.Source_Application || item.source_application || 'Unknown',
-          application: event.applicationName || event.Destination_Application || 'Unknown',
-          eventType: event.Event_Type || event.event_type || event.eventType || 'Unknown',
-          flowVersion: formatFlowVersion(rawFlow) || '-',
-          fromRole: parsed.fromRole || event.fromRole || event.From_Role || '',
-          fromMPID: parsed.fromMPID || event.fromMPID || event.From_MPID || '',
-          toRole: parsed.toRole || event.toRole || event.To_Role || '',
-          toMPID: parsed.toMPID || event.toMPID || event.To_MPID || '',
-          recApp: parsed.recApp || event.Receiving_Application || event.receivingApp || '',
-        });
-      });
-    }
-  });
-  const sourceAppOptions = ['All', ...new Set(flatData.map(i => i.sourceApp).filter(Boolean))];
-  const destinationAppOptions = ['All', ...new Set(flatData.map(i => i.application).filter(Boolean))];
-  const eventTypeOptions = ['All', ...new Set(flatData.map(i => i.eventType).filter(Boolean))].sort();
-  const flowOptions = ['All', ...new Set(flatData.map(i => i.flowVersion).filter(v => v && v !== '-'))].sort();
-  const fromRoleOptions = ['All', ...new Set(flatData.map(i => i.fromRole).filter(Boolean))].sort();
-  const fromMPIDOptions = ['All', ...new Set(flatData.map(i => i.fromMPID).filter(Boolean))].sort();
-  const toRoleOptions = ['All', ...new Set(flatData.map(i => i.toRole).filter(Boolean))].sort();
-  const toMPIDOptions = ['All', ...new Set(flatData.map(i => i.toMPID).filter(Boolean))].sort();
-  const fileIdOptions = ['All', ...Array.from(fileIdSet).sort()];
-
   // Search + column filters + sort + paginate
   const globalFiltered = filteredResults.filter(row =>
     !searchTerm || Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
@@ -614,23 +605,6 @@ const DtcAuditFilter = () => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const dropdownFields = [
-    { label: 'Source Application', field: 'sourceApp', options: sourceAppOptions },
-    { label: 'Destination Application', field: 'destinationApp', options: destinationAppOptions },
-    { label: 'Event Type', field: 'eventType', options: eventTypeOptions },
-    { label: 'Flow', field: 'flow', options: flowOptions },
-    { label: 'Version', field: 'version', options: flowOptions },
-    { label: 'From Role', field: 'fromRole', options: fromRoleOptions },
-    { label: 'From MPID', field: 'fromMPID', options: fromMPIDOptions },
-    { label: 'To Role', field: 'toRole', options: toRoleOptions },
-    { label: 'To MPID', field: 'toMPID', options: toMPIDOptions },
-  ];
-
-  const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
-  const selectStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#1e293b', background: '#fff', cursor: 'pointer', outline: 'none' };
-  const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
-  const smallInputStyle = { flex: 1, padding: '8px 8px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', outline: 'none' };
-
   return (
     <motion.div
       className="page-container dtc-audit-page"
@@ -654,136 +628,14 @@ const DtcAuditFilter = () => {
         <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Detail View</span>
       </div>
 
-      {/* Filter Section */}
-      <div style={{
-        background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px',
-        marginBottom: '16px', overflow: 'visible',
-        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
-      }}>
-        <div style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px' }}>
-            {/* Source Application - Multi-select */}
-            <div>
-              <label style={labelStyle}>Source Application</label>
-              <MultiSelectDropdown
-                label="Source Application"
-                value={filters.sourceApp}
-                options={sourceAppOptions.filter(o => o !== 'All')}
-                onChange={(value) => handleFilterChange('sourceApp', value)}
-                style={selectStyle}
-              />
-            </div>
-
-            {/* Destination Application - Multi-select */}
-            <div>
-              <label style={labelStyle}>Destination Application</label>
-              <MultiSelectDropdown
-                label="Destination Application"
-                value={filters.destinationApp}
-                options={destinationAppOptions.filter(o => o !== 'All')}
-                onChange={(value) => handleFilterChange('destinationApp', value)}
-                style={selectStyle}
-              />
-            </div>
-
-            {/* Other fields - multi-select dropdowns */}
-            {dropdownFields.filter(f => f.field !== 'sourceApp' && f.field !== 'destinationApp').map(({ label, field, options }) => (
-              <div key={field}>
-                <label style={labelStyle}>{label}</label>
-                <MultiSelectDropdown
-                  label={label}
-                  value={filters[field]}
-                  options={options.filter(o => o !== 'All')}
-                  onChange={(value) => handleFilterChange(field, value)}
-                  style={selectStyle}
-                  searchable={field === 'flow' || field === 'version' || field === 'fromMPID' || field === 'toMPID'}
-                />
-              </div>
-            ))}
-
-            <div>
-              <label style={labelStyle}>Event Timestamp From</label>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <input type="date" value={filters.eventTimestampFrom.split('T')[0] || ''}
-                  onChange={(e) => { const time = filters.eventTimestampFrom.split('T')[1] || '00:00'; handleFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : ''); }}
-                  style={smallInputStyle} />
-                <input type="time" value={filters.eventTimestampFrom.split('T')[1] || ''}
-                  onChange={(e) => { const date = filters.eventTimestampFrom.split('T')[0]; if (date) handleFilterChange('eventTimestampFrom', `${date}T${e.target.value}`); }}
-                  style={smallInputStyle} />
-              </div>
-            </div>
-
-            <div>
-              <label style={labelStyle}>Event Timestamp To</label>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <input type="date" value={filters.eventTimestampTo.split('T')[0] || ''}
-                  onChange={(e) => { const time = filters.eventTimestampTo.split('T')[1] || '23:59'; handleFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : ''); }}
-                  style={smallInputStyle} />
-                <input type="time" value={filters.eventTimestampTo.split('T')[1] || ''}
-                  onChange={(e) => { const date = filters.eventTimestampTo.split('T')[0]; if (date) handleFilterChange('eventTimestampTo', `${date}T${e.target.value}`); }}
-                  style={smallInputStyle} />
-              </div>
-            </div>
-
-            <div>
-              <label style={labelStyle}>File Creation Date</label>
-              <input type="date" value={filters.fileCreationDate} onChange={(e) => handleFilterChange('fileCreationDate', e.target.value)} style={inputStyle} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Publish Date</label>
-              <input type="date" value={filters.publishDate} onChange={(e) => handleFilterChange('publishDate', e.target.value)} style={inputStyle} />
-            </div>
-
-            <div>
-              <label style={labelStyle}>Unique ID</label>
-              <input type="text" value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} placeholder="Enter Unique ID" style={inputStyle} />
-            </div>
-          </div>
-        </div>
-
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', gap: '10px',
-          padding: '12px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc'
-        }}>
-          {dateError ? (
-            <div style={{
-              alignSelf: 'center',
-              padding: '6px 10px',
-              background: '#fef2f2',
-              border: '1px solid #fca5a5',
-              borderRadius: '6px',
-              color: '#991b1b',
-              fontSize: '12px',
-              fontWeight: 600,
-            }}>
-              {dateError}
-            </div>
-          ) : (
-            <div />
-          )}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-          <button onClick={handleReset} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px', background: '#f1f5f9', color: '#475569',
-            border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
-            fontSize: '13px', fontWeight: 600,
-          }}>
-            <RotateCcw size={14} /> Reset
-          </button>
-          <button onClick={() => { if (handleQuery(filters)) setAppliedFilters({ ...filters }); }} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px', background: '#667eea', color: 'white',
-            border: 'none', borderRadius: '8px', cursor: 'pointer',
-            fontSize: '13px', fontWeight: 600,
-            opacity: dateError ? 0.6 : 1,
-            cursor: dateError ? 'not-allowed' : 'pointer',
-          }}>
-            <Search size={14} /> Apply Filters
-          </button>
-          </div>
-        </div>
-      </div>
+      {/* Shared Filter Section (same component as DTC Audit page) */}
+      <DtcFilterDropdown
+        filters={dropdownFilters}
+        auditData={auditData}
+        onFilterChange={handleDropdownFilterChange}
+        onReset={handleReset}
+        onApply={handleDropdownApply}
+      />
 
       {/* Results Table */}
       {hasQueried && (
