@@ -4,6 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+const formatDurationHMS = (seconds) => {
+  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+  const secs = String(safeSeconds % 60).padStart(2, '0');
+  return `${hours}:${minutes}:${secs}`;
+};
+
 // Generate mini sparkline data for each app
 const generateSparkData = (appName, actualTime) => {
   const base = actualTime || 2.0;
@@ -70,8 +78,7 @@ const PerformanceDetail = () => {
     });
     return Array.from(appStats.entries()).map(([name, stats]) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
-      const fmtTime = actual >= 60 ? `${(actual / 60).toFixed(1)}m` : `${actual.toFixed(1)}s`;
-      return { name, avgTime: fmtTime, actual, threshold: 3, files: stats.files };
+      return { name, avgTime: formatDurationHMS(actual), actual, threshold: 3, files: stats.files };
     }).sort((a, b) => b.actual - a.actual);
   }, [auditData]);
 
@@ -101,9 +108,9 @@ const PerformanceDetail = () => {
   const overallAvg = useMemo(() => {
     const totalDuration = filteredItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
     const totalFiles = filteredItems.reduce((sum, app) => sum + app.files, 0);
-    if (totalFiles === 0) return '0.0s';
+    if (totalFiles === 0) return '00:00:00';
     const avg = totalDuration / totalFiles;
-    return avg >= 60 ? `${(avg / 60).toFixed(1)}m` : `${avg.toFixed(1)}s`;
+    return formatDurationHMS(avg);
   }, [filteredItems]);
 
   // Always show green for successful operations
