@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
+import { isNonDtcFailedRecord } from '../utils/statusUtils';
 
 const NonDtcFailedFiles = () => {
   const navigate = useNavigate();
@@ -24,13 +25,8 @@ const NonDtcFailedFiles = () => {
     rawData: item
   })), [nonDtcAuditData]);
 
-  const isFailedStatus = (status) => {
-    const s = (status || '').toLowerCase();
-    return s.includes('failed') || s.includes('invalid') || s.includes('error') || s.includes('rejected') || s.includes('mismatch');
-  };
-
   const failedFiles = useMemo(() => {
-    let filtered = auditData.filter(row => isFailedStatus(row.status));
+    let filtered = auditData.filter(row => isNonDtcFailedRecord(row.rawData));
     
     // Apply flow filter
     if (flowFilter && flowFilter !== 'All') {
@@ -48,7 +44,7 @@ const NonDtcFailedFiles = () => {
   }, [auditData, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    const failed = auditData.filter(row => isFailedStatus(row.status));
+    const failed = auditData.filter(row => isNonDtcFailedRecord(row.rawData));
     return ['All', ...new Set(failed.map(row => row.flow).filter(Boolean))];
   }, [auditData]);
 

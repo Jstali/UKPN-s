@@ -399,7 +399,7 @@ const DtcAuditFilter = () => {
     return field;
   };
 
-  const mapDropdownFiltersToInternal = (nextFilters) => ({
+  const mapDropdownFiltersToInternal = (nextFilters = {}) => ({
     ...nextFilters,
     sourceApp: nextFilters.sourceApplication ?? nextFilters.sourceApp ?? 'All',
     destinationApp: nextFilters.destinationApplication ?? nextFilters.destinationApp ?? 'All',
@@ -410,7 +410,8 @@ const DtcAuditFilter = () => {
   };
 
   const handleDropdownApply = (nextFilters) => {
-    const mappedFilters = mapDropdownFiltersToInternal(nextFilters);
+    const safeNextFilters = nextFilters ?? dropdownFilters;
+    const mappedFilters = mapDropdownFiltersToInternal(safeNextFilters);
     if (handleQuery(mappedFilters)) {
       setAppliedFilters({ ...mappedFilters });
     }

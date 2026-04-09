@@ -22,19 +22,32 @@ export const EVENT_TYPE_COLORS = [
 
 const ColorBar = ({ data, label, colors }) => {
   const [hovered, setHovered] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ left: 0 });
+  const [tooltipPos, setTooltipPos] = useState({ left: 0, arrowLeft: 0 });
   const barRef = useRef(null);
   const total = data.reduce((sum, d) => sum + d.count, 0);
 
   const handleMouseEnter = useCallback((i, e) => {
     setHovered(i);
     if (barRef.current) {
+      const item = data[i];
       const barRect = barRef.current.getBoundingClientRect();
       const segRect = e.currentTarget.getBoundingClientRect();
       const segCenter = segRect.left + segRect.width / 2 - barRect.left;
-      setTooltipPos({ left: segCenter });
+      const tooltipText = `${item.name}: ${item.count}`;
+      const estimatedTooltipWidth = Math.max(100, tooltipText.length * 7 + 24);
+
+      const minLeft = 4;
+      const maxLeft = Math.max(minLeft, barRect.width - estimatedTooltipWidth - 4);
+      const left = Math.min(Math.max(segCenter - estimatedTooltipWidth / 2, minLeft), maxLeft);
+
+      const arrowLeft = Math.min(
+        Math.max(segCenter - left, 10),
+        Math.max(10, estimatedTooltipWidth - 10)
+      );
+
+      setTooltipPos({ left, arrowLeft });
     }
-  }, []);
+  }, [data]);
 
   return (
     <div style={{ marginBottom: '14px', position: 'relative' }}>
@@ -43,14 +56,14 @@ const ColorBar = ({ data, label, colors }) => {
         {hovered !== null && (
           <div style={{
             position: 'absolute', bottom: '100%', left: tooltipPos.left,
-            transform: 'translateX(-50%)', marginBottom: '6px',
+            marginBottom: '6px',
             background: '#1e293b', color: '#fff', padding: '6px 12px', borderRadius: '8px',
             fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', zIndex: 50,
             boxShadow: '0 4px 12px rgba(0,0,0,0.25)', pointerEvents: 'none',
           }}>
             {data[hovered].name}: {data[hovered].count}
             <div style={{
-              position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+              position: 'absolute', top: '100%', left: tooltipPos.arrowLeft, transform: 'translateX(-50%)',
               width: 0, height: 0, borderLeft: '5px solid transparent',
               borderRight: '5px solid transparent', borderTop: '5px solid #1e293b',
             }} />

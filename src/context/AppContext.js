@@ -3,48 +3,15 @@ import api, { fetchDtcSubscriptions } from '../utils/api';
 
 const AppContext = createContext(null);
 
-// ─── localStorage cache helpers ───────────────────────────────────────────────
-const LS_KEY = 'ukpn_audit_cache';
-const LS_TTL = 5 * 60 * 1000; // 5 minutes (reduced from 30)
-
-function readLocalCache() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const { dtc, nonDtc, ts } = JSON.parse(raw);
-    const age = Date.now() - ts;
-    if (age > LS_TTL) { 
-      console.log(`🗑️ Cache expired (${Math.round(age/1000)}s old), clearing...`);
-      localStorage.removeItem(LS_KEY); 
-      return null; 
-    }
-    console.log(`✅ Using cache (${Math.round(age/1000)}s old)`);
-    return { dtc: dtc || [], nonDtc: nonDtc || [] };
-  } catch { return null; }
-}
-
-function writeLocalCache(dtc, nonDtc) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify({ dtc, nonDtc, ts: Date.now() }));
-  } catch {}
-}
-
-function clearLocalCache() {
-  try { localStorage.removeItem(LS_KEY); } catch {}
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Seed state from localStorage so data shows instantly before first API response
-  const cached = readLocalCache();
-  const [auditData, setAuditData] = useState(cached?.dtc || []);
-  const [nonDtcAuditData, setNonDtcAuditData] = useState(cached?.nonDtc || []);
+  const [auditData, setAuditData] = useState([]);
+  const [nonDtcAuditData, setNonDtcAuditData] = useState([]);
 
-  const [loading, setLoading] = useState(!cached); // show skeleton only if no cache
-  const [dataComplete, setDataComplete] = useState(!!cached);
+  const [loading, setLoading] = useState(true);
+  const [dataComplete, setDataComplete] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [nonDtcFetchError, setNonDtcFetchError] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState([]);
@@ -54,9 +21,9 @@ export const AppProvider = ({ children }) => {
 
   // Refs to avoid stale closures and prevent concurrent fetches
   const isFetchingRef = useRef(false);
-  const lastFetchRef = useRef(cached ? Date.now() - 25000 : null); // cache = 25s old, triggers refresh soon
-  const auditDataRef = useRef(cached?.dtc || []);
-  const nonDtcDataRef = useRef(cached?.nonDtc || []);
+  const lastFetchRef = useRef(null);
+  const auditDataRef = useRef([]);
+  const nonDtcDataRef = useRef([]);
 
   // Keep refs in sync with state
   const setAuditDataSync = (data) => {
@@ -97,7 +64,7 @@ export const AppProvider = ({ children }) => {
     isFetchingRef.current = true;
     const hasExistingData = auditDataRef.current.length > 0 || nonDtcDataRef.current.length > 0;
 
-    // Only show skeleton on true first load (no cache, no data)
+    // Only show skeleton on true first load (no existing data)
     if (!hasExistingData) {
       setLoading(true);
       setDataComplete(false);
@@ -146,7 +113,6 @@ export const AppProvider = ({ children }) => {
         setAuditDataSync(initialDtc);
         setNonDtcDataSync(initialNonDtc);
         setLoading(false);
-        writeLocalCache(initialDtc, initialNonDtc);
       }
 
       lastFetchRef.current = Date.now();
@@ -156,7 +122,6 @@ export const AppProvider = ({ children }) => {
         if (hasExistingData) {
           setAuditDataSync(initialDtc);
           setNonDtcDataSync(initialNonDtc);
-          writeLocalCache(initialDtc, initialNonDtc);
         }
         setDataComplete(true);
         isFetchingRef.current = false;
@@ -210,7 +175,6 @@ export const AppProvider = ({ children }) => {
       // Final update and cache write
       setAuditDataSync([...allDtc]);
       setNonDtcDataSync([...allNonDtc]);
-      writeLocalCache(allDtc, allNonDtc);
       setDataComplete(true);
       
       // Log total records fetched
@@ -267,7 +231,6 @@ export const AppProvider = ({ children }) => {
     setNonDtcDataSync([]);
     setSubscriptionData([]);
     lastFetchRef.current = null;
-    clearLocalCache();
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
   };

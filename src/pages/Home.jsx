@@ -10,6 +10,7 @@ import PerformanceSection from '../components/dashboard/PerformanceSection';
 import FailedFilesSection from '../components/dashboard/FailedFilesSection';
 import EditModal from '../components/dashboard/EditModal';
 import { parseHeader } from '../utils/auditUtils';
+import { isDtcFailedStatus, isNonDtcFailedRecord } from '../utils/statusUtils';
 
 import { useApp } from '../context/AppContext';
 
@@ -38,15 +39,10 @@ const Home = () => {
   // Data fetching and auto-refresh are handled by AppContext
 
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
-  const FAILED_STATUSES = ['failed', 'invalid subscription', 'checksum mismatch'];
   const NON_DTC_DELIVERED_STATUSES = ['success', 'succeeded', 'delivered', 'file transferred', 'completed', 'complete', 'processed'];
 
   const isFailedStatus = (status) => {
-    if (!status) return false;
-    const statusLower = String(status).toLowerCase().trim();
-    // Exclude "duplicate checksum" - it's not a failure
-    if (statusLower === 'duplicate checksum') return false;
-    return FAILED_STATUSES.includes(statusLower);
+    return isDtcFailedStatus(status);
   };
 
   const isNonDtcDelivered = (item) => {
@@ -87,7 +83,7 @@ const Home = () => {
       item.events?.some(e => isFailedStatus(e.Status) || isFailedStatus(e.status))
     );
     const nonDtcFailed = nonDtcAuditData.filter(item =>
-      isFailedStatus(item.status) || isFailedStatus(item.Status)
+      isNonDtcFailedRecord(item)
     );
     return { dtcFailed, nonDtcFailed };
   }, [auditData, nonDtcAuditData]);
@@ -190,7 +186,7 @@ const Home = () => {
     }, { valid: 0, invalid: 0, pending: 0 });
 
     const nonDtcStatusCounts = nonDtcAuditData.reduce((acc, item) => {
-      if (isFailedStatus(item.status) || isFailedStatus(item.Status)) {
+      if (isNonDtcFailedRecord(item)) {
         acc.invalid += 1;
       } else if (isNonDtcDelivered(item)) {
         acc.valid += 1;
