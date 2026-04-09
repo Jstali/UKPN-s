@@ -4,10 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
-import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
-  DTC_SUMMARY_COLUMNS_SPLIT_FLOW,
   DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
 } from '../data/dtcSummaryColumns';
 
@@ -170,8 +169,6 @@ const flattenAuditEvents = (data) => {
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
-          fromRoleMPID: formatFromRoleMPID(parsed.fromRole, parsed.fromMPID),
-          toRoleMPID: formatToRoleMPID(parsed.toRole, parsed.toMPID),
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
           toRole: parsed.toRole,
@@ -200,7 +197,6 @@ const DtcFailedFiles = () => {
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
   const isBusiness = user?.role === 'Business';
-  const splitRoleColumns = ['Testing Team', 'Core Support', 'Admin', 'Business'].includes(user?.role);
 
   const isFailedStatus = (status) => {
     const s = (status || '').toLowerCase();
@@ -351,9 +347,9 @@ const DtcFailedFiles = () => {
       ) : (
         <DataTable
           data={failedFiles}
-          columns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_COMBINED_FLOW}
-          compactColumns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_COMBINED_FLOW}
-          exportColumns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_SPLIT_FLOW}
+          columns={isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION}
+          compactColumns={isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION}
+          exportColumns={isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION}
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={50}
           groupByKey="eventId"

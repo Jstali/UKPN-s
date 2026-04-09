@@ -11,13 +11,11 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-import { parseHeader, formatDateTime, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
+import { parseHeader, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION,
-  DTC_SUMMARY_COLUMNS_SPLIT_FLOW,
-  DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
 } from '../data/dtcSummaryColumns';
 
 // Event Type mapping
@@ -104,8 +102,6 @@ const flattenAuditEvents = (data) => {
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
-          fromRoleMPID: formatFromRoleMPID(resolvedFromRole, resolvedFromMPID),
-          toRoleMPID: formatToRoleMPID(resolvedToRole, resolvedToMPID),
           fromRole: resolvedFromRole,
           fromMPID: resolvedFromMPID,
           toRole: resolvedToRole,
@@ -152,8 +148,6 @@ const buildFilteredResults = (data, filtersToUse) => {
           id: item.id,
           flowVersion: formatFlowVersion(rawFlowVersion) || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
-          fromRoleMPID: formatFromRoleMPID(resolvedFromRole, resolvedFromMPID),
-          toRoleMPID: formatToRoleMPID(resolvedToRole, resolvedToMPID),
           fromRole: resolvedFromRole,
           fromMPID: resolvedFromMPID,
           toRole: resolvedToRole,
@@ -387,24 +381,8 @@ const DtcAudit = () => {
   const defaultColumns = isBusiness ? DEFAULT_COLUMNS_BUSINESS : DEFAULT_COLUMNS_FULL;
   const filteredColumns = isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION;
   const columns = hasQueried ? filteredColumns : defaultColumns;
-  const compactColumns = isBusiness ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION;
-  const exportColumns = useMemo(() => {
-    return columns.flatMap((col) => {
-      if (col.key === 'fromRoleMPID') {
-        return [
-          { key: 'fromRole', label: 'From Role' },
-          { key: 'fromMPID', label: 'From MPID' },
-        ];
-      }
-      if (col.key === 'toRoleMPID') {
-        return [
-          { key: 'toRole', label: 'To Role' },
-          { key: 'toMPID', label: 'To MPID' },
-        ];
-      }
-      return [col];
-    });
-  }, [columns]);
+  const compactColumns = columns;
+  const exportColumns = columns;
 
   const tableData = hasQueried ? filteredResults : flattenedAuditData;
 
