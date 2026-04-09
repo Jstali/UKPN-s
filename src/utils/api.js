@@ -13,6 +13,30 @@ const USE_API = process.env.REACT_APP_USE_API === 'true';
 const AUDIT_API_TIMEOUT_MS = 60000;
 const AUDIT_PAGE_SIZE = 200;
 
+const withTimeoutSignal = (externalSignal, timeoutMs = AUDIT_API_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(new DOMException('Request timeout', 'AbortError')), timeoutMs);
+
+  const abortFromExternal = () => controller.abort(externalSignal?.reason);
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort(externalSignal.reason);
+    } else {
+      externalSignal.addEventListener('abort', abortFromExternal, { once: true });
+    }
+  }
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      clearTimeout(timeoutId);
+      if (externalSignal) {
+        externalSignal.removeEventListener('abort', abortFromExternal);
+      }
+    },
+  };
+};
+
 const getToken = () => sessionStorage.getItem('authToken');
 
 const headers = () => ({
@@ -172,7 +196,8 @@ const api = {
   },
 
   // Fetch real audit data from Azure Function App with pagination
-  async fetchDtcAuditData(continuationToken = null, pageSize = 500) {
+  async fetchDtcAuditData(continuationToken = null, pageSize = 500, options = {}) {
+    let cleanup = () => {};
     try {
       const effectivePageSize = pageSize || AUDIT_PAGE_SIZE;
       let apiUrl = `${DTC_AUDIT_API}&pageSize=${effectivePageSize}`;
@@ -180,18 +205,17 @@ const api = {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), AUDIT_API_TIMEOUT_MS);
+      const timeoutControl = withTimeoutSignal(options.signal, options.timeoutMs);
+      const signal = timeoutControl.signal;
+      cleanup = timeoutControl.cleanup;
 
       const res = await fetch(apiUrl, { 
         method: 'GET',
-        signal: controller.signal,
+        signal,
         headers: {
           'Accept-Encoding': 'gzip, deflate, br'
         }
       });
-
-      clearTimeout(timeout);
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -213,6 +237,9 @@ const api = {
         error: null,
       };
     } catch (error) {
+      if (error?.name === 'AbortError' && options.signal?.aborted) {
+        return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0, error: 'Request cancelled', aborted: true };
+      }
       const message = error.name === 'AbortError'
         ? `Request timeout after ${Math.round(AUDIT_API_TIMEOUT_MS / 1000)}s`
         : (error.message || 'Failed to fetch audit data');
@@ -221,12 +248,15 @@ const api = {
       } else {
         console.error('❌ DTC API Error:', error.message);
       }
-      return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0, error: message };
+      return { data: [], continuationToken: null, totalCount: 0, pageSize: 0, resultCount: 0, error: message, aborted: false };
+    } finally {
+      cleanup();
     }
   },
 
   // Fetch Non-DTC audit data
-  async fetchNonDtcAuditData(continuationToken = null, pageSize = 500) {
+  async fetchNonDtcAuditData(continuationToken = null, pageSize = 500, options = {}) {
+    let cleanup = () => {};
     try {
       const effectivePageSize = pageSize || AUDIT_PAGE_SIZE;
       let apiUrl = `${NON_DTC_AUDIT_API}&pageSize=${effectivePageSize}`;
@@ -234,18 +264,17 @@ const api = {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), AUDIT_API_TIMEOUT_MS);
+      const timeoutControl = withTimeoutSignal(options.signal, options.timeoutMs);
+      const signal = timeoutControl.signal;
+      cleanup = timeoutControl.cleanup;
 
       const res = await fetch(apiUrl, { 
         method: 'GET',
-        signal: controller.signal,
+        signal,
         headers: {
           'Accept-Encoding': 'gzip, deflate, br'
         }
       });
-
-      clearTimeout(timeout);
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -263,8 +292,12 @@ const api = {
         continuationToken: data.continuationToken || null,
         totalCount: data.totalCount || 0,
         error: null,
+        aborted: false,
       };
     } catch (error) {
+      if (error?.name === 'AbortError' && options.signal?.aborted) {
+        return { data: [], continuationToken: null, totalCount: 0, error: 'Request cancelled', aborted: true };
+      }
       const message = error.name === 'AbortError'
         ? `Request timeout after ${Math.round(AUDIT_API_TIMEOUT_MS / 1000)}s`
         : (error.message || 'Failed to fetch non-DTC audit data');
@@ -273,7 +306,9 @@ const api = {
       } else {
         console.error('❌ Non-DTC API Error:', error.message);
       }
-      return { data: [], continuationToken: null, totalCount: 0, error: message };
+      return { data: [], continuationToken: null, totalCount: 0, error: message, aborted: false };
+    } finally {
+      cleanup();
     }
   },
 
