@@ -378,7 +378,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
         {/* Priority Group 1: Most Used Filters */}
         <div style={{ marginBottom: '8px' }}>
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primary Filters</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 0.65fr 0.8fr 0.95fr 0.8fr 0.95fr', gap: '6px' }}>
             {orderedFields.slice(0, 6).map(({ label, field }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
@@ -398,7 +398,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
         {/* Priority Group 2: Secondary Filters */}
         <div style={{ marginBottom: '8px' }}>
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Filters</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.85fr 1.25fr 1.25fr 0.95fr', gap: '6px' }}>
             {orderedFields.slice(6).map(({ label, field }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>

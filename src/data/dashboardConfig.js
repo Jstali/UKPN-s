@@ -134,7 +134,6 @@ export const DEFAULT_COLUMNS_BUSINESS = [
   { key: 'application', label: 'Destination' },
   { key: 'status', label: 'Status' },
   { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
 ];
 
 export const DEFAULT_COLUMNS_FULL = [
@@ -150,5 +149,4 @@ export const DEFAULT_COLUMNS_FULL = [
   { key: 'application', label: 'Destination' },
   { key: 'status', label: 'Status' },
   { key: 'fileName', label: 'Source File Name' },
-  { key: 'eventId', label: 'Message ID' },
 ];

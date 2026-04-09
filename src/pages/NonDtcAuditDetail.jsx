@@ -6,15 +6,17 @@ import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 
 const ALL_COLUMNS = [
-  { key: 'uniqueId', label: 'Unique ID' },
-  { key: 'flow', label: 'Source Application' },
-  { key: 'sourceFile', label: 'Source File' },
   { key: 'fileId', label: 'File ID' },
-  { key: 'sourcePath', label: 'Source Path' },
-  { key: 'eventType', label: 'Event Type' },
-  { key: 'startDate', label: 'Start Date' },
-  { key: 'endDate', label: 'End Date' },
+  { key: 'sourceAppName', label: 'Source App Name' },
+  { key: 'sourceFileName', label: 'Source File Name' },
+  { key: 'subscription', label: 'Subscription' },
   { key: 'status', label: 'Status' },
+  { key: 'timestamp', label: 'Timestamp' },
+  { key: 'eventType', label: 'Event Type' },
+  { key: 'changeFeedStatus', label: 'Change Feed Status' },
+  { key: 'requestStatus', label: 'Request Status' },
+  { key: 'processedTime', label: 'Processed Time' },
+  { key: 'lastUpdatedAt', label: 'Last Updated At' },
 ];
 
 const matchesMultiSelect = (selectedValue, actualValue) => {
@@ -24,16 +26,17 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
 };
 
 const mapItem = (item) => ({
-  uniqueId: item.id || '',
-  flow: item.sourceAppName || item.subscription || '-',
-  sourceFile: item.sourceFileName || '',
   fileId: item.id || '',
-  sourcePath: item.sourcePath || '',
-  eventType: item.events?.[0]?.eventType || '',
-  startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
-  endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+  sourceAppName: item.sourceAppName || '',
+  sourceFileName: item.sourceFileName || '',
+  subscription: item.subscription || '',
   status: item.status || '',
   timestamp: item.timestamp || '',
+  eventType: item.events?.[0]?.eventType || item.eventType || '',
+  changeFeedStatus: item.changeFeedStatus || '',
+  requestStatus: item.requestStatus || '',
+  processedTime: item.processedTime || '',
+  lastUpdatedAt: item.lastUpdatedAt || '',
   rawData: item,
 });
 
@@ -86,11 +89,11 @@ const NonDtcAuditDetail = () => {
       setFilters(incomingFilters);
       
       let results = [...auditData];
-      results = results.filter(r => matchesMultiSelect(incomingFilters.sourceApp, r.flow));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.subscription, r.rawData?.subscription));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.sourceApp, r.sourceAppName));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.subscription, r.subscription));
       results = results.filter(r => matchesMultiSelect(incomingFilters.status, r.status));
       results = results.filter(r => matchesMultiSelect(incomingFilters.eventType, r.eventType));
-      if (incomingFilters.sourceFile) results = results.filter(r => r.sourceFile?.toLowerCase().includes(incomingFilters.sourceFile.toLowerCase()));
+      if (incomingFilters.sourceFile) results = results.filter(r => r.sourceFileName?.toLowerCase().includes(incomingFilters.sourceFile.toLowerCase()));
       if (incomingFilters.fileId) results = results.filter(r => r.fileId?.includes(incomingFilters.fileId));
       if (incomingFilters.fileCreated) {
         results = results.filter(r => {
@@ -130,8 +133,8 @@ const NonDtcAuditDetail = () => {
 
   const handleQuery = () => {
     let results = [...auditData];
-    results = results.filter(r => matchesMultiSelect(filters.sourceApp, r.flow));
-    results = results.filter(r => matchesMultiSelect(filters.subscription, r.rawData?.subscription));
+    results = results.filter(r => matchesMultiSelect(filters.sourceApp, r.sourceAppName));
+    results = results.filter(r => matchesMultiSelect(filters.subscription, r.subscription));
     results = results.filter(r => matchesMultiSelect(filters.eventType, r.eventType));
     results = results.filter(r => matchesMultiSelect(filters.status, r.status));
     if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
@@ -141,7 +144,7 @@ const NonDtcAuditDetail = () => {
   };
 
   // Build dropdown options
-  const flowOptions = [...new Set(auditData.map(r => r.flow).filter(Boolean))].sort();
+  const flowOptions = [...new Set(auditData.map(r => r.sourceAppName).filter(Boolean))].sort();
   const eventTypeOptions = [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort();
   const statusOptions = [...new Set(auditData.map(r => r.status).filter(Boolean))].sort();
 
@@ -163,24 +166,17 @@ const NonDtcAuditDetail = () => {
   if (selectedRecord) {
     const raw = selectedRecord.rawData || {};
     const summaryFields = [
-      { label: 'Unique ID', value: selectedRecord.uniqueId },
-      { label: 'File ID', value: selectedRecord.fileId },
-      { label: 'Source Application', value: selectedRecord.flow },
-      { label: 'Subscription', value: raw.subscription },
-      { label: 'Status', value: selectedRecord.status },
-      { label: 'Event Type', value: selectedRecord.eventType },
-      { label: 'Source File Name', value: selectedRecord.sourceFile },
-      { label: 'Source Path', value: selectedRecord.sourcePath },
-      { label: 'Start Date', value: selectedRecord.startDate },
-      { label: 'End Date', value: selectedRecord.endDate },
-    ];
-
-    const additionalFields = [
-      { label: 'Archive Name', value: raw.archiveName },
+      { label: 'File ID (id)', value: raw.id || selectedRecord.fileId },
       { label: 'Source App Name', value: raw.sourceAppName },
-      { label: 'Timestamp', value: raw.timestamp },
-      { label: 'Created At', value: raw.createdAt },
-      { label: 'Updated At', value: raw.updatedAt },
+      { label: 'Source File Name', value: raw.sourceFileName },
+      { label: 'Subscription', value: raw.subscription },
+      { label: 'Status', value: raw.status || selectedRecord.status },
+      { label: 'Timestamp', value: raw.timestamp || selectedRecord.timestamp },
+      { label: 'Event Type', value: raw.eventType || selectedRecord.eventType },
+      { label: 'Change Feed Status', value: raw.changeFeedStatus },
+      { label: 'Request Status', value: raw.requestStatus },
+      { label: 'Processed Time', value: raw.processedTime },
+      { label: 'Last Updated At', value: raw.lastUpdatedAt },
     ];
 
     return (
@@ -301,18 +297,6 @@ const NonDtcAuditDetail = () => {
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Summary Information</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '12px' }}>
                 {summaryFields.map((field) => (
-                  <div key={field.label} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px', background: '#fff' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>{field.label}:</div>
-                    <div style={{ fontSize: '13px', color: '#1e293b', wordBreak: 'break-word' }}>{formatValue(field.value)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Additional Details</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
-                {additionalFields.map((field) => (
                   <div key={field.label} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px', background: '#fff' }}>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>{field.label}:</div>
                     <div style={{ fontSize: '13px', color: '#1e293b', wordBreak: 'break-word' }}>{formatValue(field.value)}</div>

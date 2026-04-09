@@ -6,16 +6,37 @@ import DataTable from '../components/DataTable';
 import ColorBar, { EVENT_TYPE_COLORS } from '../components/ColorBar';
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
+import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
+
+const NON_DTC_DEFAULT_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
+  ({ key }) => !['fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
+);
+
+const formatDateTimeCell = (timestamp) => {
+  if (!timestamp) return '-';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return String(timestamp);
+  return date.toLocaleString('en-GB');
+};
 
 const mapItem = (item) => ({
   uniqueId: item.id || '',
+  flow: item.flow || item.sourceAppName || '-',
+  version: item.version || item.subscription || '-',
+  fileId: item.id || '-',
+  timestamp: formatDateTimeCell(item.events?.[0]?.timestamp || item.timestamp || ''),
+  fromRole: item.fromRole || item.rawData?.fromRole || '-',
+  fromMPID: item.fromMPID || item.rawData?.fromMPID || '-',
+  toRole: item.toRole || item.rawData?.toRole || '-',
+  toMPID: item.toMPID || item.rawData?.toMPID || '-',
+  sourceApplication: item.sourceAppName || '-',
+  application: item.destinationApplication || item.subscription || '-',
+  fileName: item.sourceFileName || '-',
   sourceApp: item.sourceAppName || item.subscription || '-',
   sourceFile: item.sourceFileName || '',
-  fileId: item.id || '',
   subscription: item.subscription || '',
   sourcePath: item.sourcePath || '',
   eventType: item.events?.[0]?.eventType || '',
-  timestamp: item.events?.[0]?.timestamp || '',
   startDate: item.events?.[0]?.timestamp
     ? new Date(item.events[0].timestamp).toLocaleString('en-GB')
     : '',
@@ -32,19 +53,7 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
   return selectedValues.includes(actualValue);
 };
 
-// Columns to display — mirrors DTC Audit column order as closely as SAP data allows
-const NON_DTC_COLUMNS = [
-  { key: 'uniqueId',    label: 'Unique ID' },
-  { key: 'sourceApp',   label: 'Source Application' },
-  { key: 'subscription', label: 'Subscription' },
-  { key: 'sourceFile',  label: 'Source File Name' },
-  { key: 'fileId',      label: 'File ID' },
-  { key: 'sourcePath',  label: 'Source Path' },
-  { key: 'eventType',   label: 'Event Type' },
-  { key: 'startDate',   label: 'Start Date' },
-  { key: 'endDate',     label: 'End Date' },
-  { key: 'status',      label: 'Status' },
-];
+const NON_DTC_COLUMNS = NON_DTC_DEFAULT_COLUMNS;
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
@@ -384,11 +393,14 @@ const NonDtcAudit = () => {
           data={filteredData}
           columns={NON_DTC_COLUMNS}
           compactColumns={[
-            { key: 'uniqueId',   label: 'Unique ID' },
-            { key: 'sourceApp',  label: 'Source Application' },
-            { key: 'sourceFile', label: 'Source File Name' },
-            { key: 'eventType',  label: 'Event Type' },
-            { key: 'status',     label: 'Status' },
+            { key: 'flow', label: 'Flow' },
+            { key: 'version', label: 'Version' },
+            { key: 'fileId', label: 'File ID' },
+            { key: 'timestamp', label: 'Event Timestamp' },
+            { key: 'sourceApplication', label: 'Source' },
+            { key: 'application', label: 'Destination' },
+            { key: 'status', label: 'Status' },
+            { key: 'fileName', label: 'Source File Name' },
           ]}
           exportColumns={NON_DTC_COLUMNS}
           defaultSort={{ key: 'startDate', direction: 'desc' }}
