@@ -120,7 +120,7 @@ const NonDtcAudit = () => {
             <ChevronDown size={11} style={{ transform: showBars ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
           </button>
           <button
-            className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
+            className={`dtc-filter-btn ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
             style={{ padding: '6px 14px', fontSize: '13px' }}
           >

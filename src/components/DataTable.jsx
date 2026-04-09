@@ -242,6 +242,8 @@ const DataTable = ({
   });
 
   const [exporting, setExporting] = useState(false);
+  const previewContentCacheRef = useRef(new Map());
+  const resolvedPreviewPathCacheRef = useRef(new Map());
 
   const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
   const columnsForExport = exportColumns?.length ? exportColumns : columns;
@@ -462,9 +464,32 @@ const DataTable = ({
     return normalizedCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
   };
 
+  const getPreviewCacheKey = (row, candidatePaths) => {
+    return row.fileId
+      || row.File_ID
+      || row.uniqueId
+      || row.Unique_ID
+      || candidatePaths.join('|');
+  };
+
   const handleViewFile = async (row) => {
     const fallbackFileName = row.fileName || row.Source_FileName || 'file.txt';
     const candidatePaths = getArchivePathCandidates(row);
+    const previewCacheKey = getPreviewCacheKey(row, candidatePaths);
+    const cachedPreview = previewContentCacheRef.current.get(previewCacheKey);
+
+    if (cachedPreview) {
+      setFileViewModal({
+        show: true,
+        fileName: cachedPreview.fileName || fallbackFileName,
+        fileContent: cachedPreview.fileContent || '',
+        loading: false,
+        error: null,
+        fileId: row.fileId || row.File_ID,
+      });
+      return;
+    }
+
     setFileViewModal({
       show: true,
       fileName: fallbackFileName,
@@ -486,20 +511,42 @@ const DataTable = ({
       return;
     }
 
+    const resolvedPath = resolvedPreviewPathCacheRef.current.get(previewCacheKey);
+    const prioritizedPaths = resolvedPath && candidatePaths.includes(resolvedPath)
+      ? [resolvedPath, ...candidatePaths.filter((path) => path !== resolvedPath)]
+      : candidatePaths;
+
     let lastError = null;
-    for (const path of candidatePaths) {
-      try {
-        const { content, filename } = await api.viewBlobFileByPath(path);
-        setFileViewModal({
-          show: true,
-          fileName: filename || fallbackFileName,
-          fileContent: content || '',
-          loading: false,
-          error: null,
-          fileId: row.fileId || row.File_ID,
-        });
-        return;
-      } catch (err) {
+    try {
+      const previewResult = await Promise.any(
+        prioritizedPaths.map(async (path) => {
+          const { content, filename } = await api.viewBlobFileByPath(path);
+          return {
+            path,
+            fileName: filename || fallbackFileName,
+            fileContent: content || '',
+          };
+        })
+      );
+
+      resolvedPreviewPathCacheRef.current.set(previewCacheKey, previewResult.path);
+      previewContentCacheRef.current.set(previewCacheKey, {
+        fileName: previewResult.fileName,
+        fileContent: previewResult.fileContent,
+      });
+      setFileViewModal({
+        show: true,
+        fileName: previewResult.fileName,
+        fileContent: previewResult.fileContent,
+        loading: false,
+        error: null,
+        fileId: row.fileId || row.File_ID,
+      });
+      return;
+    } catch (err) {
+      if (err?.name === 'AggregateError' && Array.isArray(err.errors) && err.errors.length > 0) {
+        lastError = err.errors[err.errors.length - 1];
+      } else {
         lastError = err;
       }
     }
