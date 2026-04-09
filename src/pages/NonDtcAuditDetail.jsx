@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 
 const ALL_COLUMNS = [
@@ -16,12 +17,19 @@ const ALL_COLUMNS = [
   { key: 'status', label: 'Status' },
 ];
 
+const matchesMultiSelect = (selectedValue, actualValue) => {
+  if (!selectedValue || selectedValue === 'All') return true;
+  const selectedValues = selectedValue.split(',').map(v => v.trim()).filter(Boolean);
+  return selectedValues.includes(actualValue);
+};
+
 const NonDtcAuditDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const defaultFilters = {
-    flow: 'All',
+    sourceApp: 'All',
+    subscription: 'All',
     eventType: 'All',
     status: 'All',
     fileId: '',
@@ -63,10 +71,10 @@ const NonDtcAuditDetail = () => {
       setFilters(incomingFilters);
       
       let results = [...auditData];
-      if (incomingFilters.sourceApp !== 'All') results = results.filter(r => r.flow === incomingFilters.sourceApp);
-      if (incomingFilters.subscription !== 'All') results = results.filter(r => r.rawData?.subscription === incomingFilters.subscription);
-      if (incomingFilters.status !== 'All') results = results.filter(r => r.status === incomingFilters.status);
-      if (incomingFilters.eventType !== 'All') results = results.filter(r => r.eventType === incomingFilters.eventType);
+      results = results.filter(r => matchesMultiSelect(incomingFilters.sourceApp, r.flow));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.subscription, r.rawData?.subscription));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.status, r.status));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.eventType, r.eventType));
       if (incomingFilters.sourceFile) results = results.filter(r => r.sourceFile?.toLowerCase().includes(incomingFilters.sourceFile.toLowerCase()));
       if (incomingFilters.fileId) results = results.filter(r => r.fileId?.includes(incomingFilters.fileId));
       if (incomingFilters.fileCreated) {
@@ -107,9 +115,10 @@ const NonDtcAuditDetail = () => {
 
   const handleQuery = () => {
     let results = [...auditData];
-    if (filters.flow !== 'All') results = results.filter(r => r.flow === filters.flow);
-    if (filters.eventType !== 'All') results = results.filter(r => r.eventType === filters.eventType);
-    if (filters.status !== 'All') results = results.filter(r => r.status === filters.status);
+    results = results.filter(r => matchesMultiSelect(filters.sourceApp, r.flow));
+    results = results.filter(r => matchesMultiSelect(filters.subscription, r.rawData?.subscription));
+    results = results.filter(r => matchesMultiSelect(filters.eventType, r.eventType));
+    results = results.filter(r => matchesMultiSelect(filters.status, r.status));
     if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
     setFilteredResults(results);
     setCurrentPage(1);
@@ -117,9 +126,9 @@ const NonDtcAuditDetail = () => {
   };
 
   // Build dropdown options
-  const flowOptions = ['All', ...new Set(auditData.map(r => r.flow).filter(Boolean))].sort();
-  const eventTypeOptions = ['All', ...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort();
-  const statusOptions = ['All', ...new Set(auditData.map(r => r.status).filter(Boolean))].sort();
+  const flowOptions = [...new Set(auditData.map(r => r.flow).filter(Boolean))].sort();
+  const eventTypeOptions = [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort();
+  const statusOptions = [...new Set(auditData.map(r => r.status).filter(Boolean))].sort();
 
   // Search + paginate
   const searchedResults = filteredResults.filter(row =>
@@ -134,7 +143,6 @@ const NonDtcAuditDetail = () => {
   }, [currentPage, totalPages]);
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
-  const selectStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#1e293b', background: '#fff', cursor: 'pointer', outline: 'none' };
   const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
 
   return (
@@ -170,21 +178,27 @@ const NonDtcAuditDetail = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
             <div>
               <label style={labelStyle}>Source Application</label>
-              <select value={filters.flow} onChange={(e) => handleFilterChange('flow', e.target.value)} style={selectStyle}>
-                {flowOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
+              <MultiCheckboxDropdown
+                value={filters.sourceApp}
+                onChange={(value) => handleFilterChange('sourceApp', value)}
+                options={flowOptions}
+              />
             </div>
             <div>
               <label style={labelStyle}>Event Type</label>
-              <select value={filters.eventType} onChange={(e) => handleFilterChange('eventType', e.target.value)} style={selectStyle}>
-                {eventTypeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
+              <MultiCheckboxDropdown
+                value={filters.eventType}
+                onChange={(value) => handleFilterChange('eventType', value)}
+                options={eventTypeOptions}
+              />
             </div>
             <div>
               <label style={labelStyle}>Status</label>
-              <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)} style={selectStyle}>
-                {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
+              <MultiCheckboxDropdown
+                value={filters.status}
+                onChange={(value) => handleFilterChange('status', value)}
+                options={statusOptions}
+              />
             </div>
             <div>
               <label style={labelStyle}>File ID</label>

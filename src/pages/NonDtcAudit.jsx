@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronDown, BarChart3, Activity, Filter, RotateCcw, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { EVENT_TYPE_COLORS } from '../components/ColorBar';
+import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 import { exportToCSV } from '../utils/exportUtils';
 
@@ -19,6 +20,12 @@ const mapItem = (item) => ({
   status: item.status || '',
   rawData: item,
 });
+
+const matchesMultiSelect = (selectedValue, actualValue) => {
+  if (!selectedValue || selectedValue === 'All') return true;
+  const selectedValues = selectedValue.split(',').map(v => v.trim()).filter(Boolean);
+  return selectedValues.includes(actualValue);
+};
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
@@ -42,10 +49,10 @@ const NonDtcAudit = () => {
 
   const filteredData = useMemo(() => {
     let result = [...auditData];
-    if (appliedFilters.sourceApp !== 'All') result = result.filter(r => r.flow === appliedFilters.sourceApp);
-    if (appliedFilters.subscription !== 'All') result = result.filter(r => r.rawData?.subscription === appliedFilters.subscription);
-    if (appliedFilters.status !== 'All') result = result.filter(r => r.status === appliedFilters.status);
-    if (appliedFilters.eventType !== 'All') result = result.filter(r => r.eventType === appliedFilters.eventType);
+    result = result.filter(r => matchesMultiSelect(appliedFilters.sourceApp, r.flow));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.subscription, r.rawData?.subscription));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.status, r.status));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.eventType, r.eventType));
     if (appliedFilters.sourceFile) result = result.filter(r => r.sourceFile?.toLowerCase().includes(appliedFilters.sourceFile.toLowerCase()));
     if (appliedFilters.fileId) result = result.filter(r => r.fileId?.includes(appliedFilters.fileId));
     return result;
@@ -115,31 +122,35 @@ const NonDtcAudit = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                 <div>
                   <label style={labelStyle}>Source Application</label>
-                  <select value={filters.sourceApp} onChange={e => setFilters({ ...filters, sourceApp: e.target.value })} style={inputStyle}>
-                    <option value="All">All</option>
-                    {[...new Set(auditData.map(r => r.flow).filter(Boolean))].sort().map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
+                  <MultiCheckboxDropdown
+                    value={filters.sourceApp}
+                    onChange={(value) => setFilters(prev => ({ ...prev, sourceApp: value }))}
+                    options={[...new Set(auditData.map(r => r.flow).filter(Boolean))].sort()}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Subscription</label>
-                  <select value={filters.subscription} onChange={e => setFilters({ ...filters, subscription: e.target.value })} style={inputStyle}>
-                    <option value="All">All</option>
-                    {[...new Set(auditData.map(r => r.rawData?.subscription).filter(Boolean))].sort().map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
+                  <MultiCheckboxDropdown
+                    value={filters.subscription}
+                    onChange={(value) => setFilters(prev => ({ ...prev, subscription: value }))}
+                    options={[...new Set(auditData.map(r => r.rawData?.subscription).filter(Boolean))].sort()}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Status</label>
-                  <select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} style={inputStyle}>
-                    <option value="All">All</option>
-                    {[...new Set(auditData.map(r => r.status).filter(Boolean))].sort().map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
+                  <MultiCheckboxDropdown
+                    value={filters.status}
+                    onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                    options={[...new Set(auditData.map(r => r.status).filter(Boolean))].sort()}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>Event Type</label>
-                  <select value={filters.eventType} onChange={e => setFilters({ ...filters, eventType: e.target.value })} style={inputStyle}>
-                    <option value="All">All</option>
-                    {[...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort().map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
+                  <MultiCheckboxDropdown
+                    value={filters.eventType}
+                    onChange={(value) => setFilters(prev => ({ ...prev, eventType: value }))}
+                    options={[...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort()}
+                  />
                 </div>
               </div>
             </div>
