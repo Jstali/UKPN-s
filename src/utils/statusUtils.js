@@ -11,13 +11,21 @@ export const isDtcFailedStatus = (status) => {
 export const isNonDtcFailedStatus = (status) => {
   const normalized = normalizeStatus(status);
   if (!normalized || isDuplicateChecksumStatus(normalized)) return false;
+  // Broad pattern match to cover all SAP PI failure terminology
   return (
-    normalized.includes('failed') ||
+    normalized.includes('fail') ||          // failed, failure
     normalized.includes('invalid') ||
     normalized.includes('error') ||
-    normalized.includes('rejected') ||
+    normalized.includes('reject') ||        // rejected, rejection
     normalized.includes('mismatch') ||
-    normalized.includes('exception')
+    normalized.includes('exception') ||
+    normalized.includes('not deliver') ||   // not delivered
+    normalized.includes('not process') ||   // not processed
+    normalized.includes('cancel') ||        // cancelled, cancellation
+    normalized.includes('abort') ||         // aborted
+    normalized.includes('suspend') ||       // suspended
+    normalized.includes('timeout') ||       // timeout
+    normalized.includes('timed out')        // timed out
   );
 };
 

@@ -6,17 +6,22 @@ import DataTable from '../components/DataTable';
 import ColorBar, { EVENT_TYPE_COLORS } from '../components/ColorBar';
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
-import { exportToCSV } from '../utils/exportUtils';
 
 const mapItem = (item) => ({
   uniqueId: item.id || '',
-  flow: item.sourceAppName || item.subscription || '-',
+  sourceApp: item.sourceAppName || item.subscription || '-',
   sourceFile: item.sourceFileName || '',
   fileId: item.id || '',
+  subscription: item.subscription || '',
   sourcePath: item.sourcePath || '',
   eventType: item.events?.[0]?.eventType || '',
-  startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
-  endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+  timestamp: item.events?.[0]?.timestamp || '',
+  startDate: item.events?.[0]?.timestamp
+    ? new Date(item.events[0].timestamp).toLocaleString('en-GB')
+    : '',
+  endDate: item.events?.[item.events.length - 1]?.timestamp
+    ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB')
+    : '',
   status: item.status || '',
   rawData: item,
 });
@@ -26,6 +31,20 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
   const selectedValues = selectedValue.split(',').map(v => v.trim()).filter(Boolean);
   return selectedValues.includes(actualValue);
 };
+
+// Columns to display — mirrors DTC Audit column order as closely as SAP data allows
+const NON_DTC_COLUMNS = [
+  { key: 'uniqueId',    label: 'Unique ID' },
+  { key: 'sourceApp',   label: 'Source Application' },
+  { key: 'subscription', label: 'Subscription' },
+  { key: 'sourceFile',  label: 'Source File Name' },
+  { key: 'fileId',      label: 'File ID' },
+  { key: 'sourcePath',  label: 'Source Path' },
+  { key: 'eventType',   label: 'Event Type' },
+  { key: 'startDate',   label: 'Start Date' },
+  { key: 'endDate',     label: 'End Date' },
+  { key: 'status',      label: 'Status' },
+];
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
@@ -40,59 +59,82 @@ const NonDtcAudit = () => {
     sourceFile: '',
     fileId: '',
     fileCreated: '',
-    eventFrom: '',
-    eventTo: ''
   });
   const [appliedFilters, setAppliedFilters] = useState(filters);
+  const [hasQueried, setHasQueried] = useState(false);
 
   const auditData = useMemo(() => (nonDtcAuditData || []).map(mapItem), [nonDtcAuditData]);
 
   const filteredData = useMemo(() => {
     let result = [...auditData];
-    result = result.filter(r => matchesMultiSelect(appliedFilters.sourceApp, r.flow));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.subscription, r.rawData?.subscription));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.sourceApp, r.sourceApp));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.subscription, r.subscription));
     result = result.filter(r => matchesMultiSelect(appliedFilters.status, r.status));
     result = result.filter(r => matchesMultiSelect(appliedFilters.eventType, r.eventType));
-    if (appliedFilters.sourceFile) result = result.filter(r => r.sourceFile?.toLowerCase().includes(appliedFilters.sourceFile.toLowerCase()));
-    if (appliedFilters.fileId) result = result.filter(r => r.fileId?.includes(appliedFilters.fileId));
+    if (appliedFilters.sourceFile)
+      result = result.filter(r => r.sourceFile?.toLowerCase().includes(appliedFilters.sourceFile.toLowerCase()));
+    if (appliedFilters.fileId)
+      result = result.filter(r => r.fileId?.includes(appliedFilters.fileId));
     return result;
   }, [auditData, appliedFilters]);
 
-  const applyFilters = () => { setAppliedFilters(filters); setShowFilters(false); };
-  const resetFilters = () => {
-    const empty = { sourceApp: 'All', subscription: 'All', status: 'All', eventType: 'All', sourceFile: '', fileId: '', fileCreated: '', eventFrom: '', eventTo: '' };
-    setFilters(empty);
-    setAppliedFilters(empty);
+  const applyFilters = () => {
+    setAppliedFilters(filters);
+    setHasQueried(true);
+    setShowFilters(false);
   };
 
-  const uniqueFlows = [...new Set(filteredData.map(r => r.flow))].filter(Boolean).length;
+  const resetFilters = () => {
+    const empty = {
+      sourceApp: 'All', subscription: 'All', status: 'All',
+      eventType: 'All', sourceFile: '', fileId: '', fileCreated: '',
+    };
+    setFilters(empty);
+    setAppliedFilters(empty);
+    setHasQueried(false);
+  };
+
+  const uniqueFlows = [...new Set(filteredData.map(r => r.sourceApp))].filter(Boolean).length;
 
   const eventTypeCounts = useMemo(() => {
     const counts = {};
-    filteredData.forEach(row => { const et = row.eventType || 'Unknown'; counts[et] = (counts[et] || 0) + 1; });
-    return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+    filteredData.forEach(row => {
+      const et = row.eventType || 'Unknown';
+      counts[et] = (counts[et] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
   }, [filteredData]);
 
-  const columns = [
-    { key: 'uniqueId', label: 'Unique ID' },
-    { key: 'flow', label: 'Source Application' },
-    { key: 'sourceFile', label: 'Source File' },
-    { key: 'fileId', label: 'File ID' },
-    { key: 'sourcePath', label: 'Source Path' },
-    { key: 'eventType', label: 'Event Type' },
-    { key: 'startDate', label: 'Start Date' },
-    { key: 'endDate', label: 'End Date' },
-    { key: 'status', label: 'Status' },
-  ];
-
-  const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', background: '#fff', cursor: 'pointer' };
-  const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' };
+  const inputStyle = {
+    width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0',
+    borderRadius: '8px', fontSize: '13px', background: '#fff', cursor: 'pointer',
+  };
+  const labelStyle = {
+    display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b',
+    marginBottom: '4px', textTransform: 'uppercase',
+  };
 
   return (
-    <motion.div className="page-container non-dtc-audit-page" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+    <motion.div
+      className="page-container non-dtc-audit-page"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* ── Header bar — identical structure to DTC Audit ── */}
       <div className="dtc-header-bar">
         <div className="dtc-header-left">
-          <button onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 14px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 14px', background: '#667eea', color: 'white',
+              border: 'none', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '13px', fontWeight: 600,
+            }}
+          >
             <ArrowLeft size={14} /> Back to Home
           </button>
           <div className="dtc-breadcrumb-inline">
@@ -103,14 +145,20 @@ const NonDtcAudit = () => {
         <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <BarChart3 size={13} color="#6366f1" />
-            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Files</span>
-            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{filteredData.length.toLocaleString()}</span>
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Records</span>
+            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{auditData.length.toLocaleString()}</span>
           </div>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <Activity size={13} color="#0ea5e9" />
-            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Flows</span>
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Apps</span>
             <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{uniqueFlows}</span>
           </div>
+          {hasQueried && (
+            <div className="dtc-kpi-chip dtc-kpi-results" style={{ padding: '6px 12px', fontSize: '13px' }}>
+              <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Results</span>
+              <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{filteredData.length.toLocaleString()}</span>
+            </div>
+          )}
           <button
             className={`dtc-apps-toggle ${showBars ? 'active' : ''}`}
             onClick={() => setShowBars(!showBars)}
@@ -119,6 +167,11 @@ const NonDtcAudit = () => {
             Charts
             <ChevronDown size={11} style={{ transform: showBars ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
           </button>
+          {hasQueried && (
+            <button onClick={resetFilters} className="dtc-reset-btn" style={{ padding: '6px 14px', fontSize: '13px' }}>
+              <RotateCcw size={12} /> Reset
+            </button>
+          )}
           <button
             className={`dtc-filter-btn ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
@@ -130,76 +183,172 @@ const NonDtcAudit = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}
-            style={{ background: 'white', borderRadius: '12px', padding: '20px', margin: '0 24px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-            <div style={{ marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primary Filters</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                <div>
-                  <label style={labelStyle}>Source Application</label>
-                  <MultiCheckboxDropdown
-                    value={filters.sourceApp}
-                    onChange={(value) => setFilters(prev => ({ ...prev, sourceApp: value }))}
-                    options={[...new Set(auditData.map(r => r.flow).filter(Boolean))].sort()}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Subscription</label>
-                  <MultiCheckboxDropdown
-                    value={filters.subscription}
-                    onChange={(value) => setFilters(prev => ({ ...prev, subscription: value }))}
-                    options={[...new Set(auditData.map(r => r.rawData?.subscription).filter(Boolean))].sort()}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Status</label>
-                  <MultiCheckboxDropdown
-                    value={filters.status}
-                    onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
-                    options={[...new Set(auditData.map(r => r.status).filter(Boolean))].sort()}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Event Type</label>
-                  <MultiCheckboxDropdown
-                    value={filters.eventType}
-                    onChange={(value) => setFilters(prev => ({ ...prev, eventType: value }))}
-                    options={[...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort()}
-                  />
-                </div>
-              </div>
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Filters</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                <div><label style={labelStyle}>Source File</label><input type="text" value={filters.sourceFile} onChange={e => setFilters({ ...filters, sourceFile: e.target.value })} placeholder="Enter source file name" style={inputStyle} /></div>
-                <div><label style={labelStyle}>File ID</label><input type="text" value={filters.fileId} onChange={e => setFilters({ ...filters, fileId: e.target.value })} placeholder="Enter File ID" style={inputStyle} /></div>
-                <div><label style={labelStyle}>File Created</label><input type="date" value={filters.fileCreated} onChange={e => setFilters({ ...filters, fileCreated: e.target.value })} style={inputStyle} /></div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
-              <button onClick={resetFilters} style={{ padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <RotateCcw size={14} /> Reset
-              </button>
-              <button onClick={applyFilters} style={{ padding: '8px 16px', background: '#667eea', color: 'white', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Apply Filters</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* ── Charts bar — identical position to DTC Audit ── */}
       <AnimatePresence>
         {showBars && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="dtc-apps-bar">
-            {eventTypeCounts.length > 0 && <ColorBar data={eventTypeCounts} label="Event Type" colors={EVENT_TYPE_COLORS} />}
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="dtc-apps-bar"
+          >
+            {eventTypeCounts.length > 0 && (
+              <ColorBar data={eventTypeCounts} label="Event Type" colors={EVENT_TYPE_COLORS} />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* ── Filter panel — same margin/padding as DTC Audit (no lateral inset) ── */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ marginBottom: '8px', overflow: 'hidden' }}
+          >
+            <div style={{
+              background: 'white', borderRadius: '12px', padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            }}>
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{
+                  fontSize: '11px', fontWeight: 700, color: '#64748b',
+                  marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                }}>
+                  Primary Filters
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>Source Application</label>
+                    <MultiCheckboxDropdown
+                      value={filters.sourceApp}
+                      onChange={value => setFilters(prev => ({ ...prev, sourceApp: value }))}
+                      options={[...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort()}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Subscription</label>
+                    <MultiCheckboxDropdown
+                      value={filters.subscription}
+                      onChange={value => setFilters(prev => ({ ...prev, subscription: value }))}
+                      options={[...new Set(auditData.map(r => r.subscription).filter(Boolean))].sort()}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Status</label>
+                    <MultiCheckboxDropdown
+                      value={filters.status}
+                      onChange={value => setFilters(prev => ({ ...prev, status: value }))}
+                      options={[...new Set(auditData.map(r => r.status).filter(Boolean))].sort()}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Event Type</label>
+                    <MultiCheckboxDropdown
+                      value={filters.eventType}
+                      onChange={value => setFilters(prev => ({ ...prev, eventType: value }))}
+                      options={[...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort()}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{
+                  fontSize: '11px', fontWeight: 700, color: '#64748b',
+                  marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px',
+                }}>
+                  Additional Filters
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                  <div>
+                    <label style={labelStyle}>Source File</label>
+                    <input
+                      type="text"
+                      value={filters.sourceFile}
+                      onChange={e => setFilters({ ...filters, sourceFile: e.target.value })}
+                      placeholder="Enter source file name"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>File ID</label>
+                    <input
+                      type="text"
+                      value={filters.fileId}
+                      onChange={e => setFilters({ ...filters, fileId: e.target.value })}
+                      placeholder="Enter File ID"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>File Created</label>
+                    <input
+                      type="date"
+                      value={filters.fileCreated}
+                      onChange={e => setFilters({ ...filters, fileCreated: e.target.value })}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex', gap: '8px', justifyContent: 'flex-end',
+                paddingTop: '12px', borderTop: '1px solid #f1f5f9',
+              }}>
+                <button
+                  onClick={resetFilters}
+                  style={{
+                    padding: '8px 16px', background: '#f1f5f9', color: '#475569',
+                    border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                  }}
+                >
+                  <RotateCcw size={14} /> Reset
+                </button>
+                <button
+                  onClick={applyFilters}
+                  style={{
+                    padding: '8px 16px', background: '#667eea', color: 'white',
+                    border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Filter summary — same as DTC Audit's criteria bar ── */}
+      {hasQueried && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{
+            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+            marginBottom: '8px', padding: '8px 16px',
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+            textAlign: 'center', fontSize: '12px', color: '#475569',
+          }}
+        >
+          {filteredData.length === 0
+            ? 'No Non-DTC audit records found matching your criteria'
+            : <>Found <span style={{ fontWeight: 700, color: '#10b981' }}>{filteredData.length}</span> Non-DTC audit record{filteredData.length !== 1 ? 's' : ''} matching your criteria</>
+          }
+        </motion.div>
+      )}
+
+      {/* ── SAP API error — shown below header like DTC Audit error banner ── */}
       {nonDtcFetchError && nonDtcAuditData.length === 0 && (
         <div style={{
-          margin: '0 0 16px', padding: '16px 20px', background: '#fff7ed',
+          marginBottom: '16px', padding: '16px 20px', background: '#fff7ed',
           border: '1px solid #fed7aa', borderRadius: '10px',
           display: 'flex', alignItems: 'flex-start', gap: '12px',
         }}>
@@ -215,24 +364,49 @@ const NonDtcAudit = () => {
           </div>
         </div>
       )}
+
+      {/* ── Loading state ── */}
       {(loading || (!dataComplete && nonDtcAuditData.length === 0 && !nonDtcFetchError)) ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', flexDirection: 'column', gap: '14px', color: '#64748b', fontSize: '14px', fontWeight: 500 }}>
-          <div style={{ width: '36px', height: '36px', border: '3px solid #e2e8f0', borderTopColor: '#667eea', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '300px', flexDirection: 'column', gap: '14px',
+          color: '#64748b', fontSize: '14px', fontWeight: 500,
+        }}>
+          <div style={{
+            width: '36px', height: '36px', border: '3px solid #e2e8f0',
+            borderTopColor: '#667eea', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }} />
           Loading Non-DTC audit data...
         </div>
       ) : (
         <DataTable
           data={filteredData}
-          columns={columns}
+          columns={NON_DTC_COLUMNS}
           compactColumns={[
-            { key: 'uniqueId', label: 'Unique ID' },
-            { key: 'flow', label: 'Source Application' },
-            { key: 'sourceFile', label: 'Source File' },
-            { key: 'eventType', label: 'Event Type' },
-            { key: 'status', label: 'Status' },
+            { key: 'uniqueId',   label: 'Unique ID' },
+            { key: 'sourceApp',  label: 'Source Application' },
+            { key: 'sourceFile', label: 'Source File Name' },
+            { key: 'eventType',  label: 'Event Type' },
+            { key: 'status',     label: 'Status' },
           ]}
-          onDownload={(row) => exportToCSV([row], columns, `non_dtc_audit_${row.uniqueId}`)}
-          exportConfig={{ filename: 'non_dtc_audit_report' }}
+          exportColumns={NON_DTC_COLUMNS}
+          defaultSort={{ key: 'startDate', direction: 'desc' }}
+          defaultPageSize={50}
+          onDownload={true}
+          exportConfig={{
+            filename: 'Non_DTC_Audit_Export',
+            pdfOptions: {
+              orientation: 'landscape',
+              pageFormat: 'a4',
+              fontSize: 6,
+              overflow: 'linebreak',
+              horizontalPageBreak: true,
+              horizontalPageBreakRepeat: [0, 1, 2],
+              minCellWidth: 14,
+              cellPadding: 2,
+            },
+          }}
           onViewDetail={() => navigate('/non-dtc-audit-detail')}
           detailPagePath="/non-dtc-audit-detail"
         />

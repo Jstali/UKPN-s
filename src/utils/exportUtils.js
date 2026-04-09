@@ -41,31 +41,36 @@ export const exportToPDF = (data, columns, filename, title, options = {}) => {
       return;
     }
     const reportTitle = title || filename?.replace(/_/g, ' ') || 'Audit Report';
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-    const headers = columns.map(col => col.label);
-    const rows = data.map(row =>
-      columns.map(col => String(row[col.key] ?? ''))
-    );
     const {
+      orientation = 'landscape',
+      pageFormat = 'a4',
       fontSize = 6,
       overflow = 'linebreak',
       horizontalPageBreak = false,
       horizontalPageBreakRepeat = undefined,
       repeatHeaderEveryPage = true,
       minCellWidth = undefined,
+      cellPadding = 2,
     } = options;
+
+    const doc = new jsPDF({ orientation, unit: 'mm', format: pageFormat });
+
+    const headers = columns.map(col => col.label);
+    const rows = data.map(row =>
+      columns.map(col => String(row[col.key] ?? ''))
+    );
 
     autoTable(doc, {
       head: [headers],
       body: rows,
       startY: 20,
-      styles: { fontSize, cellPadding: 2, overflow, minCellWidth },
+      styles: { fontSize, cellPadding, overflow, minCellWidth, valign: 'middle' },
       headStyles: {
         fillColor: [76, 78, 189],
         textColor: 255,
         fontStyle: 'bold',
         overflow,
+        halign: 'left',
       },
       horizontalPageBreak,
       horizontalPageBreakRepeat,

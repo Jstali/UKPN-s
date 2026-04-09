@@ -602,7 +602,19 @@ const DtcAudit = () => {
           defaultPageSize={50}
           groupByKey="eventId"
           onDownload={true}
-          exportConfig={{ filename: 'DTC_Audit_Export' }}
+          exportConfig={{
+            filename: 'DTC_Audit_Export',
+            pdfOptions: {
+              orientation: 'landscape',
+              pageFormat: 'a4',
+              fontSize: 6,
+              overflow: 'linebreak',
+              horizontalPageBreak: true,
+              horizontalPageBreakRepeat: [0, 1, 2],
+              minCellWidth: 12,
+              cellPadding: 2,
+            },
+          }}
           onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
         />
       )}

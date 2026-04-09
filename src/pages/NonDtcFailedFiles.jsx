@@ -8,7 +8,7 @@ import { isNonDtcFailedRecord } from '../utils/statusUtils';
 
 const NonDtcFailedFiles = () => {
   const navigate = useNavigate();
-  const { nonDtcAuditData, loading, dataComplete } = useApp();
+  const { nonDtcAuditData, loading, dataComplete, nonDtcFetchError } = useApp();
   const [flowFilter, setFlowFilter] = useState('All');
   const [fileNameFilter, setFileNameFilter] = useState('');
 
@@ -59,6 +59,9 @@ const NonDtcFailedFiles = () => {
     { key: 'endDate', label: 'End Date' },
     { key: 'status', label: 'Status' }
   ];
+
+  const hasUsableData = auditData.length > 0;
+  const showLoadingState = !hasUsableData && (loading || !dataComplete) && !nonDtcFetchError;
 
   return (
     <motion.div
@@ -155,7 +158,22 @@ const NonDtcFailedFiles = () => {
         </div>
       </motion.div>
 
-      {loading || !dataComplete ? (
+      {nonDtcFetchError && !hasUsableData && (
+        <div style={{
+          marginBottom: '12px',
+          padding: '12px 16px',
+          background: '#fff7ed',
+          border: '1px solid #fed7aa',
+          borderRadius: '8px',
+          color: '#9a3412',
+          fontSize: '13px',
+          fontWeight: 600,
+        }}>
+          Non-DTC API error: {nonDtcFetchError}
+        </div>
+      )}
+
+      {showLoadingState ? (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: '300px', flexDirection: 'column', gap: '14px',
@@ -166,18 +184,41 @@ const NonDtcFailedFiles = () => {
             borderTopColor: '#667eea', borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
           }} />
-          {loading ? 'Loading failed files data...' : 'Fetching all data, please wait...'}
+          Loading failed files data...
         </div>
       ) : (
-        <DataTable
-          data={failedFiles}
-          columns={columns}
-          defaultSort={{ key: 'startDate', direction: 'desc' }}
-          defaultPageSize={50}
-          onDownload={true}
-          exportConfig={{ filename: 'Non_DTC_Failed_Files_Export' }}
-          hideViewDetail={true}
-        />
+        <>
+          {(loading || !dataComplete) && hasUsableData && (
+            <div style={{
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#64748b',
+              fontSize: '12px',
+              fontWeight: 600,
+            }}>
+              <div style={{
+                width: '14px',
+                height: '14px',
+                border: '2px solid #e2e8f0',
+                borderTopColor: '#667eea',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }} />
+              Refreshing Non-DTC failed files...
+            </div>
+          )}
+          <DataTable
+            data={failedFiles}
+            columns={columns}
+            defaultSort={{ key: 'startDate', direction: 'desc' }}
+            defaultPageSize={50}
+            onDownload={true}
+            exportConfig={{ filename: 'Non_DTC_Failed_Files_Export' }}
+            hideViewDetail={true}
+          />
+        </>
       )}
     </motion.div>
   );

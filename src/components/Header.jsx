@@ -49,7 +49,7 @@ const Header = () => {
             </div>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              title={autoRefresh ? 'Auto-refresh ON (1 min)' : 'Auto-refresh OFF'}
+              title={autoRefresh ? 'Auto-refresh ON (every 30 seconds)' : 'Auto-refresh OFF'}
               aria-label={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
               style={{
                 display: 'flex',

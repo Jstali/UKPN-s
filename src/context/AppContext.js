@@ -47,13 +47,6 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  const resolveNextDataset = (nextData, hadError, currentData) => {
-    if (hadError && currentData.length > 0) {
-      return currentData;
-    }
-    return nextData;
-  };
-
   const fetchAllData = useCallback(async (force = false) => {
     // Prevent concurrent fetches
     if (isFetchingRef.current) {
@@ -77,8 +70,6 @@ export const AppProvider = ({ children }) => {
       setLoading(true);
       setDataComplete(false);
     }
-    // On refresh with existing data: keep dataComplete=true so Failed Files stay visible
-    // Don't set dataComplete=false here — only flip it when data is truly absent
 
     setFetchError(null);
     setNonDtcFetchError(null);
@@ -104,15 +95,12 @@ export const AppProvider = ({ children }) => {
 
       const initialDtc = dtcResponse.data || [];
       const initialNonDtc = nonDtcResponse.data || [];
-      const nextInitialDtc = resolveNextDataset(initialDtc, !!dtcErr, auditDataRef.current);
-      const nextInitialNonDtc = resolveNextDataset(initialNonDtc, !!nonDtcErr, nonDtcDataRef.current);
 
       if (dtcErr) setFetchError(dtcErr);
-      // Track Non-DTC error independently so the page can show a specific message
       if (nonDtcErr) setNonDtcFetchError(nonDtcErr);
 
-      if (nextInitialDtc.length === 0 && nextInitialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
-        setFetchError(dtcErr || nonDtcErr);
+      // Both APIs failed with no data at all — bail early, keep whatever we had
+      if (initialDtc.length === 0 && initialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
         setLoading(false);
         if (!hasExistingData) setDataComplete(true);
         lastFetchRef.current = Date.now();
@@ -120,30 +108,18 @@ export const AppProvider = ({ children }) => {
         return;
       }
 
-      // On first load (no existing data): show data immediately as pages arrive
-      // On background refresh: hold off until all pages collected (atomic swap)
+      // First load: show page 1 immediately so the UI isn't blank while paginating
       if (!hasExistingData) {
-        setAuditDataSync(nextInitialDtc);
-        setNonDtcDataSync(nextInitialNonDtc);
+        setAuditDataSync(initialDtc);
+        setNonDtcDataSync(initialNonDtc);
         setLoading(false);
       }
 
       lastFetchRef.current = Date.now();
 
-      // No more pages — commit and finish
-      if (!dtcResponse.continuationToken && !nonDtcResponse.continuationToken) {
-        if (hasExistingData) {
-          setAuditDataSync(nextInitialDtc);
-          setNonDtcDataSync(nextInitialNonDtc);
-        }
-        setDataComplete(true);
-        isFetchingRef.current = false;
-        return;
-      }
-
-      // Paginate remaining pages, accumulating silently
-      let allDtc = [...nextInitialDtc];
-      let allNonDtc = [...nextInitialNonDtc];
+      // Accumulate ALL pages from the API
+      let allFetchedDtc = [...initialDtc];
+      let allFetchedNonDtc = [...initialNonDtc];
       let dtcToken = dtcResponse.continuationToken;
       let nonDtcToken = nonDtcResponse.continuationToken;
 
@@ -152,18 +128,16 @@ export const AppProvider = ({ children }) => {
         if (dtcToken) {
           promises.push(
             api.fetchDtcAuditData(dtcToken, AUDIT_PAGE_SIZE).catch(err => {
-              const message = err.message || 'DTC pagination error';
               console.error('DTC pagination error:', err);
-              return { data: [], continuationToken: null, error: message };
+              return { data: [], continuationToken: null, error: err.message };
             })
           );
         }
         if (nonDtcToken) {
           promises.push(
             api.fetchNonDtcAuditData(nonDtcToken, AUDIT_PAGE_SIZE).catch(err => {
-              const message = err.message || 'Non-DTC pagination error';
               console.error('Non-DTC pagination error:', err);
-              return { data: [], continuationToken: null, error: message };
+              return { data: [], continuationToken: null, error: err.message };
             })
           );
         }
@@ -172,30 +146,66 @@ export const AppProvider = ({ children }) => {
 
         if (dtcToken) {
           const dtcRes = results[0];
-          allDtc = [...allDtc, ...(dtcRes.data || [])];
+          allFetchedDtc = [...allFetchedDtc, ...(dtcRes.data || [])];
           if (dtcRes.error) setFetchError(dtcRes.error);
           dtcToken = dtcRes.continuationToken;
         }
         if (nonDtcToken) {
           const nonDtcRes = results[promises.length === 2 ? 1 : 0];
-          allNonDtc = [...allNonDtc, ...(nonDtcRes.data || [])];
+          allFetchedNonDtc = [...allFetchedNonDtc, ...(nonDtcRes.data || [])];
           if (nonDtcRes.error) setNonDtcFetchError(nonDtcRes.error);
           nonDtcToken = nonDtcRes.continuationToken;
         }
 
-        // Update UI progressively every page
-        setAuditDataSync([...allDtc]);
-        setNonDtcDataSync([...allNonDtc]);
-        // Don't write cache on every page - only at the end
+        // First load only: update UI progressively as each page arrives
+        if (!hasExistingData) {
+          setAuditDataSync([...allFetchedDtc]);
+          setNonDtcDataSync([...allFetchedNonDtc]);
+        }
       }
 
-      // Final update and cache write
-      setAuditDataSync([...allDtc]);
-      setNonDtcDataSync([...allNonDtc]);
+      // ─── Commit final result ───────────────────────────────────────────────
+      if (hasExistingData) {
+        // BACKGROUND REFRESH — incremental merge:
+        // 1. For records already in state: update them in-place with fresh API data
+        //    (picks up new events, status changes on existing files)
+        // 2. For records the API returned that we've never seen: append them
+        // This means the count only ever goes UP, filters/scroll position are preserved,
+        // and the test team never sees their working dataset wiped.
+
+        const freshDtcMap = new Map(allFetchedDtc.filter(r => r.id).map(r => [r.id, r]));
+        const freshNonDtcMap = new Map(allFetchedNonDtc.filter(r => r.id).map(r => [r.id, r]));
+
+        // Update existing records in-place
+        const updatedDtc = auditDataRef.current.map(r =>
+          r.id && freshDtcMap.has(r.id) ? { ...r, ...freshDtcMap.get(r.id) } : r
+        );
+        const updatedNonDtc = nonDtcDataRef.current.map(r =>
+          r.id && freshNonDtcMap.has(r.id) ? { ...r, ...freshNonDtcMap.get(r.id) } : r
+        );
+
+        // Append genuinely new records
+        const existingDtcIds = new Set(auditDataRef.current.map(r => r.id).filter(Boolean));
+        const existingNonDtcIds = new Set(nonDtcDataRef.current.map(r => r.id).filter(Boolean));
+        const newDtc = allFetchedDtc.filter(r => r.id && !existingDtcIds.has(r.id));
+        const newNonDtc = allFetchedNonDtc.filter(r => r.id && !existingNonDtcIds.has(r.id));
+
+        if (newDtc.length > 0 || newNonDtc.length > 0) {
+          console.log(`🆕 New records found — DTC: +${newDtc.length}, Non-DTC: +${newNonDtc.length}`);
+        } else {
+          console.log('✅ No new records this cycle');
+        }
+
+        setAuditDataSync([...updatedDtc, ...newDtc]);
+        setNonDtcDataSync([...updatedNonDtc, ...newNonDtc]);
+      } else {
+        // First load: just set the full dataset
+        setAuditDataSync([...allFetchedDtc]);
+        setNonDtcDataSync([...allFetchedNonDtc]);
+      }
+
       setDataComplete(true);
-      
-      // Log total records fetched
-      console.log(`📊 Total records fetched - DTC: ${allDtc.length}, Non-DTC: ${allNonDtc.length}`);
+      console.log(`📊 Total in state — DTC: ${auditDataRef.current.length}, Non-DTC: ${nonDtcDataRef.current.length}`);
     } catch (error) {
       console.error('Failed to fetch audit data:', error);
       setFetchError(error.message || 'Failed to load data');

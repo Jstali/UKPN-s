@@ -437,6 +437,8 @@ const DataTable = ({
     const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
     const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
     const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
+    // Direct path from event Destination_Path field (used when blob archive fields are absent)
+    const destinationPath = row.destinationPath || row.Destination_Path || row.destination_path || '';
 
     const joinPath = (base, name) => {
       const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
@@ -448,20 +450,20 @@ const DataTable = ({
     const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/').trim();
     const isArchivePath = (value) => /^DTC_File\/Archive\//i.test(toForwardSlashes(value));
 
-    const rawCandidates = [
+    // Archive-based candidates (require the DTC_File/Archive/ prefix)
+    const archiveCandidates = [
       blobFileName,
       joinPath(blobArchiveLocation, sourceFileName),
       joinPath(blobArchiveLocation, destinationFileName),
       joinPath(blobLocation, sourceFileName),
       joinPath(blobLocation, destinationFileName),
-    ];
+    ].map(toForwardSlashes).filter(Boolean).filter(isArchivePath);
 
-    const normalizedCandidates = rawCandidates
-      .map((path) => toForwardSlashes(path))
-      .filter(Boolean)
-      .filter(isArchivePath);
+    // Direct destination path from event data — accepted as-is without archive restriction
+    const directCandidates = [destinationPath].map(toForwardSlashes).filter(Boolean);
 
-    return normalizedCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
+    const allCandidates = [...archiveCandidates, ...directCandidates];
+    return allCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
   };
 
   const getPreviewCacheKey = (row, candidatePaths) => {
