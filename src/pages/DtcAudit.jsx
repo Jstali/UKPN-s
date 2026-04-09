@@ -400,6 +400,15 @@ const DtcAudit = () => {
 
   const [showApps, setShowApps] = useState(false);
 
+  const appliedCriteria = useMemo(() => {
+    if (!appliedFilters) return [];
+
+    return CRITERIA_FIELDS.filter(({ key }) => {
+      const value = appliedFilters[key];
+      return value && value !== 'All' && value !== '';
+    });
+  }, [appliedFilters]);
+
   const uniqueFlowCount = useMemo(() => {
     if (tableData.length === 0) return 0;
     const flows = new Set(tableData.map(r => r.flowVersion).filter(Boolean));
@@ -517,7 +526,7 @@ const DtcAudit = () => {
       </AnimatePresence>
 
       {/* Selection Criteria Summary — shown after Apply Filter */}
-      {hasQueried && appliedFilters && (
+      {hasQueried && appliedCriteria.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -539,10 +548,7 @@ const DtcAudit = () => {
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '6px 16px', padding: '10px 16px'
           }}>
-            {CRITERIA_FIELDS.filter(({ key }) => {
-              const value = appliedFilters[key];
-              return value && value !== 'All' && value !== '';
-            }).map(({ label, key }) => {
+            {appliedCriteria.map(({ label, key }) => {
               let displayValue = appliedFilters[key];
               
               // Format timestamp fields
