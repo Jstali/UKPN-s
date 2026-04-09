@@ -217,6 +217,7 @@ const NonDtcAudit = () => {
           onDownload={(row) => exportToCSV([row], columns, `non_dtc_audit_${row.uniqueId}`)}
           exportConfig={{ filename: 'non_dtc_audit_report' }}
           onViewDetail={() => navigate('/non-dtc-audit-detail')}
+          detailPagePath="/non-dtc-audit-detail"
         />
       )}
     </motion.div>

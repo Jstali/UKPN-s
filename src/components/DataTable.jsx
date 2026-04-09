@@ -827,13 +827,13 @@ const DataTable = ({
                           <span className={`status-badge ${getStatusClass(row[col.key])}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
                             {row[col.key]}
                           </span>
-                        ) : col.key === 'id' ? (
+                        ) : col.key === 'id' || col.key === 'uniqueId' ? (
                           <span
                             style={{ color: '#4c4ebd', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}
                             onClick={() => {
                               sessionStorage.setItem('dataTablePage', String(currentPage));
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
-                              navigate(detailPagePath, { state: { record: row } });
+                              navigate(detailPagePath, { state: { record: row, uniqueId: row.uniqueId || row.id || row.eventId, returnPath: window.location.pathname } });
                             }}
                           >
                             {row[col.key]}

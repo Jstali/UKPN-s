@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 
@@ -21,6 +21,25 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
   if (!selectedValue || selectedValue === 'All') return true;
   const selectedValues = selectedValue.split(',').map(v => v.trim()).filter(Boolean);
   return selectedValues.includes(actualValue);
+};
+
+const mapItem = (item) => ({
+  uniqueId: item.id || '',
+  flow: item.sourceAppName || item.subscription || '-',
+  sourceFile: item.sourceFileName || '',
+  fileId: item.id || '',
+  sourcePath: item.sourcePath || '',
+  eventType: item.events?.[0]?.eventType || '',
+  startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
+  endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
+  status: item.status || '',
+  timestamp: item.timestamp || '',
+  rawData: item,
+});
+
+const formatValue = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') return '-';
+  return String(value);
 };
 
 const NonDtcAuditDetail = () => {
@@ -43,19 +62,14 @@ const NonDtcAuditDetail = () => {
   const [pageSize, setPageSize] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const auditData = useMemo(() => (nonDtcAuditData || []).map(item => ({
-    uniqueId: item.id || '',
-    flow: item.sourceAppName || item.subscription || '-',
-    sourceFile: item.sourceFileName || '',
-    fileId: item.id || '',
-    sourcePath: item.sourcePath || '',
-    eventType: item.events?.[0]?.eventType || '',
-    startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString() : '',
-    endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString() : '',
-    status: item.status || '',
-    timestamp: item.timestamp || '',
-    rawData: item,
-  })), [nonDtcAuditData]);
+  const auditData = useMemo(() => (nonDtcAuditData || []).map(mapItem), [nonDtcAuditData]);
+  const selectedRecord = useMemo(() => {
+    const navRecord = location.state?.record;
+    if (!navRecord) return null;
+    const selectedId = navRecord.uniqueId || navRecord.fileId || navRecord.id;
+    const matched = (nonDtcAuditData || []).find(item => (item.id || '') === selectedId);
+    return matched ? mapItem(matched) : navRecord;
+  }, [location.state, nonDtcAuditData]);
 
   // Initialise filteredResults when data loads (no nav-state filters)
   useEffect(() => {
@@ -144,6 +158,99 @@ const NonDtcAuditDetail = () => {
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
   const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
+
+  if (selectedRecord) {
+    const raw = selectedRecord.rawData || {};
+    const summaryFields = [
+      { label: 'Unique ID', value: selectedRecord.uniqueId },
+      { label: 'File ID', value: selectedRecord.fileId },
+      { label: 'Source Application', value: selectedRecord.flow },
+      { label: 'Subscription', value: raw.subscription },
+      { label: 'Status', value: selectedRecord.status },
+      { label: 'Event Type', value: selectedRecord.eventType },
+      { label: 'Source File Name', value: selectedRecord.sourceFile },
+      { label: 'Source Path', value: selectedRecord.sourcePath },
+      { label: 'Start Date', value: selectedRecord.startDate },
+      { label: 'End Date', value: selectedRecord.endDate },
+    ];
+
+    const additionalFields = [
+      { label: 'Archive Name', value: raw.archiveName },
+      { label: 'Source App Name', value: raw.sourceAppName },
+      { label: 'Timestamp', value: raw.timestamp },
+      { label: 'Created At', value: raw.createdAt },
+      { label: 'Updated At', value: raw.updatedAt },
+    ];
+
+    return (
+      <motion.div className="page-container dtc-audit-page" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px', color: '#64748b' }}>
+          <Link to="/" style={{ color: '#4c4ebd', textDecoration: 'none' }}>Home</Link>
+          <ChevronRight size={12} />
+          <Link to="/non-dtc-audit" style={{ color: '#4c4ebd', textDecoration: 'none' }}>Non DTC Audit</Link>
+          <ChevronRight size={12} />
+          <span style={{ color: '#1e293b', fontWeight: 600 }}>Details</span>
+        </div>
+
+        <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
+          <button
+            onClick={() => navigate(location.state?.returnPath || '/non-dtc-audit')}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#4c4ebd', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
+          <button
+            onClick={() => {
+              const blob = new Blob([JSON.stringify(raw, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${selectedRecord.sourceFile || selectedRecord.uniqueId || 'non_dtc_audit_details'}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}
+          >
+            <Download size={16} />
+            Download
+          </button>
+        </div>
+
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)' }}>
+          <div style={{ padding: '18px 24px', borderBottom: '1px solid #e5e7eb' }}>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Audit Record Details</h2>
+          </div>
+
+          <div style={{ padding: '24px' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Summary Information</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '12px' }}>
+                {summaryFields.map((field) => (
+                  <div key={field.label} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px', background: '#fff' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>{field.label}:</div>
+                    <div style={{ fontSize: '13px', color: '#1e293b', wordBreak: 'break-word' }}>{formatValue(field.value)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#60a5fa', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Additional Details</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
+                {additionalFields.map((field) => (
+                  <div key={field.label} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '12px 14px', background: '#fff' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>{field.label}:</div>
+                    <div style={{ fontSize: '13px', color: '#1e293b', wordBreak: 'break-word' }}>{formatValue(field.value)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
