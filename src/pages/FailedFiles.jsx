@@ -58,8 +58,12 @@ const FailedFiles = () => {
       item.events?.forEach(event => {
         if (isFailedStatus(event.Status) || isFailedStatus(event.status)) {
           const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
+          const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
+          const [flow = '-', version = '-'] = formattedFlowVersion.split(' ');
           failed.push({
-            flowVersion: formatFlowVersion(rawFlowVersion) || '-',
+            flowVersion: formattedFlowVersion,
+            flow,
+            version,
             fileId: item.File_ID || '',
             fromMPID: parsed.fromMPID || '',
             toMPID: parsed.toMPID || '',
@@ -255,11 +259,12 @@ const FailedFiles = () => {
         {/* Table Header */}
         {isDtc ? (
           <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+            display: 'grid', gridTemplateColumns: '1fr 0.8fr 1fr 1fr 1fr 1fr 1fr',
             padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb',
             fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px',
           }}>
-            <span>Flow Version</span>
+            <span>Flow</span>
+            <span>Version</span>
             <span>File ID</span>
             <span>From MPID</span>
             <span>To MPID</span>
@@ -295,7 +300,7 @@ const FailedFiles = () => {
               transition={{ delay: i * 0.04 }}
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 0.8fr 1fr 1fr 1fr 1fr 1fr',
                 padding: '14px 20px', alignItems: 'center',
                 borderBottom: i < failedRecords.length - 1 ? '1px solid #f1f5f9' : 'none',
                 transition: 'background 0.15s ease',
@@ -303,7 +308,8 @@ const FailedFiles = () => {
             >
               {isDtc ? (
                 <>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>{record.flowVersion}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>{record.flow}</span>
+                  <span style={{ fontSize: '13px', color: '#475569' }}>{record.version}</span>
                   <span style={{ fontSize: '13px', color: '#475569' }}>{record.fileId}</span>
                   <span style={{ fontSize: '13px', color: '#475569' }}>{record.fromMPID}</span>
                   <span style={{ fontSize: '13px', color: '#475569' }}>{record.toMPID}</span>

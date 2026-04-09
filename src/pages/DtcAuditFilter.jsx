@@ -204,7 +204,8 @@ const ALL_COLUMNS = [
   { key: 'fileName', label: 'File Name' },
   { key: 'sourcePath', label: 'Source Path' },
   { key: 'headerString', label: 'Header String' },
-  { key: 'flowVersion', label: 'Flow Version' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
   { key: 'fromRole', label: 'From Role' },
   { key: 'fromMPID', label: 'From MPID' },
   { key: 'toRole', label: 'To Role' },
@@ -455,13 +456,17 @@ const DtcAuditFilter = () => {
 
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {
+          const formattedFlowVersion = formatFlowVersion(rawFlow) || '-';
+          const flowVersionParts = formattedFlowVersion.split(' ');
           results.push({
             id: item.id,
             fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
             fileName,
             sourcePath: item.Source_Path || item.source_path || item.SourcePath || '',
             headerString: headerStr,
-            flowVersion: formatFlowVersion(rawFlow) || '-',
+            flowVersion: formattedFlowVersion,
+            flow: flowVersionParts[0] || '-',
+            version: flowVersionParts[1] || '-',
             fromRole: parsed.fromRole || event.fromRole || event.From_Role || '',
             fromMPID: parsed.fromMPID || event.fromMPID || event.From_MPID || '',
             toRole: parsed.toRole || event.toRole || event.To_Role || '',
@@ -494,14 +499,14 @@ const DtcAuditFilter = () => {
       results = results.filter(r => selectedApps.includes(r.application));
     }
     if (f.eventType && f.eventType !== 'All') { const v = f.eventType.split(','); results = results.filter(r => v.includes(r.eventType)); }
-    if (f.flow && f.flow !== 'All') { const v = f.flow.split(','); results = results.filter(r => v.includes(r.flowVersion)); }
+    if (f.flow && f.flow !== 'All') { const v = f.flow.split(','); results = results.filter(r => v.includes(r.flow)); }
     if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(','); results = results.filter(r => v.includes(r.fromRole)); }
     if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(','); results = results.filter(r => v.includes(r.fromMPID)); }
     if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(','); results = results.filter(r => v.includes(r.toRole)); }
     if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(','); results = results.filter(r => v.includes(r.toMPID)); }
     if (f.fileId) results = results.filter(r => r.fileId && r.fileId.includes(f.fileId));
     if (f.msgId) results = results.filter(r => r.eventId && r.eventId.includes(f.msgId));
-    if (f.version && f.version !== 'All') { const v = f.version.split(','); results = results.filter(r => v.includes(r.flowVersion)); }
+    if (f.version && f.version !== 'All') { const v = f.version.split(','); results = results.filter(r => v.includes(r.version)); }
     if (f.eventTimestampFrom) {
       const from = new Date(f.eventTimestampFrom);
       results = results.filter(r => {

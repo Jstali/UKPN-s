@@ -203,7 +203,6 @@ const DtcFailedFilesDetail = () => {
     { key: 'headerString', label: 'Header String' },
     { key: 'flow', label: 'Flow' },
     { key: 'version', label: 'Version' },
-    { key: 'flowVersion', label: 'Flow Version' },
     { key: 'fromRole', label: 'From Role' },
     { key: 'fromMPID', label: 'From MPID' },
     { key: 'toRole', label: 'To Role' },
@@ -238,7 +237,7 @@ const DtcFailedFilesDetail = () => {
 
     if (flowFilter && flowFilter !== 'All') {
       const selectedFlows = flowFilter.split(',').filter(Boolean);
-      filtered = filtered.filter(row => selectedFlows.includes(row.flowVersion));
+      filtered = filtered.filter(row => selectedFlows.includes(row.flow));
     }
 
     if (fileNameFilter) {
@@ -251,12 +250,12 @@ const DtcFailedFilesDetail = () => {
   }, [failedRecords, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    return [...new Set(failedRecords.map(row => row.flowVersion).filter(v => v && v !== '-'))].sort();
+    return [...new Set(failedRecords.map(row => row.flow).filter(v => v && v !== '-'))].sort();
   }, [failedRecords]);
 
   const uniqueFlowCount = useMemo(() => {
     if (filteredRecords.length === 0) return 0;
-    const flows = new Set(filteredRecords.map(r => r.flowVersion).filter(Boolean));
+    const flows = new Set(filteredRecords.map(r => r.flow).filter(Boolean));
     return flows.size;
   }, [filteredRecords]);
 

@@ -382,7 +382,8 @@ const DataTable = ({
     lines.push(`File Path          : ${v(row.filePath || row.File_Path)}`);
     lines.push(`Source File Name   : ${v(row.Source_FileName || row.fileName)}`);
     lines.push(`Source Path        : ${v(row.Source_Path || row.sourcePath)}`);
-    lines.push(`Flow               : ${v(row.flowVersion)}`);
+    lines.push(`Flow               : ${v(row.flow)}`);
+    lines.push(`Version            : ${v(row.version)}`);
     lines.push(`Header String      : ${v(row.Header_String)}`);
     lines.push(`Checksum           : ${v(row.checksum)}`);
     lines.push(`Checksum From User : ${v(row.Checksum_From_User)}`);

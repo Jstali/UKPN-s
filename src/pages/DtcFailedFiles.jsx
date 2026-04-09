@@ -222,7 +222,7 @@ const DtcFailedFiles = () => {
 
     if (flowFilter && flowFilter !== 'All') {
       const selectedFlows = flowFilter.split(',').filter(Boolean);
-      filtered = filtered.filter(row => selectedFlows.includes(row.flowVersion));
+      filtered = filtered.filter(row => selectedFlows.includes(row.flow));
     }
 
     if (fileNameFilter) {
@@ -235,7 +235,7 @@ const DtcFailedFiles = () => {
   }, [failedRecords, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    return [...new Set(failedRecords.map(row => row.flowVersion).filter(v => v && v !== '-'))].sort();
+    return [...new Set(failedRecords.map(row => row.flow).filter(v => v && v !== '-'))].sort();
   }, [failedRecords]);
 
   return (

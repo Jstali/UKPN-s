@@ -284,8 +284,9 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
 
       if (parsed.flowVersion) {
         const formatted = formatFlowVersion(parsed.flowVersion);
-        values.flow.add(formatted);
-        values.version.add(formatted);
+        const [flow = '', version = ''] = String(formatted || '').split(' ');
+        if (flow) values.flow.add(flow);
+        if (version) values.version.add(version);
       }
       if (parsed.fromRole) values.fromRole.add(parsed.fromRole);
       if (parsed.fromMPID) values.fromMPID.add(parsed.fromMPID);

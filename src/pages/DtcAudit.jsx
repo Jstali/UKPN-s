@@ -138,15 +138,18 @@ const buildFilteredResults = (data, filtersToUse) => {
 
       reversedEvents.forEach(event => {
         const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
+        const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
+        const flowVersionParts = formattedFlowVersion.split(' ');
         const resolvedFromRole = parsed.fromRole || item.From_Role || item.from_role || item.fromRole || event.fromRole || event.From_Role || '';
         const resolvedFromMPID = parsed.fromMPID || item.From_MPID || item.from_mpid || item.fromMPID || event.fromMPID || event.From_MPID || '';
         const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
-        const ts = event.timestamp ? new Date(event.timestamp) : null;
         results.push({
           ...item, // Include all original fields
           id: item.id,
-          flowVersion: formatFlowVersion(rawFlowVersion) || '-',
+          flowVersion: formattedFlowVersion,
+          flow: flowVersionParts[0] || '-',
+          version: flowVersionParts[1] || '-',
           fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRole: resolvedFromRole,
           fromMPID: resolvedFromMPID,
@@ -172,8 +175,8 @@ const buildFilteredResults = (data, filtersToUse) => {
   const filterMap = {
     application: 'application',
     eventType: 'eventType',
-    flow: 'flowVersion',
-    version: 'flowVersion',
+    flow: 'flow',
+    version: 'version',
     fromRole: 'fromRole',
     fromMPID: 'fromMPID',
     toRole: 'toRole',
@@ -411,7 +414,7 @@ const DtcAudit = () => {
 
   const uniqueFlowCount = useMemo(() => {
     if (tableData.length === 0) return 0;
-    const flows = new Set(tableData.map(r => r.flowVersion).filter(Boolean));
+    const flows = new Set(tableData.map(r => r.flow).filter(Boolean));
     return flows.size;
   }, [tableData]);
 

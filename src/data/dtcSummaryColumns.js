@@ -2,7 +2,8 @@
 // four SEPARATE columns in ALL export types (Excel, PDF, CSV, Email).
 // Do NOT merge them into combined columns like "From Role + From MPID".
 export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW = [
-  { key: 'flowVersion', label: 'Flow' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
   { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp' },
   { key: 'fromRole', label: 'From Role' },       // separate — do not merge
@@ -33,7 +34,8 @@ export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION = [
 ];
 
 export const DTC_SUMMARY_COLUMNS_SPLIT_FLOW = [
-  { key: 'flowVersion', label: 'Flow' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
   { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp' },
   { key: 'fromRole', label: 'From Role' },
@@ -64,7 +66,8 @@ export const DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION = [
 ];
 
 export const DTC_AUDIT_DETAIL_SUMMARY_FIELDS = [
-  { key: 'flowVersion', label: 'Flow' },
+  { key: 'flow', label: 'Flow' },
+  { key: 'version', label: 'Version' },
   { key: 'fileId', label: 'File ID' },
   { key: 'timestamp', label: 'Event Timestamp', format: 'datetime' },
   { key: 'fromRole', label: 'From Role' },

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
-import { parseHeader } from '../../utils/auditUtils';
+import { parseHeader, formatFlowVersion } from '../../utils/auditUtils';
 
 const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => {
   const [expandedCategory, setExpandedCategory] = useState(null);
@@ -14,10 +14,16 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
     setFileNameFilter('');
   };
 
+  const getDtcFlowParts = (file) => {
+    const formatted = formatFlowVersion(parseHeader(file.Header_String).flowVersion || '');
+    const [flow = '', version = ''] = String(formatted || '').split(' ');
+    return { flow, version };
+  };
+
   const getFilteredFiles = (files, category) => {
     const isDtc = category === 'dtc';
     return files.filter(file => {
-      const flowVal = isDtc ? parseHeader(file.Header_String).flowVersion : file.flow;
+      const flowVal = isDtc ? getDtcFlowParts(file).flow : file.flow;
       const fileName = isDtc ? file.Source_FileName : file.sourceFile;
       const matchesFlow = flowFilter === 'All' || flowVal === flowFilter;
       const matchesFileName = !fileNameFilter || fileName?.toLowerCase().includes(fileNameFilter.toLowerCase());
@@ -28,7 +34,7 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
   const getUniqueFlows = (files, category) => {
     const isDtc = category === 'dtc';
     const flows = files.map(f =>
-      isDtc ? parseHeader(f.Header_String).flowVersion : f.flow
+      isDtc ? getDtcFlowParts(f).flow : f.flow
     ).filter(Boolean);
     return ['All', ...new Set(flows)];
   };
@@ -104,9 +110,9 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                 ) : (
                   filteredFiles.map((file, idx) => {
                     const fileName = isDtc ? file.Source_FileName : file.sourceFile;
-                    const flowDisplay = isDtc
-                      ? (parseHeader(file.Header_String).flowVersion || 'N/A')
-                      : (file.flow || 'N/A');
+                    const dtcFlowParts = isDtc ? getDtcFlowParts(file) : { flow: file.flow || 'N/A', version: file.version || '' };
+                    const flowDisplay = dtcFlowParts.flow || 'N/A';
+                    const versionDisplay = dtcFlowParts.version || 'N/A';
                     const statusDisplay = isDtc
                       ? (file.events?.find(e => {
                           const s = (e.Status || e.status || '').toLowerCase();
@@ -133,6 +139,7 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                         </div>
                         <div style={{ display: 'flex', gap: '12px', color: '#64748b', fontSize: '11px' }}>
                           <span>Flow: {flowDisplay}</span>
+                          {isDtc && <span>Version: {versionDisplay}</span>}
                           <span>Status: <span style={{ color: '#dc2626', fontWeight: 600 }}>{statusDisplay}</span></span>
                         </div>
                       </div>
