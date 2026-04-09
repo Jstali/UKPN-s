@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import api, { fetchDtcSubscriptions } from '../utils/api';
 
 const AppContext = createContext(null);
+const AUDIT_PAGE_SIZE = 200;
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -46,6 +47,13 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
+  const resolveNextDataset = (nextData, hadError, currentData) => {
+    if (hadError && currentData.length > 0) {
+      return currentData;
+    }
+    return nextData;
+  };
+
   const fetchAllData = useCallback(async (force = false) => {
     // Prevent concurrent fetches
     if (isFetchingRef.current) {
@@ -78,27 +86,32 @@ export const AppProvider = ({ children }) => {
     try {
       let dtcErr = null, nonDtcErr = null;
       console.log('📡 Fetching page 1...');
-      const dtcPromise = api.fetchDtcAuditData(null, 500).catch(err => {
+      const dtcPromise = api.fetchDtcAuditData(null, AUDIT_PAGE_SIZE).catch(err => {
         dtcErr = err.message || 'DTC API error';
         console.error('❌ DTC fetch failed:', dtcErr);
-        return { data: [], continuationToken: null };
+        return { data: [], continuationToken: null, error: dtcErr };
       });
 
-      const nonDtcPromise = api.fetchNonDtcAuditData(null, 500).catch(err => {
+      const nonDtcPromise = api.fetchNonDtcAuditData(null, AUDIT_PAGE_SIZE).catch(err => {
         nonDtcErr = err.message || 'Non-DTC API error';
         console.error('❌ Non-DTC fetch failed:', nonDtcErr);
-        return { data: [], continuationToken: null };
+        return { data: [], continuationToken: null, error: nonDtcErr };
       });
 
       const [dtcResponse, nonDtcResponse] = await Promise.all([dtcPromise, nonDtcPromise]);
+      dtcErr = dtcErr || dtcResponse?.error || null;
+      nonDtcErr = nonDtcErr || nonDtcResponse?.error || null;
 
       const initialDtc = dtcResponse.data || [];
       const initialNonDtc = nonDtcResponse.data || [];
+      const nextInitialDtc = resolveNextDataset(initialDtc, !!dtcErr, auditDataRef.current);
+      const nextInitialNonDtc = resolveNextDataset(initialNonDtc, !!nonDtcErr, nonDtcDataRef.current);
 
+      if (dtcErr) setFetchError(dtcErr);
       // Track Non-DTC error independently so the page can show a specific message
       if (nonDtcErr) setNonDtcFetchError(nonDtcErr);
 
-      if (initialDtc.length === 0 && initialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
+      if (nextInitialDtc.length === 0 && nextInitialNonDtc.length === 0 && (dtcErr || nonDtcErr)) {
         setFetchError(dtcErr || nonDtcErr);
         setLoading(false);
         if (!hasExistingData) setDataComplete(true);
@@ -110,8 +123,8 @@ export const AppProvider = ({ children }) => {
       // On first load (no existing data): show data immediately as pages arrive
       // On background refresh: hold off until all pages collected (atomic swap)
       if (!hasExistingData) {
-        setAuditDataSync(initialDtc);
-        setNonDtcDataSync(initialNonDtc);
+        setAuditDataSync(nextInitialDtc);
+        setNonDtcDataSync(nextInitialNonDtc);
         setLoading(false);
       }
 
@@ -120,8 +133,8 @@ export const AppProvider = ({ children }) => {
       // No more pages — commit and finish
       if (!dtcResponse.continuationToken && !nonDtcResponse.continuationToken) {
         if (hasExistingData) {
-          setAuditDataSync(initialDtc);
-          setNonDtcDataSync(initialNonDtc);
+          setAuditDataSync(nextInitialDtc);
+          setNonDtcDataSync(nextInitialNonDtc);
         }
         setDataComplete(true);
         isFetchingRef.current = false;
@@ -129,8 +142,8 @@ export const AppProvider = ({ children }) => {
       }
 
       // Paginate remaining pages, accumulating silently
-      let allDtc = [...initialDtc];
-      let allNonDtc = [...initialNonDtc];
+      let allDtc = [...nextInitialDtc];
+      let allNonDtc = [...nextInitialNonDtc];
       let dtcToken = dtcResponse.continuationToken;
       let nonDtcToken = nonDtcResponse.continuationToken;
 
@@ -138,17 +151,19 @@ export const AppProvider = ({ children }) => {
         const promises = [];
         if (dtcToken) {
           promises.push(
-            api.fetchDtcAuditData(dtcToken, 500).catch(err => {
+            api.fetchDtcAuditData(dtcToken, AUDIT_PAGE_SIZE).catch(err => {
+              const message = err.message || 'DTC pagination error';
               console.error('DTC pagination error:', err);
-              return { data: [], continuationToken: null };
+              return { data: [], continuationToken: null, error: message };
             })
           );
         }
         if (nonDtcToken) {
           promises.push(
-            api.fetchNonDtcAuditData(nonDtcToken, 500).catch(err => {
+            api.fetchNonDtcAuditData(nonDtcToken, AUDIT_PAGE_SIZE).catch(err => {
+              const message = err.message || 'Non-DTC pagination error';
               console.error('Non-DTC pagination error:', err);
-              return { data: [], continuationToken: null };
+              return { data: [], continuationToken: null, error: message };
             })
           );
         }
@@ -158,11 +173,13 @@ export const AppProvider = ({ children }) => {
         if (dtcToken) {
           const dtcRes = results[0];
           allDtc = [...allDtc, ...(dtcRes.data || [])];
+          if (dtcRes.error) setFetchError(dtcRes.error);
           dtcToken = dtcRes.continuationToken;
         }
         if (nonDtcToken) {
           const nonDtcRes = results[promises.length === 2 ? 1 : 0];
           allNonDtc = [...allNonDtc, ...(nonDtcRes.data || [])];
+          if (nonDtcRes.error) setNonDtcFetchError(nonDtcRes.error);
           nonDtcToken = nonDtcRes.continuationToken;
         }
 
