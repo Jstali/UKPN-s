@@ -99,16 +99,33 @@ const NonDtcAudit = () => {
             <span style={{ fontWeight: 700, fontSize: '18px', color: '#1e293b' }}>Non DTC Audit</span>
           </div>
         </div>
-        <div className="dtc-kpi-row">
-          <div className="dtc-kpi-chip"><BarChart3 size={14} color="#6366f1" /><span className="dtc-kpi-label">Files</span><span className="dtc-kpi-value">{filteredData.length.toLocaleString()}</span></div>
-          <div className="dtc-kpi-chip"><Activity size={14} color="#0ea5e9" /><span className="dtc-kpi-label">Flows</span><span className="dtc-kpi-value">{uniqueFlows}</span></div>
-        </div>
-        <div className="dtc-header-actions">
-          <button className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showFilters)}>
-            <Filter size={12} /> Filters <ChevronDown size={12} style={{ transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+
+        <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
+          <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <BarChart3 size={13} color="#6366f1" />
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Files</span>
+            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{filteredData.length.toLocaleString()}</span>
+          </div>
+          <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
+            <Activity size={13} color="#0ea5e9" />
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Flows</span>
+            <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{uniqueFlows}</span>
+          </div>
+          <button
+            className={`dtc-apps-toggle ${showBars ? 'active' : ''}`}
+            onClick={() => setShowBars(!showBars)}
+            style={{ padding: '6px 14px', fontSize: '13px' }}
+          >
+            Charts
+            <ChevronDown size={11} style={{ transform: showBars ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
           </button>
-          <button className={`dtc-apps-toggle ${showBars ? 'active' : ''}`} onClick={() => setShowBars(!showBars)}>
-            Charts <ChevronDown size={12} style={{ transform: showBars ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+          <button
+            className={`dtc-apps-toggle ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+            style={{ padding: '6px 14px', fontSize: '13px' }}
+          >
+            <Filter size={12} /> Filters
+            <ChevronDown size={11} style={{ transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
           </button>
         </div>
       </div>
