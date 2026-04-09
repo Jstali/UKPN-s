@@ -388,11 +388,7 @@ const DtcAudit = () => {
   const filteredColumns = isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION;
   const columns = hasQueried ? filteredColumns : defaultColumns;
   const compactColumns = isBusiness ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION;
-  const shouldSplitRoleColumnsForExport = ['Testing Team', 'Core Support', 'Admin'].includes(user?.role);
-
   const exportColumns = useMemo(() => {
-    if (!shouldSplitRoleColumnsForExport) return columns;
-
     return columns.flatMap((col) => {
       if (col.key === 'fromRoleMPID') {
         return [
@@ -408,7 +404,7 @@ const DtcAudit = () => {
       }
       return [col];
     });
-  }, [columns, shouldSplitRoleColumnsForExport]);
+  }, [columns]);
 
   const tableData = hasQueried ? filteredResults : flattenedAuditData;
 

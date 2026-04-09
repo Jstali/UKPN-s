@@ -7,6 +7,7 @@ import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, formatFromRoleMPID, formatToRoleMPID } from '../utils/auditUtils';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
+  DTC_SUMMARY_COLUMNS_SPLIT_FLOW,
   DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
 } from '../data/dtcSummaryColumns';
 
@@ -42,6 +43,104 @@ const deriveFlowVersion = (item, parsedFlowVersion, event) => {
   if (flowOnly) return flowOnly;
 
   return '';
+};
+
+const FlowMultiSelectDropdown = ({ value, options, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedValues = value === 'All' ? [] : (value ? value.split(',') : []);
+
+  React.useEffect(() => {
+    const handleOutside = (e) => {
+      if (!e.target.closest('[data-flow-multi-select-default]')) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
+  const toggleOption = (option) => {
+    let nextSelected;
+    if (selectedValues.includes(option)) {
+      nextSelected = selectedValues.filter((v) => v !== option);
+    } else {
+      nextSelected = [...selectedValues, option];
+    }
+    onChange(nextSelected.length === 0 ? 'All' : nextSelected.join(','));
+  };
+
+  const displayText = selectedValues.length === 0
+    ? 'All'
+    : selectedValues.length === 1
+      ? selectedValues[0]
+      : `${selectedValues.length} selected`;
+
+  return (
+    <div data-flow-multi-select-default style={{ position: 'relative', minWidth: '140px' }}>
+      <div
+        onClick={() => setIsOpen((prev) => !prev)}
+        style={{
+          padding: '4px 8px',
+          border: '1px solid #fca5a5',
+          borderRadius: '6px',
+          fontSize: '12px',
+          background: '#fff',
+          cursor: 'pointer',
+          minWidth: '120px',
+        }}
+      >
+        {displayText}
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          marginTop: '4px',
+          background: '#fff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          maxHeight: '240px',
+          overflowY: 'auto',
+          zIndex: 999,
+          minWidth: '160px',
+        }}>
+          <div
+            onClick={() => onChange('All')}
+            style={{
+              padding: '8px 10px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              borderBottom: '1px solid #f1f5f9',
+              background: selectedValues.length === 0 ? '#f8fafc' : '#fff',
+              fontWeight: selectedValues.length === 0 ? 600 : 400,
+            }}
+          >
+            <input type="checkbox" readOnly checked={selectedValues.length === 0} style={{ marginRight: '8px' }} />
+            All
+          </div>
+          {options.map((option) => (
+            <div
+              key={option}
+              onClick={() => toggleOption(option)}
+              style={{
+                padding: '8px 10px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid #f1f5f9',
+                background: selectedValues.includes(option) ? '#eef2ff' : '#fff',
+              }}
+            >
+              <input type="checkbox" readOnly checked={selectedValues.includes(option)} style={{ marginRight: '8px' }} />
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const flattenAuditEvents = (data) => {
@@ -126,7 +225,8 @@ const DtcFailedFiles = () => {
     let filtered = failedRecords;
 
     if (flowFilter && flowFilter !== 'All') {
-      filtered = filtered.filter(row => row.flowVersion === flowFilter);
+      const selectedFlows = flowFilter.split(',').filter(Boolean);
+      filtered = filtered.filter(row => selectedFlows.includes(row.flowVersion));
     }
 
     if (fileNameFilter) {
@@ -139,7 +239,7 @@ const DtcFailedFiles = () => {
   }, [failedRecords, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {
-    return ['All', ...new Set(failedRecords.map(row => row.flowVersion).filter(v => v && v !== '-'))];
+    return [...new Set(failedRecords.map(row => row.flowVersion).filter(v => v && v !== '-'))].sort();
   }, [failedRecords]);
 
   return (
@@ -208,22 +308,11 @@ const DtcFailedFiles = () => {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#7f1d1d', marginRight: '4px' }}>Flow:</label>
-              <select 
+              <FlowMultiSelectDropdown
                 value={flowFilter} 
-                onChange={(e) => setFlowFilter(e.target.value)}
-                style={{
-                  padding: '4px 8px',
-                  border: '1px solid #fca5a5',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  background: '#fff',
-                  cursor: 'pointer'
-                }}
-              >
-                {uniqueFlows.map(flow => (
-                  <option key={flow} value={flow}>{flow}</option>
-                ))}
-              </select>
+                options={uniqueFlows}
+                onChange={setFlowFilter}
+              />
             </div>
             
             <div>
@@ -264,13 +353,26 @@ const DtcFailedFiles = () => {
           data={failedFiles}
           columns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_COMBINED_FLOW}
           compactColumns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_COMBINED_FLOW}
+          exportColumns={splitRoleColumns ? DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION : DTC_SUMMARY_COLUMNS_SPLIT_FLOW}
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={50}
           groupByKey="eventId"
           onDownload={true}
           onViewDetail={() => navigate('/dtc-failed-files-detail')}
           detailPagePath="/audit-details"
-          exportConfig={{ filename: 'DTC_Failed_Files_Export' }}
+          exportConfig={{
+            filename: 'DTC_Failed_Files_Export',
+            pdfOptions: {
+              orientation: 'landscape',
+              pageFormat: 'a4',
+              fontSize: 7,
+              overflow: 'linebreak',
+              horizontalPageBreak: true,
+              horizontalPageBreakRepeat: [0, 1, 2],
+              minCellWidth: 14,
+              cellPadding: 2.2,
+            },
+          }}
           hideViewDetail={false}
         />
       )}

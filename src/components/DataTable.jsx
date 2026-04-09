@@ -404,8 +404,10 @@ const DataTable = ({
     lines.push(`Timestamp          : ${v(row.timestamp || row.created)}`);
     lines.push(`Source Application : ${v(row.sourceApplication)}`);
     lines.push(`Destination App    : ${v(row.application)}`);
-    lines.push(`From Role + MPID   : ${v(row.fromRoleMPID || (row.fromRole ? `${row.fromRole} ${row.fromMPID}` : null))}`);
-    lines.push(`To Role + MPID     : ${v(row.toRoleMPID || (row.toRole ? `${row.toRole} ${row.toMPID}` : null))}`);
+    lines.push(`From Role          : ${v(row.fromRole)}`);
+    lines.push(`From MPID          : ${v(row.fromMPID)}`);
+    lines.push(`To Role            : ${v(row.toRole)}`);
+    lines.push(`To MPID            : ${v(row.toMPID)}`);
     lines.push(`Receiving App      : ${v(row.recApp)}`);
     lines.push(`Message ID         : ${v(row.eventId)}`);
     lines.push(`Destination Path   : ${v(row.destinationPath || row.Destination_Path)}`);
@@ -614,7 +616,13 @@ const DataTable = ({
                 </div>
               )}
               <ExportDropdown
-                onExportPDF={() => handleExport(() => exportToPDF(sortedData, columnsForExport, exportConfig.filename, exportConfig.title || exportConfig.filename?.replace(/_/g, ' ')))}
+                onExportPDF={() => handleExport(() => exportToPDF(
+                  sortedData,
+                  columnsForExport,
+                  exportConfig.filename,
+                  exportConfig.title || exportConfig.filename?.replace(/_/g, ' '),
+                  exportConfig.pdfOptions || {}
+                ))}
                 onExportExcel={() => handleExport(() => exportToExcel(sortedData, columnsForExport, exportConfig.filename))}
                 onExportCSV={() => handleExport(() => exportToCSV(sortedData, columnsForExport, exportConfig.filename))}
                 onSendEmail={() => setShowEmailModal(true)}
