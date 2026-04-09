@@ -11,7 +11,6 @@ import api from '../utils/api';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
 const MAX_FILTER_SUGGESTIONS = 50;
-const MAX_EXPORT_ROWS = 5000;
 
 const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
   const ref = useRef(null);
@@ -357,12 +356,6 @@ const DataTable = ({
 
   const handleExport = useCallback((exportFn) => {
     if (sortedData.length === 0) return;
-    if (sortedData.length > MAX_EXPORT_ROWS) {
-      const proceed = window.confirm(
-        `You are about to export ${sortedData.length.toLocaleString()} rows. This may take a while and could slow down your browser.\n\nContinue?`
-      );
-      if (!proceed) return;
-    }
     setExporting(true);
     setTimeout(() => {
       try {
