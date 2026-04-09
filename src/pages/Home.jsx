@@ -15,7 +15,17 @@ import { isDtcFailedStatus, isNonDtcFailedRecord } from '../utils/statusUtils';
 import { useApp } from '../context/AppContext';
 
 const Home = () => {
-  const { user, autoRefresh, setAutoRefresh, auditData, nonDtcAuditData, loading, fetchError, fetchAllData } = useApp();
+  const {
+    user,
+    autoRefresh,
+    setAutoRefresh,
+    auditData,
+    nonDtcAuditData,
+    loading,
+    fetchError,
+    nonDtcFetchError,
+    fetchAllData,
+  } = useApp();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [showFailedDropdown, setShowFailedDropdown] = React.useState(false);
@@ -505,7 +515,13 @@ const Home = () => {
               onShowDetails={showDetails}
               loading={loading}
             />
-            <ApplicationStatusSection dashboardUpdatedAt={dashboardUpdatedAt} loading={loading} />
+            <ApplicationStatusSection
+              dashboardUpdatedAt={dashboardUpdatedAt}
+              loading={loading}
+              fetchError={fetchError}
+              nonDtcFetchError={nonDtcFetchError}
+              hasAuditData={auditData.length > 0 || nonDtcAuditData.length > 0}
+            />
           </div>
           <div className="dashboard-col-right">
             <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} loading={loading} />
