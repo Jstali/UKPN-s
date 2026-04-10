@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X, Eye, GripVertical, Save, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X, Eye, GripVertical } from 'lucide-react';
 import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
 import FileViewModal from './FileViewModal';
@@ -257,7 +257,6 @@ const DataTable = ({
     () => compactColumns ? (loadColOrder(tableId, 'compact', compactColumns) || compactColumns.map(c => c.key)) : null
   );
   const [dragOverKey, setDragOverKey] = useState(null);
-  const [saveIndicator, setSaveIndicator] = useState(false);
   const dragColRef = useRef(null);
 
   // File view modal state
@@ -314,24 +313,29 @@ const DataTable = ({
       next.splice(ti, 0, fromKey);
       return next;
     };
-    if (compactColumns && !viewAll) setCompactOrder(reorder);
-    else setFullOrder(reorder);
+    const isCompact = Boolean(compactColumns && !viewAll);
+    const mode = isCompact ? 'compact' : 'full';
+    if (isCompact) {
+      setCompactOrder(prev => {
+        const next = reorder(prev);
+        saveColOrder(tableId, mode, next);
+        return next;
+      });
+    } else {
+      setFullOrder(prev => {
+        const next = reorder(prev);
+        saveColOrder(tableId, mode, next);
+        return next;
+      });
+    }
     setDragOverKey(null);
     dragColRef.current = null;
-  }, [viewAll, compactColumns]);
+  }, [viewAll, compactColumns, tableId]);
 
   const handleDragEnd = useCallback(() => {
     dragColRef.current = null;
     setDragOverKey(null);
   }, []);
-
-  const handleSaveColumnOrder = useCallback(() => {
-    if (!tableId) return;
-    if (compactOrder) saveColOrder(tableId, 'compact', compactOrder);
-    saveColOrder(tableId, 'full', fullOrder);
-    setSaveIndicator(true);
-    setTimeout(() => setSaveIndicator(false), 2000);
-  }, [tableId, compactOrder, fullOrder]);
 
   const handleResizeStart = useCallback((colKey, e) => {
     e.preventDefault();
@@ -759,24 +763,6 @@ const DataTable = ({
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
-          {tableId && (
-            <button
-              onClick={handleSaveColumnOrder}
-              title="Save current column order"
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
-                padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
-                fontSize: '11px', fontWeight: 600, border: '1px solid',
-                background: saveIndicator ? '#f0fdf4' : '#f8fafc',
-                color: saveIndicator ? '#16a34a' : '#475569',
-                borderColor: saveIndicator ? '#bbf7d0' : '#e2e8f0',
-                transition: 'all 0.2s',
-              }}
-            >
-              {saveIndicator ? <Check size={12} /> : <Save size={12} />}
-              {saveIndicator ? 'Saved!' : 'Save Layout'}
-            </button>
-          )}
           {activeFilterCount > 0 && (
             <button
               onClick={() => { setColumnFilters({}); setCurrentPage(1); }}
