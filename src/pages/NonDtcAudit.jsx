@@ -426,6 +426,7 @@ const NonDtcAudit = () => {
         </div>
       ) : (
         <DataTable
+          tableId="non_dtc_audit"
           data={filteredData}
           columns={NON_DTC_COLUMNS}
           compactColumns={[

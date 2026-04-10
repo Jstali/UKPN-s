@@ -210,6 +210,7 @@ const NonDtcFailedFiles = () => {
             </div>
           )}
           <DataTable
+            tableId="non_dtc_failed"
             data={failedFiles}
             columns={columns}
             defaultSort={{ key: 'startDate', direction: 'desc' }}

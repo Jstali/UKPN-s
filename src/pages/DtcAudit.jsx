@@ -598,6 +598,7 @@ const DtcAudit = () => {
         </div>
       ) : (
         <DataTable
+          tableId="dtc_audit"
           data={hasQueried ? filteredResults : flattenedAuditData}
           columns={columns}
           exportColumns={exportColumns}

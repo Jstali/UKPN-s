@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Download, ArrowUp, ArrowDown, Filter, Calendar, X, Eye, GripVertical, Save, Check } from 'lucide-react';
 import ExportDropdown from './ExportDropdown';
 import EmailModal from './EmailModal';
 import FileViewModal from './FileViewModal';
@@ -11,6 +11,23 @@ import api from '../utils/api';
 
 const DATE_COLUMNS = ['created', 'timestamp'];
 const MAX_FILTER_SUGGESTIONS = 50;
+
+const loadColOrder = (tableId, mode, cols) => {
+  if (!tableId || !cols || cols.length === 0) return null;
+  try {
+    const raw = localStorage.getItem(`col_order_${tableId}_${mode}`);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    const colKeys = cols.map(c => c.key);
+    if (!Array.isArray(saved) || saved.length !== colKeys.length || !saved.every(k => colKeys.includes(k))) return null;
+    return saved;
+  } catch { return null; }
+};
+
+const saveColOrder = (tableId, mode, keys) => {
+  if (!tableId) return;
+  try { localStorage.setItem(`col_order_${tableId}_${mode}`, JSON.stringify(keys)); } catch {}
+};
 
 const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
   const ref = useRef(null);
@@ -201,7 +218,8 @@ const DataTable = ({
   detailPagePath = '/audit-details',
   defaultSort = null,
   defaultPageSize = 50,
-  groupByKey = null
+  groupByKey = null,
+  tableId = null,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -231,6 +249,17 @@ const DataTable = ({
   const [viewAll, setViewAll] = useState(false);
   const resizing = useRef(null);
 
+  // Column drag-to-reorder
+  const [fullOrder, setFullOrder] = useState(
+    () => loadColOrder(tableId, 'full', columns) || columns.map(c => c.key)
+  );
+  const [compactOrder, setCompactOrder] = useState(
+    () => compactColumns ? (loadColOrder(tableId, 'compact', compactColumns) || compactColumns.map(c => c.key)) : null
+  );
+  const [dragOverKey, setDragOverKey] = useState(null);
+  const [saveIndicator, setSaveIndicator] = useState(false);
+  const dragColRef = useRef(null);
+
   // File view modal state
   const [fileViewModal, setFileViewModal] = useState({
     show: false,
@@ -247,6 +276,62 @@ const DataTable = ({
 
   const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
   const columnsForExport = exportColumns?.length ? exportColumns : columns;
+
+  const orderedActiveColumns = useMemo(() => {
+    const isCompact = Boolean(compactColumns && !viewAll);
+    const order = isCompact ? compactOrder : fullOrder;
+    if (!order || order.length === 0) return activeColumns;
+    return [...activeColumns].sort((a, b) => {
+      const ai = order.indexOf(a.key);
+      const bi = order.indexOf(b.key);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [activeColumns, viewAll, compactColumns, compactOrder, fullOrder]);
+
+  const handleDragStart = useCallback((colKey, e) => {
+    dragColRef.current = colKey;
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragOver = useCallback((colKey, e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (colKey !== dragColRef.current) setDragOverKey(colKey);
+  }, []);
+
+  const handleDrop = useCallback((colKey, e) => {
+    e.preventDefault();
+    const fromKey = dragColRef.current;
+    if (!fromKey || fromKey === colKey) { setDragOverKey(null); return; }
+    const reorder = (prev) => {
+      const next = [...prev];
+      const fi = next.indexOf(fromKey);
+      const ti = next.indexOf(colKey);
+      if (fi === -1 || ti === -1) return prev;
+      next.splice(fi, 1);
+      next.splice(ti, 0, fromKey);
+      return next;
+    };
+    if (compactColumns && !viewAll) setCompactOrder(reorder);
+    else setFullOrder(reorder);
+    setDragOverKey(null);
+    dragColRef.current = null;
+  }, [viewAll, compactColumns]);
+
+  const handleDragEnd = useCallback(() => {
+    dragColRef.current = null;
+    setDragOverKey(null);
+  }, []);
+
+  const handleSaveColumnOrder = useCallback(() => {
+    if (!tableId) return;
+    if (compactOrder) saveColOrder(tableId, 'compact', compactOrder);
+    saveColOrder(tableId, 'full', fullOrder);
+    setSaveIndicator(true);
+    setTimeout(() => setSaveIndicator(false), 2000);
+  }, [tableId, compactOrder, fullOrder]);
 
   const handleResizeStart = useCallback((colKey, e) => {
     e.preventDefault();
@@ -674,6 +759,24 @@ const DataTable = ({
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginRight: '20px' }}>
+          {tableId && (
+            <button
+              onClick={handleSaveColumnOrder}
+              title="Save current column order"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '6px 12px', borderRadius: '6px', cursor: 'pointer',
+                fontSize: '11px', fontWeight: 600, border: '1px solid',
+                background: saveIndicator ? '#f0fdf4' : '#f8fafc',
+                color: saveIndicator ? '#16a34a' : '#475569',
+                borderColor: saveIndicator ? '#bbf7d0' : '#e2e8f0',
+                transition: 'all 0.2s',
+              }}
+            >
+              {saveIndicator ? <Check size={12} /> : <Save size={12} />}
+              {saveIndicator ? 'Saved!' : 'Save Layout'}
+            </button>
+          )}
           {activeFilterCount > 0 && (
             <button
               onClick={() => { setColumnFilters({}); setCurrentPage(1); }}
@@ -752,7 +855,7 @@ const DataTable = ({
         >
           {Object.keys(colWidths).length > 0 && (
             <colgroup>
-              {activeColumns.map((col) => (
+              {orderedActiveColumns.map((col) => (
                 <col key={col.key} style={{ width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined }} />
               ))}
               {onDownload && <col style={{ width: '80px' }} />}
@@ -760,9 +863,14 @@ const DataTable = ({
           )}
           <thead>
             <tr>
-              {activeColumns.map((col) => (
+              {orderedActiveColumns.map((col) => (
                 <th
                   key={col.key}
+                  draggable={Boolean(tableId)}
+                  onDragStart={(e) => handleDragStart(col.key, e)}
+                  onDragOver={(e) => handleDragOver(col.key, e)}
+                  onDrop={(e) => handleDrop(col.key, e)}
+                  onDragEnd={handleDragEnd}
                   style={{
                     position: 'sticky', top: 0, zIndex: 20, userSelect: 'none',
                     width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined,
@@ -770,9 +878,19 @@ const DataTable = ({
                     padding: '8px 10px',
                     fontSize: '11px',
                     background: sortConfig.key === col.key ? '#5b4fc7' : undefined,
+                    borderLeft: dragOverKey === col.key ? '2px solid #4c4ebd' : undefined,
+                    cursor: tableId ? 'grab' : undefined,
+                    opacity: dragColRef.current === col.key ? 0.5 : 1,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {tableId && (
+                      <GripVertical
+                        size={11}
+                        color="#94a3b8"
+                        style={{ flexShrink: 0, cursor: 'grab' }}
+                      />
+                    )}
                     <span
                       onClick={() => handleSort(col.key)}
                       style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}
@@ -813,6 +931,7 @@ const DataTable = ({
                   </div>
                   {/* Resize handle */}
                   <div
+                    draggable={false}
                     onMouseDown={(e) => handleResizeStart(col.key, e)}
                     style={{
                       position: 'absolute', right: 0, top: 0, bottom: 0, width: '5px',
@@ -839,7 +958,7 @@ const DataTable = ({
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={activeColumns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '13px' }}>
+                <td colSpan={orderedActiveColumns.length + (onDownload ? 1 : 0)} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '13px' }}>
                   No records found
                 </td>
               </tr>
@@ -851,7 +970,7 @@ const DataTable = ({
                   const prevRow = idx > 0 ? paginatedData[idx - 1] : null;
                   const currentGroup = row[groupByKey];
                   const prevGroup = prevRow ? prevRow[groupByKey] : null;
-                  
+
                   // Track group index
                   let groupIndex = 0;
                   for (let i = 0; i <= idx; i++) {
@@ -861,10 +980,10 @@ const DataTable = ({
                   }
                   groupBg = groupIndex % 2 === 0 ? '#fff' : '#f9fafb';
                 }
-                
+
                 return (
                   <tr key={idx} style={{ background: groupBg }}>
-                    {activeColumns.map((col) => (
+                    {orderedActiveColumns.map((col) => (
                       <td key={col.key} style={{ padding: '6px 10px', fontSize: '12px' }}>
                         {col.key === 'status' ? (
                           <span className={`status-badge ${getStatusClass(row[col.key])}`} style={{ fontSize: '11px', padding: '2px 8px' }}>

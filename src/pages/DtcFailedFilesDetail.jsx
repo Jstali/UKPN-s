@@ -372,6 +372,7 @@ const DtcFailedFilesDetail = () => {
         </div>
       ) : (
         <DataTable
+          tableId="dtc_failed_detail"
           data={filteredRecords}
           columns={columns}
           detailPagePath="/audit-details"

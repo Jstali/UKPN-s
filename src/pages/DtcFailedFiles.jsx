@@ -346,6 +346,7 @@ const DtcFailedFiles = () => {
         </div>
       ) : (
         <DataTable
+          tableId="dtc_failed"
           data={failedFiles}
           columns={isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION}
           compactColumns={isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION}
