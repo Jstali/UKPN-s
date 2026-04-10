@@ -526,6 +526,7 @@ const NonDtcAudit = () => {
           defaultSort={{ key: 'startDate', direction: 'desc' }}
           isNonDtc={true}
           defaultPageSize={50}
+          onDownload={true}
           exportConfig={{
             filename: 'Non_DTC_Audit_Export',
             pdfOptions: {
