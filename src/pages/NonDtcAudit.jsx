@@ -33,10 +33,14 @@ const mapNonDtcEventType = (event) => {
 
 const BLOB_PATH_FIELDS = [
   'destinationPath', 'Destination_Path', 'destination_path',
+  'destinationContent', 'DestinationContent', 'destination_content',
   'blobPath', 'BlobPath', 'blob_path',
   'blobFilePath', 'blobFileName', 'Blob_File_Name',
   'blobLocation', 'Blob_Location', 'blob_location',
-  'archivePath', 'Archive_Path',
+  'blobArchiveLinkLocation', 'Blob_Archive_Link_Location', 'blob_archive_link_location',
+  'archivePath', 'Archive_Path', 'archive_path',
+  'storagePath', 'StoragePath', 'storage_path',
+  'filePath', 'FilePath', 'file_path',
 ];
 
 // UNC paths (\\server or //server) and absolute filesystem paths are NOT blob paths
@@ -98,6 +102,17 @@ const flattenNonDtcEvents = (data) => {
     const blobPath = getNonDtcBlobPath(item);
     const displayDestPath = getNonDtcDisplayDestPath(item);
 
+    // Extract blob archive fields from top-level item (same fields DTC uses)
+    const itemBlobArchive = item.Blob_Archive_Link_Location || item.blobArchiveLinkLocation || item.blob_archive_link_location || '';
+    const itemBlobLocation = item.Blob_Location || item.blobLocation || item.blob_location || '';
+    const itemBlobFileName = item.Blob_File_Name || item.blobFileName || item.blob_file_name || '';
+
+    // Also extract blob fields from the "File Stored To Blob" event (type 2)
+    const blobEvent = (item.events || []).find(e => String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '') === '2');
+    const evtBlobArchive = blobEvent ? (blobEvent.Blob_Archive_Link_Location || blobEvent.blobArchiveLinkLocation || '') : '';
+    const evtBlobLocation = blobEvent ? (blobEvent.Blob_Location || blobEvent.blobLocation || blobEvent.storagePath || blobEvent.StoragePath || blobEvent.filePath || '') : '';
+    const evtBlobFileName = blobEvent ? (blobEvent.Blob_File_Name || blobEvent.blobFileName || blobEvent.destinationContent || blobEvent.DestinationContent || '') : '';
+
     events.forEach(event => {
       flatData.push({
         uniqueId: item.id || '',
@@ -120,6 +135,11 @@ const flattenNonDtcEvents = (data) => {
         sourcePath: item.sourcePath || '',
         destinationPath: displayDestPath,
         _blobPath: blobPath,
+        // Blob archive fields — passed through so DataTable can build paths the same way as DTC
+        Blob_Archive_Link_Location: itemBlobArchive || evtBlobArchive,
+        Blob_Location: itemBlobLocation || evtBlobLocation,
+        Blob_File_Name: itemBlobFileName || evtBlobFileName,
+        Source_FileName: fileName,
         eventType: mapNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
         startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
         endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB') : '',
