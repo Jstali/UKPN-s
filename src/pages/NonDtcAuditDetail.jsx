@@ -5,7 +5,6 @@ import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download, Eye 
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import FileViewModal from '../components/FileViewModal';
 import { useApp } from '../context/AppContext';
-import api from '../utils/api';
 
 const NON_DTC_EVENT_TYPE_MAP = {
   '1': 'File Pickup from Source',
@@ -82,79 +81,22 @@ const NonDtcAuditDetail = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [fileViewModal, setFileViewModal] = useState({ show: false, fileName: '', fileContent: '', loading: false, error: null });
 
-  const getFilePath = (rawRecord) => {
-    // Log the raw record fields to diagnose what path fields are available
-    console.log('🔍 Non-DTC getFilePath raw record keys:', Object.keys(rawRecord || {}));
-    console.log('🔍 Non-DTC getFilePath events:', (rawRecord?.events || []).map(e => ({ ...e })));
-
-    const blobFieldNames = [
-      'destinationPath', 'Destination_Path', 'destination_path',
-      'blobPath', 'BlobPath', 'blob_path',
-      'blobFilePath', 'blobFileName', 'Blob_File_Name',
-      'blobLocation', 'Blob_Location', 'blob_location',
-      'archivePath', 'Archive_Path',
-    ];
-
-    const events = Array.isArray(rawRecord?.events) ? rawRecord.events : [];
-
-    // Prefer path from "File Stored To Blob" event (type 2)
-    for (const e of events) {
-      const evtType = String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '');
-      if (evtType === '2') {
-        for (const field of blobFieldNames) {
-          if (e[field]) { console.log(`✅ Found blob path in event type 2 field "${field}":`, e[field]); return e[field]; }
-        }
-      }
-    }
-    // Fall back: any event's blob path field
-    for (const e of events) {
-      for (const field of blobFieldNames) {
-        if (e[field]) { console.log(`✅ Found blob path in event field "${field}":`, e[field]); return e[field]; }
-      }
-    }
-    // Fall back: top-level blob path field on the record
-    for (const field of blobFieldNames) {
-      if (rawRecord?.[field]) { console.log(`✅ Found blob path in record field "${field}":`, rawRecord[field]); return rawRecord[field]; }
-    }
-
-    console.warn('⚠️ No blob path found for Non-DTC record:', rawRecord?.id);
-    return '';
+  const handlePreview = (rawRecord) => {
+    const fileName = (rawRecord?.sourceFileName || rawRecord?.id || 'non_dtc_record') + '.json';
+    const content = JSON.stringify(rawRecord, null, 2);
+    setFileViewModal({ show: true, fileName, fileContent: content, loading: false, error: null });
   };
 
-  const handlePreview = async (rawRecord) => {
-    const path = getFilePath(rawRecord);
-    const fallbackName = rawRecord?.sourceFileName || rawRecord?.id || 'file';
-    if (!path) {
-      setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: false, error: 'No file path available for this record.' });
-      return;
-    }
-    setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: true, error: null });
-    try {
-      const { content, filename } = await api.viewBlobFileByPath(path, true);
-      setFileViewModal({ show: true, fileName: filename || fallbackName, fileContent: content || '', loading: false, error: null });
-    } catch (err) {
-      setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: false, error: err?.message || 'Failed to load preview.' });
-    }
-  };
-
-  const handleDownload = async (rawRecord) => {
-    const path = getFilePath(rawRecord);
-    const fallbackName = rawRecord?.sourceFileName || rawRecord?.id || 'non_dtc_file';
-    if (!path) {
-      alert('No file path available for download.');
-      return;
-    }
-    try {
-      const { blob, filename } = await api.downloadFileByPath(path, true);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename || fallbackName;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      alert(`Download failed: ${err?.message || 'Unknown error'}`);
-    }
+  const handleDownload = (rawRecord) => {
+    const fileName = (rawRecord?.sourceFileName || rawRecord?.id || 'non_dtc_record') + '.json';
+    const content = JSON.stringify(rawRecord, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const auditData = useMemo(() => (nonDtcAuditData || []).map(mapItem), [nonDtcAuditData]);
