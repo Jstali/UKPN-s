@@ -14,8 +14,28 @@ const AppContext = createContext(null);
 const MAX_AUDIT_RECORDS = 1000;
 const AUDIT_PAGE_SIZE = 500;
 const AUTO_REFRESH_INTERVAL_MS = 60000;
+const DTC_CACHE_KEY = 'fc_dtc_cache';
+const NON_DTC_CACHE_KEY = 'fc_nondtc_cache';
 
 const trimRecords = (records) => (Array.isArray(records) ? records.slice(0, MAX_AUDIT_RECORDS) : []);
+
+const readCache = (key) => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeCache = (key, records) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(records));
+  } catch {
+    // Storage quota exceeded — clear and skip
+    try { sessionStorage.removeItem(key); } catch { /* noop */ }
+  }
+};
 
 // Fetch one page from a given API endpoint
 const fetchOnePage = async (fetchFn, token, signal) =>
@@ -24,9 +44,20 @@ const fetchOnePage = async (fetchFn, token, signal) =>
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [auditData, setAuditData] = useState([]);
-  const [nonDtcAuditData, setNonDtcAuditData] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Initialise from cache for instant display — fresh data loads in background
+  const [auditData, setAuditData] = useState(() => readCache(DTC_CACHE_KEY));
+  const [nonDtcAuditData, setNonDtcAuditData] = useState(() => readCache(NON_DTC_CACHE_KEY));
+
+  // Only show loading spinner when there is no cached data to display
+  const [loading, setLoading] = useState(() => {
+    try {
+      return !sessionStorage.getItem(DTC_CACHE_KEY);
+    } catch {
+      return true;
+    }
+  });
+
   const [dataComplete, setDataComplete] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [nonDtcFetchError, setNonDtcFetchError] = useState(null);
@@ -45,12 +76,23 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
     if (!savedUser) return;
-
     try {
       setUser(JSON.parse(savedUser));
     } catch {
       sessionStorage.removeItem('user');
     }
+  }, []);
+
+  const commitAuditData = useCallback((records) => {
+    const trimmed = trimRecords(records);
+    setAuditData(trimmed);
+    writeCache(DTC_CACHE_KEY, trimmed);
+  }, []);
+
+  const commitNonDtcData = useCallback((records) => {
+    const trimmed = trimRecords(records);
+    setNonDtcAuditData(trimmed);
+    writeCache(NON_DTC_CACHE_KEY, trimmed);
   }, []);
 
   const fetchAllData = useCallback(async (options = {}) => {
@@ -84,9 +126,9 @@ export const AppProvider = ({ children }) => {
       setFetchError(dtcFirst?.error || null);
       setNonDtcFetchError(nonDtcFirst?.error || null);
 
-      // Show first page immediately — clears the loading spinner
-      setAuditData(trimRecords(dtcRecords));
-      setNonDtcAuditData(trimRecords(nonDtcRecords));
+      // Show first page immediately and cache it — clears the loading spinner
+      commitAuditData(dtcRecords);
+      commitNonDtcData(nonDtcRecords);
       setLoading(false);
 
       // ── Step 2: Fetch remaining pages in background (both in parallel) ──────
@@ -130,9 +172,9 @@ export const AppProvider = ({ children }) => {
           }
         }
 
-        // Update state as more data arrives
-        if (dtcUpdated) setAuditData(trimRecords(dtcRecords));
-        if (nonDtcUpdated) setNonDtcAuditData(trimRecords(nonDtcRecords));
+        // Update state and cache as more data arrives
+        if (dtcUpdated) commitAuditData(dtcRecords);
+        if (nonDtcUpdated) commitNonDtcData(nonDtcRecords);
       }
 
       setDataComplete(true);
@@ -155,7 +197,7 @@ export const AppProvider = ({ children }) => {
         fetchAllData(queuedOptions);
       }
     }
-  }, []);
+  }, [commitAuditData, commitNonDtcData]);
 
   useEffect(() => {
     if (mountedRef.current) {
@@ -163,7 +205,10 @@ export const AppProvider = ({ children }) => {
     }
 
     mountedRef.current = true;
-    fetchAllData();
+
+    // If cached data exists, load silently — user sees data immediately
+    const hasCachedData = readCache(DTC_CACHE_KEY).length > 0;
+    fetchAllData({ silent: hasCachedData });
 
     return () => {
       if (activeControllerRef.current) {
@@ -231,6 +276,8 @@ export const AppProvider = ({ children }) => {
 
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem(DTC_CACHE_KEY);
+    sessionStorage.removeItem(NON_DTC_CACHE_KEY);
   }, []);
 
   const contextValue = useMemo(() => ({
