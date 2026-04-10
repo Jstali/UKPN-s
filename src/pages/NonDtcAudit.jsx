@@ -53,6 +53,7 @@ const flattenNonDtcEvents = (data) => {
         sourceFile: item.sourceFileName || '',
         subscription: item.subscription || '',
         sourcePath: item.sourcePath || '',
+        destinationPath: event.destinationPath || event.Destination_Path || item.destinationPath || '',
         eventType: mapNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
         startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
         endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB') : '',
@@ -70,7 +71,11 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
   return selectedValues.includes(actualValue);
 };
 
-const NON_DTC_COLUMNS = NON_DTC_DEFAULT_COLUMNS;
+const NON_DTC_COLUMNS = [
+  ...NON_DTC_DEFAULT_COLUMNS,
+  { key: 'sourcePath', label: 'Source Path' },
+  { key: 'destinationPath', label: 'Destination Path' },
+];
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
