@@ -31,13 +31,40 @@ const mapNonDtcEventType = (event) => {
   return event.description || event.Description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
 };
 
+const BLOB_PATH_FIELDS = [
+  'destinationPath', 'Destination_Path', 'destination_path',
+  'blobPath', 'BlobPath', 'blob_path',
+  'blobFilePath', 'blobFileName', 'Blob_File_Name',
+  'blobLocation', 'Blob_Location', 'blob_location',
+  'archivePath', 'Archive_Path',
+];
+
+const getNonDtcBlobPath = (item) => {
+  const events = item.events || [];
+  // Prefer "File Stored To Blob" event (type 2)
+  for (const e of events) {
+    const evtType = String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '');
+    if (evtType === '2') {
+      for (const f of BLOB_PATH_FIELDS) { if (e[f]) return e[f]; }
+    }
+  }
+  // Any event
+  for (const e of events) {
+    for (const f of BLOB_PATH_FIELDS) { if (e[f]) return e[f]; }
+  }
+  // Top-level item
+  for (const f of BLOB_PATH_FIELDS) { if (item[f]) return item[f]; }
+  return '';
+};
+
 const flattenNonDtcEvents = (data) => {
   const flatData = [];
   (data || []).forEach(item => {
     const events = item.events && item.events.length > 0 ? item.events : [{}];
     const fileName = item.sourceFileName || '';
     const fileType = fileName ? fileName.split('.').pop().toUpperCase() : '-';
-    
+    const blobPath = getNonDtcBlobPath(item);
+
     events.forEach(event => {
       flatData.push({
         uniqueId: item.id || '',
@@ -58,7 +85,7 @@ const flattenNonDtcEvents = (data) => {
         sourceFile: fileName || '',
         subscription: item.subscription || '',
         sourcePath: item.sourcePath || '',
-        destinationPath: event.destinationPath || event.Destination_Path || item.destinationPath || '',
+        destinationPath: blobPath,
         eventType: mapNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
         startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
         endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB') : '',

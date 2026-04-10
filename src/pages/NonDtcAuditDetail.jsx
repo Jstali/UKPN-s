@@ -83,21 +83,42 @@ const NonDtcAuditDetail = () => {
   const [fileViewModal, setFileViewModal] = useState({ show: false, fileName: '', fileContent: '', loading: false, error: null });
 
   const getFilePath = (rawRecord) => {
+    // Log the raw record fields to diagnose what path fields are available
+    console.log('🔍 Non-DTC getFilePath raw record keys:', Object.keys(rawRecord || {}));
+    console.log('🔍 Non-DTC getFilePath events:', (rawRecord?.events || []).map(e => ({ ...e })));
+
+    const blobFieldNames = [
+      'destinationPath', 'Destination_Path', 'destination_path',
+      'blobPath', 'BlobPath', 'blob_path',
+      'blobFilePath', 'blobFileName', 'Blob_File_Name',
+      'blobLocation', 'Blob_Location', 'blob_location',
+      'archivePath', 'Archive_Path',
+    ];
+
     const events = Array.isArray(rawRecord?.events) ? rawRecord.events : [];
-    // Prefer destinationPath from "File Stored To Blob" event (type 2) — this is the blob storage path
+
+    // Prefer path from "File Stored To Blob" event (type 2)
     for (const e of events) {
       const evtType = String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '');
       if (evtType === '2') {
-        const p = e?.destinationPath || e?.Destination_Path;
-        if (p) return p;
+        for (const field of blobFieldNames) {
+          if (e[field]) { console.log(`✅ Found blob path in event type 2 field "${field}":`, e[field]); return e[field]; }
+        }
       }
     }
-    // Fall back to any event's destinationPath
+    // Fall back: any event's blob path field
     for (const e of events) {
-      const p = e?.destinationPath || e?.Destination_Path;
-      if (p) return p;
+      for (const field of blobFieldNames) {
+        if (e[field]) { console.log(`✅ Found blob path in event field "${field}":`, e[field]); return e[field]; }
+      }
     }
-    return rawRecord?.destinationPath || '';
+    // Fall back: top-level blob path field on the record
+    for (const field of blobFieldNames) {
+      if (rawRecord?.[field]) { console.log(`✅ Found blob path in record field "${field}":`, rawRecord[field]); return rawRecord[field]; }
+    }
+
+    console.warn('⚠️ No blob path found for Non-DTC record:', rawRecord?.id);
+    return '';
   };
 
   const handlePreview = async (rawRecord) => {
