@@ -12,7 +12,7 @@ import api, { fetchDtcSubscriptions } from '../utils/api';
 const AppContext = createContext(null);
 
 const MAX_AUDIT_RECORDS = 1000;
-const AUDIT_PAGE_SIZE = 200;
+const AUDIT_PAGE_SIZE = 500;
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 
 const buildDatasetSignature = (records) =>
@@ -27,44 +27,9 @@ const buildDatasetSignature = (records) =>
 
 const trimRecords = (records) => (Array.isArray(records) ? records.slice(0, MAX_AUDIT_RECORDS) : []);
 
-const collectAuditPages = async (fetchPage, signal) => {
-  const records = [];
-  let continuationToken = null;
-  let lastError = null;
-  let aborted = false;
-
-  do {
-    const response = await fetchPage(continuationToken, AUDIT_PAGE_SIZE, { signal });
-
-    if (response?.aborted) {
-      aborted = true;
-      break;
-    }
-
-    if (response?.error) {
-      lastError = response.error;
-      break;
-    }
-
-    const nextRecords = Array.isArray(response?.data) ? response.data : [];
-    if (nextRecords.length > 0) {
-      records.push(...nextRecords);
-      if (records.length >= MAX_AUDIT_RECORDS) {
-        records.length = MAX_AUDIT_RECORDS;
-        continuationToken = null;
-        break;
-      }
-    }
-
-    continuationToken = response?.continuationToken || null;
-  } while (continuationToken && !signal.aborted);
-
-  return {
-    data: trimRecords(records),
-    error: lastError,
-    aborted,
-  };
-};
+// Fetch one page from a given API endpoint
+const fetchOnePage = async (fetchFn, token, signal) =>
+  fetchFn(token, AUDIT_PAGE_SIZE, { signal });
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -116,16 +81,10 @@ export const AppProvider = ({ children }) => {
   const fetchAllData = useCallback(async (options = {}) => {
     const { restart = false, silent = false } = options;
 
-    // Prevent duplicate fetches. Manual refresh may explicitly restart.
     if (isFetchingRef.current) {
-      if (!restart) {
-        return false;
-      }
-
+      if (!restart) return false;
       queuedFetchOptionsRef.current = { restart: false, silent };
-      if (activeControllerRef.current) {
-        activeControllerRef.current.abort();
-      }
+      if (activeControllerRef.current) activeControllerRef.current.abort();
       return false;
     }
 
@@ -133,44 +92,85 @@ export const AppProvider = ({ children }) => {
     activeControllerRef.current = controller;
     isFetchingRef.current = true;
 
-    if (!silent) {
-      setLoading(true);
-    }
+    if (!silent) setLoading(true);
 
     try {
-      // Fetch both APIs in parallel. Each collector paginates up to 1000 records max.
-      const [dtcResult, nonDtcResult] = await Promise.all([
-        collectAuditPages(api.fetchDtcAuditData.bind(api), controller.signal),
-        collectAuditPages(api.fetchNonDtcAuditData.bind(api), controller.signal),
+      // ── Step 1: Fetch first page of both APIs in parallel ──────────────────
+      const [dtcFirst, nonDtcFirst] = await Promise.all([
+        fetchOnePage(api.fetchDtcAuditData.bind(api), null, controller.signal),
+        fetchOnePage(api.fetchNonDtcAuditData.bind(api), null, controller.signal),
       ]);
 
-      if (controller.signal.aborted || dtcResult.aborted || nonDtcResult.aborted) {
-        return false;
+      if (controller.signal.aborted) return false;
+
+      const dtcRecords = Array.isArray(dtcFirst?.data) ? [...dtcFirst.data] : [];
+      const nonDtcRecords = Array.isArray(nonDtcFirst?.data) ? [...nonDtcFirst.data] : [];
+
+      setFetchError(dtcFirst?.error || null);
+      setNonDtcFetchError(nonDtcFirst?.error || null);
+
+      // Show first page immediately — clears the loading spinner
+      commitDatasetIfChanged(setAuditData, auditSignatureRef, dtcRecords);
+      commitDatasetIfChanged(setNonDtcAuditData, nonDtcSignatureRef, nonDtcRecords);
+      setLoading(false);
+
+      // ── Step 2: Fetch remaining pages in background (both in parallel) ──────
+      let dtcToken = dtcRecords.length < MAX_AUDIT_RECORDS ? (dtcFirst?.continuationToken || null) : null;
+      let nonDtcToken = nonDtcRecords.length < MAX_AUDIT_RECORDS ? (nonDtcFirst?.continuationToken || null) : null;
+
+      while ((dtcToken || nonDtcToken) && !controller.signal.aborted) {
+        const pageFetches = [];
+
+        if (dtcToken) {
+          pageFetches.push(
+            fetchOnePage(api.fetchDtcAuditData.bind(api), dtcToken, controller.signal)
+              .then(r => ({ kind: 'dtc', ...r }))
+          );
+        }
+        if (nonDtcToken) {
+          pageFetches.push(
+            fetchOnePage(api.fetchNonDtcAuditData.bind(api), nonDtcToken, controller.signal)
+              .then(r => ({ kind: 'nonDtc', ...r }))
+          );
+        }
+
+        const pages = await Promise.all(pageFetches);
+        if (controller.signal.aborted) break;
+
+        let dtcUpdated = false;
+        let nonDtcUpdated = false;
+
+        for (const page of pages) {
+          const newRows = Array.isArray(page.data) ? page.data : [];
+          if (page.kind === 'dtc') {
+            dtcRecords.push(...newRows);
+            if (dtcRecords.length >= MAX_AUDIT_RECORDS) dtcRecords.length = MAX_AUDIT_RECORDS;
+            dtcToken = dtcRecords.length < MAX_AUDIT_RECORDS ? (page.continuationToken || null) : null;
+            if (newRows.length > 0) dtcUpdated = true;
+          } else {
+            nonDtcRecords.push(...newRows);
+            if (nonDtcRecords.length >= MAX_AUDIT_RECORDS) nonDtcRecords.length = MAX_AUDIT_RECORDS;
+            nonDtcToken = nonDtcRecords.length < MAX_AUDIT_RECORDS ? (page.continuationToken || null) : null;
+            if (newRows.length > 0) nonDtcUpdated = true;
+          }
+        }
+
+        // Update state as more data arrives
+        if (dtcUpdated) commitDatasetIfChanged(setAuditData, auditSignatureRef, dtcRecords);
+        if (nonDtcUpdated) commitDatasetIfChanged(setNonDtcAuditData, nonDtcSignatureRef, nonDtcRecords);
       }
-
-      setFetchError(dtcResult.error || null);
-      setNonDtcFetchError(nonDtcResult.error || null);
-
-      // Avoid re-render when payload has not changed.
-      commitDatasetIfChanged(setAuditData, auditSignatureRef, dtcResult.data);
-      commitDatasetIfChanged(setNonDtcAuditData, nonDtcSignatureRef, nonDtcResult.data);
 
       setDataComplete(true);
       return true;
     } catch (error) {
-      if (controller.signal.aborted) {
-        return false;
-      }
-
+      if (controller.signal.aborted) return false;
       const message = error?.message || 'Failed to load audit data';
       setFetchError(message);
       setNonDtcFetchError((prev) => prev || message);
       setDataComplete(true);
       return false;
     } finally {
-      if (activeControllerRef.current === controller) {
-        activeControllerRef.current = null;
-      }
+      if (activeControllerRef.current === controller) activeControllerRef.current = null;
       isFetchingRef.current = false;
       setLoading(false);
 
