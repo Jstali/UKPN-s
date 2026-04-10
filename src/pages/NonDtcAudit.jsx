@@ -437,6 +437,7 @@ const NonDtcAudit = () => {
             { key: 'application', label: 'Destination' },
             { key: 'sourcePath', label: 'Source Path' },
             { key: 'destinationPath', label: 'Destination Path' },
+            { key: 'status', label: 'Status' },
             { key: 'fileName', label: 'Source File Name' },
           ]}
           exportColumns={NON_DTC_COLUMNS}
