@@ -951,7 +951,7 @@ const DataTable = ({
                   )}
                 </th>
               ))}
-              {onDownload && <th style={{ width: '120px', position: 'sticky', top: 0, zIndex: 20 }}>Actions</th>}
+              {onDownload && <th style={{ width: '90px', minWidth: '90px', position: 'sticky', top: 0, right: 0, zIndex: 30, background: '#1e2a4a', boxShadow: '-2px 0 4px rgba(0,0,0,0.08)' }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -1025,7 +1025,7 @@ const DataTable = ({
                       </td>
                     ))}
                     {onDownload && (
-                      <td style={{ padding: '6px 10px' }}>
+                      <td style={{ padding: '6px 10px', position: 'sticky', right: 0, background: groupBg, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)', zIndex: 1 }}>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button
                             className="table-action-btn"
