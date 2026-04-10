@@ -429,6 +429,8 @@ const NonDtcAudit = () => {
             { key: 'application', label: 'Destination' },
             { key: 'status', label: 'Status' },
             { key: 'fileName', label: 'Source File Name' },
+            { key: 'sourcePath', label: 'Source Path' },
+            { key: 'destinationPath', label: 'Destination Path' },
           ]}
           exportColumns={NON_DTC_COLUMNS}
           defaultSort={{ key: 'startDate', direction: 'desc' }}

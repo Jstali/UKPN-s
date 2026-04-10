@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, RefreshCw, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import api from '../utils/api';
 import { NAV_CARDS } from '../data/dashboardConfig';
 import FileStatusSection from '../components/dashboard/FileStatusSection';
@@ -17,8 +17,6 @@ import { useApp } from '../context/AppContext';
 const Home = () => {
   const {
     user,
-    autoRefresh,
-    setAutoRefresh,
     auditData,
     nonDtcAuditData,
     loading,
@@ -40,11 +38,9 @@ const Home = () => {
   // Update timestamp when auditData changes
   React.useEffect(() => {
     if (auditData.length > 0) {
-      const newTime = new Date().toLocaleTimeString();
-      setDashboardUpdatedAt(newTime);
-      console.log('🏠 Home: auditData updated, length =', auditData.length, 'at', newTime);
+      setDashboardUpdatedAt(new Date().toLocaleTimeString());
     }
-  }, [auditData.length]); // Only trigger when length changes, not on every render
+  }, [auditData, nonDtcAuditData]);
 
   // Data fetching and auto-refresh are handled by AppContext
 
@@ -168,7 +164,7 @@ const Home = () => {
     totalDelivered: dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length,
     pendingDelivery: Math.max((auditData.length + nonDtcAuditData.length) - (dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length), 0),
     duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
-  }), [auditData.length, nonDtcAuditData, dtcDeliveredFiles.length, duplicateChecksumFiles.length, nonDtcDuplicateChecksumCount]);
+  }), [auditData, nonDtcAuditData, dtcDeliveredFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount]);
 
   const showDetails = useCallback((type) => {
     // Calculate actual status distribution from combined DTC and Non-DTC audit data
@@ -282,35 +278,15 @@ const Home = () => {
     if (detail) navigate('/analytics', { state: { ...detail, type } });
   }, [auditData, nonDtcAuditData, fileStats, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, isFailedStatus, navigate]);
 
-  const handleToggleAutoRefresh = useCallback(() => {
-    setAutoRefresh(prev => !prev);
-    if (!autoRefresh) setDashboardUpdatedAt(new Date().toLocaleTimeString());
-  }, [autoRefresh, setAutoRefresh]);
-
   return (
     <div className="dashboard-root">
       <div className="dashboard-body">
 
-        {/* Welcome Strip — compact single row */}
+        {/* Welcome Strip */}
         <div className="dashboard-welcome-strip">
           <div>
             <h1 className="dashboard-welcome-title">Welcome to File Connect</h1>
             <div className="dashboard-welcome-bar" />
-          </div>
-          <div className="dashboard-auto-refresh">
-            <span className="dashboard-auto-refresh-label" style={{ color: autoRefresh ? '#16a34a' : '#94a3b8' }}>
-              Auto Refresh
-            </span>
-            <button
-              onClick={handleToggleAutoRefresh}
-              className="dashboard-toggle-btn"
-              style={{ background: autoRefresh ? '#22c55e' : '#cbd5e1' }}
-              title={autoRefresh ? 'Disable Auto Refresh' : 'Enable Auto Refresh'}
-            >
-              <div className="dashboard-toggle-knob" style={{ left: autoRefresh ? '22px' : '2px' }}>
-                <RefreshCw size={11} color={autoRefresh ? '#22c55e' : '#94a3b8'} style={{ animation: autoRefresh ? 'spin 2s linear infinite' : 'none' }} />
-              </div>
-            </button>
           </div>
         </div>
 
