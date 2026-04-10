@@ -83,9 +83,16 @@ const NonDtcAuditDetail = () => {
   const [fileViewModal, setFileViewModal] = useState({ show: false, fileName: '', fileContent: '', loading: false, error: null });
 
   const getFilePath = (rawRecord) => {
-    // Try sourcePath first, then check each event's destinationPath
-    if (rawRecord?.sourcePath) return rawRecord.sourcePath;
     const events = Array.isArray(rawRecord?.events) ? rawRecord.events : [];
+    // Prefer destinationPath from "File Stored To Blob" event (type 2) — this is the blob storage path
+    for (const e of events) {
+      const evtType = String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '');
+      if (evtType === '2') {
+        const p = e?.destinationPath || e?.Destination_Path;
+        if (p) return p;
+      }
+    }
+    // Fall back to any event's destinationPath
     for (const e of events) {
       const p = e?.destinationPath || e?.Destination_Path;
       if (p) return p;
