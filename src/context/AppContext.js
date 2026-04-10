@@ -21,7 +21,7 @@ const trimRecords = (records) => (Array.isArray(records) ? records.slice(0, MAX_
 
 const readCache = (key) => {
   try {
-    const raw = sessionStorage.getItem(key);
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -30,10 +30,10 @@ const readCache = (key) => {
 
 const writeCache = (key, records) => {
   try {
-    sessionStorage.setItem(key, JSON.stringify(records));
+    localStorage.setItem(key, JSON.stringify(records));
   } catch {
     // Storage quota exceeded — clear and skip
-    try { sessionStorage.removeItem(key); } catch { /* noop */ }
+    try { localStorage.removeItem(key); } catch { /* noop */ }
   }
 };
 
@@ -52,7 +52,7 @@ export const AppProvider = ({ children }) => {
   // Only show loading spinner when there is no cached data to display
   const [loading, setLoading] = useState(() => {
     try {
-      return !sessionStorage.getItem(DTC_CACHE_KEY);
+      return !localStorage.getItem(DTC_CACHE_KEY);
     } catch {
       return true;
     }
@@ -276,8 +276,8 @@ export const AppProvider = ({ children }) => {
 
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem(DTC_CACHE_KEY);
-    sessionStorage.removeItem(NON_DTC_CACHE_KEY);
+    localStorage.removeItem(DTC_CACHE_KEY);
+    localStorage.removeItem(NON_DTC_CACHE_KEY);
   }, []);
 
   const contextValue = useMemo(() => ({
