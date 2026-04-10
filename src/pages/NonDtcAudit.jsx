@@ -434,6 +434,7 @@ const NonDtcAudit = () => {
             { key: 'sourceApplication', label: 'Source' },
             { key: 'application', label: 'Destination' },
             { key: 'status', label: 'Status' },
+            { key: 'fileType', label: 'File Type' },
             { key: 'fileName', label: 'Source File Name' },
             { key: 'sourcePath', label: 'Source Path' },
             { key: 'destinationPath', label: 'Destination Path' },
