@@ -210,15 +210,12 @@ export const AppProvider = ({ children }) => {
     const hasCachedData = readCache(DTC_CACHE_KEY).length > 0;
     fetchAllData({ silent: hasCachedData });
 
-    // Pre-fetch subscriptions so app names are available everywhere on load
-    fetchSubscriptions();
-
     return () => {
       if (activeControllerRef.current) {
         activeControllerRef.current.abort();
       }
     };
-  }, [fetchAllData, fetchSubscriptions]);
+  }, [fetchAllData]);
 
   useEffect(() => {
     if (refreshTimerRef.current) {
@@ -261,6 +258,11 @@ export const AppProvider = ({ children }) => {
       setSubscriptionLoading(false);
     }
   }, []);
+
+  // Pre-fetch subscriptions on mount so app names are available everywhere
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
 
   const login = useCallback((userData) => {
     setUser(userData);
