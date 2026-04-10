@@ -9,7 +9,7 @@ import { useApp } from '../context/AppContext';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
 const NON_DTC_DEFAULT_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
-  ({ key }) => !['fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
+  ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
 );
 
 const formatDateTimeCell = (timestamp) => {
@@ -410,8 +410,6 @@ const NonDtcAudit = () => {
           data={filteredData}
           columns={NON_DTC_COLUMNS}
           compactColumns={[
-            { key: 'flow', label: 'Flow' },
-            { key: 'version', label: 'Version' },
             { key: 'fileId', label: 'File ID' },
             { key: 'timestamp', label: 'Event Timestamp' },
             { key: 'sourceApplication', label: 'Source' },
