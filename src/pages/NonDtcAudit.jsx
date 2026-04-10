@@ -39,21 +39,29 @@ const BLOB_PATH_FIELDS = [
   'archivePath', 'Archive_Path',
 ];
 
+// UNC paths (\\server or //server) and absolute filesystem paths are NOT blob paths
+const isBlobPath = (p) => {
+  if (!p) return false;
+  const s = String(p).trim();
+  if (s.startsWith('//') || s.startsWith('\\\\') || s.startsWith('/')) return false;
+  return s.length > 0;
+};
+
 const getNonDtcBlobPath = (item) => {
   const events = item.events || [];
-  // Prefer "File Stored To Blob" event (type 2)
+  // Only use "File Stored To Blob" event (type 2) — other events have network share paths
   for (const e of events) {
     const evtType = String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '');
     if (evtType === '2') {
-      for (const f of BLOB_PATH_FIELDS) { if (e[f]) return e[f]; }
+      for (const f of BLOB_PATH_FIELDS) {
+        if (isBlobPath(e[f])) return e[f];
+      }
     }
   }
-  // Any event
-  for (const e of events) {
-    for (const f of BLOB_PATH_FIELDS) { if (e[f]) return e[f]; }
+  // Top-level item blob fields only (skip sourcePath which is filesystem)
+  for (const f of BLOB_PATH_FIELDS.filter(f => f !== 'destinationPath' && f !== 'Destination_Path' && f !== 'destination_path')) {
+    if (isBlobPath(item[f])) return item[f];
   }
-  // Top-level item
-  for (const f of BLOB_PATH_FIELDS) { if (item[f]) return item[f]; }
   return '';
 };
 
@@ -470,6 +478,7 @@ const NonDtcAudit = () => {
           ]}
           exportColumns={NON_DTC_COLUMNS}
           defaultSort={{ key: 'startDate', direction: 'desc' }}
+          isNonDtc={true}
           defaultPageSize={50}
           onDownload={true}
           exportConfig={{

@@ -130,7 +130,7 @@ const NonDtcAuditDetail = () => {
     }
     setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: true, error: null });
     try {
-      const { content, filename } = await api.viewBlobFileByPath(path);
+      const { content, filename } = await api.viewBlobFileByPath(path, true);
       setFileViewModal({ show: true, fileName: filename || fallbackName, fileContent: content || '', loading: false, error: null });
     } catch (err) {
       setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: false, error: err?.message || 'Failed to load preview.' });
@@ -145,7 +145,7 @@ const NonDtcAuditDetail = () => {
       return;
     }
     try {
-      const { blob, filename } = await api.downloadFileByPath(path);
+      const { blob, filename } = await api.downloadFileByPath(path, true);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

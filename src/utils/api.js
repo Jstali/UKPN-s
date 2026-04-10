@@ -313,14 +313,14 @@ const api = {
     }
   },
 
-  async downloadFileByPath(path) {
+  async downloadFileByPath(path, isNonDtc = false) {
     const cleanPath = String(path || '').trim();
     if (!cleanPath) {
       throw new Error('Missing file path');
     }
 
     const configuredCode = process.env.REACT_APP_DTC_DOWNLOAD_API_CODE;
-    const code = configuredCode || DTC_API_CODE;
+    const code = isNonDtc ? NON_DTC_API_CODE : (configuredCode || DTC_API_CODE);
     const url = `${DOWNLOAD_FILE_API}?path=${encodeURIComponent(cleanPath)}${code ? `&code=${encodeURIComponent(code)}` : ''}`;
 
     const res = await fetch(url, { method: 'GET' });
@@ -337,14 +337,14 @@ const api = {
     return { blob, filename };
   },
 
-  async viewBlobFileByPath(path) {
+  async viewBlobFileByPath(path, isNonDtc = false) {
     const cleanPath = String(path || '').trim();
     if (!cleanPath) {
       throw new Error('Missing file path');
     }
 
     const configuredCode = process.env.REACT_APP_DTC_PREVIEW_API_CODE || process.env.REACT_APP_DTC_DOWNLOAD_API_CODE;
-    const code = configuredCode || DTC_API_CODE;
+    const code = isNonDtc ? NON_DTC_API_CODE : (configuredCode || DTC_API_CODE);
     const url = `${VIEW_FILE_API}?path=${encodeURIComponent(cleanPath)}${code ? `&code=${encodeURIComponent(code)}` : ''}`;
 
     const res = await fetch(url, { method: 'GET' });

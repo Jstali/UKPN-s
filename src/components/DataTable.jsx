@@ -220,6 +220,7 @@ const DataTable = ({
   defaultPageSize = 50,
   groupByKey = null,
   tableId = null,
+  isNonDtc = false,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -612,7 +613,7 @@ const DataTable = ({
     try {
       const previewResult = await Promise.any(
         prioritizedPaths.map(async (path) => {
-          const { content, filename } = await api.viewBlobFileByPath(path);
+          const { content, filename } = await api.viewBlobFileByPath(path, isNonDtc);
           return {
             path,
             fileName: filename || fallbackFileName,
@@ -672,7 +673,7 @@ const DataTable = ({
       const failedPaths = [];
       for (const path of candidatePaths) {
         try {
-          const { blob, filename } = await api.downloadFileByPath(path);
+          const { blob, filename } = await api.downloadFileByPath(path, isNonDtc);
           const objectUrl = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = objectUrl;
