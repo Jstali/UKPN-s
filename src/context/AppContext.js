@@ -95,6 +95,25 @@ export const AppProvider = ({ children }) => {
     writeCache(NON_DTC_CACHE_KEY, trimmed);
   }, []);
 
+  const fetchSubscriptions = useCallback(async () => {
+    setSubscriptionLoading(true);
+    setSubscriptionError(null);
+
+    try {
+      const { data, isLocal, error } = await fetchDtcSubscriptions();
+      setSubscriptionData(Array.isArray(data) ? data : []);
+      setIsLocalSubscription(Boolean(isLocal));
+      if (error) {
+        setSubscriptionError(error);
+      }
+    } catch (err) {
+      setSubscriptionError(err.message || 'Failed to load subscriptions');
+      setSubscriptionData([]);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  }, []);
+
   const fetchAllData = useCallback(async (options = {}) => {
     const { restart = false, silent = false } = options;
 
@@ -210,12 +229,15 @@ export const AppProvider = ({ children }) => {
     const hasCachedData = readCache(DTC_CACHE_KEY).length > 0;
     fetchAllData({ silent: hasCachedData });
 
+    // Pre-fetch subscriptions so app names are available everywhere on load
+    fetchSubscriptions();
+
     return () => {
       if (activeControllerRef.current) {
         activeControllerRef.current.abort();
       }
     };
-  }, [fetchAllData]);
+  }, [fetchAllData, fetchSubscriptions]);
 
   useEffect(() => {
     if (refreshTimerRef.current) {
@@ -239,30 +261,6 @@ export const AppProvider = ({ children }) => {
       }
     };
   }, [autoRefresh, fetchAllData]);
-
-  const fetchSubscriptions = useCallback(async () => {
-    setSubscriptionLoading(true);
-    setSubscriptionError(null);
-
-    try {
-      const { data, isLocal, error } = await fetchDtcSubscriptions();
-      setSubscriptionData(Array.isArray(data) ? data : []);
-      setIsLocalSubscription(Boolean(isLocal));
-      if (error) {
-        setSubscriptionError(error);
-      }
-    } catch (err) {
-      setSubscriptionError(err.message || 'Failed to load subscriptions');
-      setSubscriptionData([]);
-    } finally {
-      setSubscriptionLoading(false);
-    }
-  }, []);
-
-  // Pre-fetch subscriptions on mount so app names are available everywhere
-  useEffect(() => {
-    fetchSubscriptions();
-  }, [fetchSubscriptions]);
 
   const login = useCallback((userData) => {
     setUser(userData);
