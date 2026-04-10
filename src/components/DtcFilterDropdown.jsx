@@ -254,7 +254,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
     if (!auditData || auditData.length === 0) {
       return {
         sourceApplication: subscriptionAppNames.length ? [...subscriptionAppNames].sort() : [],
-        destinationApplication: [],
+        destinationApplication: subscriptionAppNames.length ? [...subscriptionAppNames].sort() : [],
         eventType: [],
         flow: [],
         version: [],
@@ -268,7 +268,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
 
     const values = {
       sourceApplication: new Set(subscriptionAppNames),
-      destinationApplication: new Set(),
+      destinationApplication: new Set(subscriptionAppNames),
       eventType: new Set(),
       flow: new Set(),
       version: new Set(),
