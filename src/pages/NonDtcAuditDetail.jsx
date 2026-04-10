@@ -14,8 +14,8 @@ const NON_DTC_EVENT_TYPE_MAP = {
   '4': 'File Delivered',
 };
 const mapNonDtcEventType = (event) => {
-  const raw = String(event.eventType || event.event_type || '');
-  return event.description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
+  const raw = String(event.eventType || event.event_type || event.Event_Type || event.EventType || '');
+  return event.description || event.Description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
 };
 
 const ALL_COLUMNS = [
@@ -45,7 +45,9 @@ const mapItem = (item) => ({
   subscription: item.subscription || '',
   status: item.status || '',
   timestamp: item.timestamp || '',
-  eventType: mapNonDtcEventType({ eventType: item.events?.[0]?.eventType || item.eventType }),
+  eventType: (item.events && item.events.length > 0)
+    ? [...new Set(item.events.map(e => mapNonDtcEventType(e)).filter(Boolean))].join(', ')
+    : mapNonDtcEventType({ eventType: item.eventType }),
   changeFeedStatus: item.changeFeedStatus || '',
   requestStatus: item.requestStatus || '',
   processedTime: item.processedTime || '',

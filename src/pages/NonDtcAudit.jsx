@@ -27,8 +27,8 @@ const NON_DTC_EVENT_TYPE_MAP = {
 };
 
 const mapNonDtcEventType = (event) => {
-  const raw = String(event.eventType || event.event_type || '');
-  return event.description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
+  const raw = String(event.eventType || event.event_type || event.Event_Type || event.EventType || '');
+  return event.description || event.Description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
 };
 
 const flattenNonDtcEvents = (data) => {
@@ -438,6 +438,7 @@ const NonDtcAudit = () => {
             { key: 'sourcePath', label: 'Source Path' },
             { key: 'destinationPath', label: 'Destination Path' },
             { key: 'status', label: 'Status' },
+            { key: 'eventType', label: 'Event Type' },
             { key: 'fileName', label: 'Source File Name' },
           ]}
           exportColumns={NON_DTC_COLUMNS}
