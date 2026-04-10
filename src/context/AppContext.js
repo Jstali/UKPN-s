@@ -15,16 +15,6 @@ const MAX_AUDIT_RECORDS = 1000;
 const AUDIT_PAGE_SIZE = 500;
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 
-const buildDatasetSignature = (records) =>
-  JSON.stringify(
-    (records || []).slice(0, MAX_AUDIT_RECORDS).map((item) => ({
-      id: item?.id || item?.File_ID || item?.fileId || '',
-      updatedAt: item?._ts || '',
-      eventCount: Array.isArray(item?.events) ? item.events.length : 0,
-      status: item?.status || item?.Status || '',
-    }))
-  );
-
 const trimRecords = (records) => (Array.isArray(records) ? records.slice(0, MAX_AUDIT_RECORDS) : []);
 
 // Fetch one page from a given API endpoint
@@ -51,8 +41,6 @@ export const AppProvider = ({ children }) => {
   const refreshTimerRef = useRef(null);
   const mountedRef = useRef(false);
   const queuedFetchOptionsRef = useRef(null);
-  const auditSignatureRef = useRef('');
-  const nonDtcSignatureRef = useRef('');
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
@@ -63,19 +51,6 @@ export const AppProvider = ({ children }) => {
     } catch {
       sessionStorage.removeItem('user');
     }
-  }, []);
-
-  const commitDatasetIfChanged = useCallback((setState, signatureRef, records) => {
-    const trimmedRecords = trimRecords(records);
-    const nextSignature = buildDatasetSignature(trimmedRecords);
-
-    if (nextSignature === signatureRef.current) {
-      return false;
-    }
-
-    signatureRef.current = nextSignature;
-    setState(trimmedRecords);
-    return true;
   }, []);
 
   const fetchAllData = useCallback(async (options = {}) => {
@@ -110,8 +85,8 @@ export const AppProvider = ({ children }) => {
       setNonDtcFetchError(nonDtcFirst?.error || null);
 
       // Show first page immediately — clears the loading spinner
-      commitDatasetIfChanged(setAuditData, auditSignatureRef, dtcRecords);
-      commitDatasetIfChanged(setNonDtcAuditData, nonDtcSignatureRef, nonDtcRecords);
+      setAuditData(trimRecords(dtcRecords));
+      setNonDtcAuditData(trimRecords(nonDtcRecords));
       setLoading(false);
 
       // ── Step 2: Fetch remaining pages in background (both in parallel) ──────
@@ -156,8 +131,8 @@ export const AppProvider = ({ children }) => {
         }
 
         // Update state as more data arrives
-        if (dtcUpdated) commitDatasetIfChanged(setAuditData, auditSignatureRef, dtcRecords);
-        if (nonDtcUpdated) commitDatasetIfChanged(setNonDtcAuditData, nonDtcSignatureRef, nonDtcRecords);
+        if (dtcUpdated) setAuditData(trimRecords(dtcRecords));
+        if (nonDtcUpdated) setNonDtcAuditData(trimRecords(nonDtcRecords));
       }
 
       setDataComplete(true);
@@ -180,7 +155,7 @@ export const AppProvider = ({ children }) => {
         fetchAllData(queuedOptions);
       }
     }
-  }, [commitDatasetIfChanged]);
+  }, []);
 
   useEffect(() => {
     if (mountedRef.current) {
@@ -253,8 +228,6 @@ export const AppProvider = ({ children }) => {
     setAuditData([]);
     setNonDtcAuditData([]);
     setSubscriptionData([]);
-    auditSignatureRef.current = '';
-    nonDtcSignatureRef.current = '';
 
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
