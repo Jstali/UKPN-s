@@ -43,7 +43,7 @@ const mapItem = (item) => ({
   subscription: item.subscription || '',
   status: item.status || '',
   timestamp: item.timestamp || '',
-  eventType: item.events?.[0]?.eventType || item.eventType || '',
+  eventType: mapNonDtcEventType({ eventType: item.events?.[0]?.eventType || item.eventType }),
   changeFeedStatus: item.changeFeedStatus || '',
   requestStatus: item.requestStatus || '',
   processedTime: item.processedTime || '',
