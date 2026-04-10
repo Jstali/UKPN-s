@@ -528,11 +528,11 @@ const DataTable = ({
     const blobFileName = row.Blob_File_Name || row.blobFileName || row.blob_file_name || '';
     const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
     const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
-    // Direct path from event Destination_Path field (used when blob archive fields are absent)
+    // Direct path: for Non-DTC use destination path as-is (UNC paths pass through to the API);
+    // for DTC filter out UNC/filesystem paths since only blob paths are valid there.
     const rawDestPath = row._blobPath || row.destinationPath || row.Destination_Path || row.destination_path || '';
-    // Exclude UNC (//server or \\server) and absolute filesystem paths — those are not blob paths
     const isValidBlobPath = (p) => { const s = String(p || '').trim(); return s.length > 0 && !s.startsWith('//') && !s.startsWith('\\\\') && !s.startsWith('/'); };
-    const destinationPath = isValidBlobPath(rawDestPath) ? rawDestPath : '';
+    const destinationPath = isNonDtc ? String(rawDestPath || '').trim() : (isValidBlobPath(rawDestPath) ? rawDestPath : '');
 
     const joinPath = (base, name) => {
       const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
@@ -544,8 +544,8 @@ const DataTable = ({
     const toForwardSlashes = (value) => String(value || '').replace(/\\/g, '/').trim();
     const isArchivePath = (value) => /^DTC_File\/Archive\//i.test(toForwardSlashes(value));
 
-    // Archive-based candidates (require the DTC_File/Archive/ prefix)
-    const archiveCandidates = [
+    // Archive-based candidates (require the DTC_File/Archive/ prefix) — DTC only
+    const archiveCandidates = isNonDtc ? [] : [
       blobFileName,
       joinPath(blobArchiveLocation, sourceFileName),
       joinPath(blobArchiveLocation, destinationFileName),
@@ -553,8 +553,8 @@ const DataTable = ({
       joinPath(blobLocation, destinationFileName),
     ].map(toForwardSlashes).filter(Boolean).filter(isArchivePath);
 
-    // Direct destination path from event data — accepted as-is without archive restriction
-    const directCandidates = [destinationPath].map(toForwardSlashes).filter(Boolean);
+    // Direct destination path — for Non-DTC this is the primary path sent to the view API
+    const directCandidates = [destinationPath].filter(Boolean);
 
     const allCandidates = [...archiveCandidates, ...directCandidates];
     return allCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
