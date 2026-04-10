@@ -99,7 +99,8 @@ const flattenNonDtcEvents = (data) => {
     const events = item.events && item.events.length > 0 ? item.events : [{}];
     const fileName = item.sourceFileName || '';
     const fileType = fileName ? fileName.split('.').pop().toUpperCase() : '-';
-    const blobPath = getNonDtcBlobPath(item);
+    // blobArchiveLocation is the top-level blob storage path for the file
+    const blobPath = item.blobArchiveLocation || getNonDtcBlobPath(item);
     const displayDestPath = getNonDtcDisplayDestPath(item);
 
     // Extract blob archive fields from top-level item (same fields DTC uses)
@@ -525,17 +526,6 @@ const NonDtcAudit = () => {
           defaultSort={{ key: 'startDate', direction: 'desc' }}
           isNonDtc={true}
           defaultPageSize={50}
-          onPreview={(row) => {
-            const name = (row.fileName && row.fileName !== '-' ? row.fileName : row.fileId || 'non_dtc_record') + '.json';
-            return { fileName: name, fileContent: JSON.stringify(row.rawData, null, 2) };
-          }}
-          onDownload={(row) => {
-            const name = (row.fileName && row.fileName !== '-' ? row.fileName : row.fileId || 'non_dtc_record') + '.json';
-            const blob = new Blob([JSON.stringify(row.rawData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
-          }}
           exportConfig={{
             filename: 'Non_DTC_Audit_Export',
             pdfOptions: {
