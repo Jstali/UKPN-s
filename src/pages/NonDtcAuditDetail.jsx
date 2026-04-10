@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
+import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
+import { useApp } from '../context/AppContext';
 
 const NON_DTC_EVENT_TYPE_MAP = {
   '1': 'File Pickup from Source',
@@ -10,11 +15,6 @@ const mapNonDtcEventType = (event) => {
   const raw = String(event.eventType || event.event_type || '');
   return event.description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
 };
-import { motion } from 'framer-motion';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
-import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
-import { useApp } from '../context/AppContext';
 
 const ALL_COLUMNS = [
   { key: 'fileId', label: 'File ID' },
