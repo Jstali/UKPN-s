@@ -217,7 +217,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, onApply }) => {
+const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
   const [dateError, setDateError] = React.useState('');
 
   // Validate date range
@@ -253,7 +253,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
   const uniqueValues = useMemo(() => {
     if (!auditData || auditData.length === 0) {
       return {
-        sourceApplication: [],
+        sourceApplication: subscriptionAppNames.length ? [...subscriptionAppNames].sort() : [],
         destinationApplication: [],
         eventType: [],
         flow: [],
@@ -267,7 +267,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     }
 
     const values = {
-      sourceApplication: new Set(),
+      sourceApplication: new Set(subscriptionAppNames),
       destinationApplication: new Set(),
       eventType: new Set(),
       flow: new Set(),
@@ -328,7 +328,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], onFilterChange, onReset, o
     return Object.fromEntries(
       Object.entries(values).map(([key, set]) => [key, Array.from(set).sort()])
     );
-  }, [auditData]);
+  }, [auditData, subscriptionAppNames]);
 
   // Reordered fields based on priority
   const orderedFields = [

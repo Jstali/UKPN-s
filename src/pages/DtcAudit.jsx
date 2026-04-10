@@ -284,7 +284,11 @@ const CRITERIA_FIELDS = [
 ];
 
 const DtcAudit = () => {
-  const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading } = useApp();
+  const { user, autoRefresh, setAutoRefresh, auditData: globalAuditData, loading: globalLoading, subscriptionData } = useApp();
+  const subscriptionAppNames = useMemo(
+    () => [...new Set((subscriptionData || []).map(app => app.Application || app.application || app.filterId || app.id).filter(Boolean))].sort(),
+    [subscriptionData]
+  );
   const location = useLocation();
   const navigate = useNavigate();
   const [hasQueried, setHasQueried] = useState(false);
@@ -521,6 +525,7 @@ const DtcAudit = () => {
             <DtcFilterDropdown
               filters={filters}
               auditData={globalAuditData}
+              subscriptionAppNames={subscriptionAppNames}
               onFilterChange={handleFilterChange}
               onReset={handleReset}
               onApply={() => handleQuery()}

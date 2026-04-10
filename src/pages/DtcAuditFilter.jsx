@@ -347,7 +347,11 @@ const DtcAuditFilter = () => {
     msgId: '',
   };
 
-  const { auditData, loading } = useApp();
+  const { auditData, loading, subscriptionData } = useApp();
+  const subscriptionAppNames = useMemo(
+    () => [...new Set((subscriptionData || []).map(app => app.Application || app.application || app.filterId || app.id).filter(Boolean))].sort(),
+    [subscriptionData]
+  );
   const [filters, setFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
   const [hasQueried, setHasQueried] = useState(true);
@@ -638,6 +642,7 @@ const DtcAuditFilter = () => {
       <DtcFilterDropdown
         filters={dropdownFilters}
         auditData={auditData}
+        subscriptionAppNames={subscriptionAppNames}
         onFilterChange={handleDropdownFilterChange}
         onReset={handleReset}
         onApply={handleDropdownApply}
