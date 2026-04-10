@@ -8,12 +8,9 @@ import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
-const NON_DTC_DEFAULT_COLUMNS = [
-  ...DEFAULT_COLUMNS_FULL.filter(
-    ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
-  ),
-  { key: 'fileType', label: 'File Type' }
-];
+const NON_DTC_DEFAULT_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
+  ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
+);
 
 const formatDateTimeCell = (timestamp) => {
   if (!timestamp) return '-';
@@ -54,8 +51,9 @@ const flattenNonDtcEvents = (data) => {
         toMPID: item.toMPID || '-',
         sourceApplication: item.sourceAppName || '-',
         application: event.applicationName || item.destinationApplication || item.subscription || '-',
-        fileName: fileName || '-',
+        status: event.status || item.status || '',
         fileType: fileType,
+        fileName: fileName || '-',
         sourceApp: item.sourceAppName || item.subscription || '-',
         sourceFile: fileName || '',
         subscription: item.subscription || '',
@@ -64,7 +62,6 @@ const flattenNonDtcEvents = (data) => {
         eventType: mapNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
         startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
         endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB') : '',
-        status: event.status || item.status || '',
         rawData: item,
       });
     });
