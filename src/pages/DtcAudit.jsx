@@ -26,6 +26,7 @@ const EVENT_TYPE_MAP = {
   '4': 'Delivered',
   '21': 'Invalid Flow',
   '22': 'File Transferred',
+  '32': 'File Processed',
   'Failed': 'Failed'
 };
 
@@ -101,7 +102,7 @@ const flattenAuditEvents = (data) => {
           flowVersion: formattedFlowVersion,
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
-          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+          fileId: item.id || pickId(item.File_ID, item.fileId, item.file_id, item.correlationId),
           fromRole: resolvedFromRole,
           fromMPID: resolvedFromMPID,
           toRole: resolvedToRole,
@@ -150,7 +151,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           flowVersion: formattedFlowVersion,
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
-          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+          fileId: item.id || pickId(item.File_ID, item.fileId, item.file_id, item.correlationId),
           fromRole: resolvedFromRole,
           fromMPID: resolvedFromMPID,
           toRole: resolvedToRole,

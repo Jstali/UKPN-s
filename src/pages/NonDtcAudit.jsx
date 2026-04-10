@@ -19,33 +19,50 @@ const formatDateTimeCell = (timestamp) => {
   return date.toLocaleString('en-GB');
 };
 
-const mapItem = (item) => ({
-  uniqueId: item.id || '',
-  flow: item.flow || item.sourceAppName || '-',
-  version: item.version || item.subscription || '-',
-  fileId: item.id || '-',
-  timestamp: formatDateTimeCell(item.events?.[0]?.timestamp || item.timestamp || ''),
-  fromRole: item.fromRole || item.rawData?.fromRole || '-',
-  fromMPID: item.fromMPID || item.rawData?.fromMPID || '-',
-  toRole: item.toRole || item.rawData?.toRole || '-',
-  toMPID: item.toMPID || item.rawData?.toMPID || '-',
-  sourceApplication: item.sourceAppName || '-',
-  application: item.destinationApplication || item.subscription || '-',
-  fileName: item.sourceFileName || '-',
-  sourceApp: item.sourceAppName || item.subscription || '-',
-  sourceFile: item.sourceFileName || '',
-  subscription: item.subscription || '',
-  sourcePath: item.sourcePath || '',
-  eventType: item.events?.[0]?.eventType || '',
-  startDate: item.events?.[0]?.timestamp
-    ? new Date(item.events[0].timestamp).toLocaleString('en-GB')
-    : '',
-  endDate: item.events?.[item.events.length - 1]?.timestamp
-    ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB')
-    : '',
-  status: item.status || '',
-  rawData: item,
-});
+const NON_DTC_EVENT_TYPE_MAP = {
+  '1': 'File Pickup from Source',
+  '2': 'File Stored To Blob',
+  '3': 'File Subscribe',
+  '4': 'File Delivered',
+};
+
+const mapNonDtcEventType = (event) => {
+  const raw = String(event.eventType || event.event_type || '');
+  return event.description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
+};
+
+const flattenNonDtcEvents = (data) => {
+  const flatData = [];
+  (data || []).forEach(item => {
+    const events = item.events && item.events.length > 0 ? item.events : [{}];
+    events.forEach(event => {
+      flatData.push({
+        uniqueId: item.id || '',
+        flow: item.flow || item.sourceAppName || '-',
+        version: item.version || item.subscription || '-',
+        fileId: item.id || '-',
+        timestamp: formatDateTimeCell(event.timestamp || item.timestamp || ''),
+        fromRole: item.fromRole || '-',
+        fromMPID: item.fromMPID || '-',
+        toRole: item.toRole || '-',
+        toMPID: item.toMPID || '-',
+        sourceApplication: item.sourceAppName || '-',
+        application: event.applicationName || item.destinationApplication || item.subscription || '-',
+        fileName: item.sourceFileName || '-',
+        sourceApp: item.sourceAppName || item.subscription || '-',
+        sourceFile: item.sourceFileName || '',
+        subscription: item.subscription || '',
+        sourcePath: item.sourcePath || '',
+        eventType: mapNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
+        startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
+        endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB') : '',
+        status: event.status || item.status || '',
+        rawData: item,
+      });
+    });
+  });
+  return flatData;
+};
 
 const matchesMultiSelect = (selectedValue, actualValue) => {
   if (!selectedValue || selectedValue === 'All') return true;
@@ -72,7 +89,7 @@ const NonDtcAudit = () => {
   const [appliedFilters, setAppliedFilters] = useState(filters);
   const [hasQueried, setHasQueried] = useState(false);
 
-  const auditData = useMemo(() => (nonDtcAuditData || []).map(mapItem), [nonDtcAuditData]);
+  const auditData = useMemo(() => flattenNonDtcEvents(nonDtcAuditData || []), [nonDtcAuditData]);
 
   const filteredData = useMemo(() => {
     let result = [...auditData];

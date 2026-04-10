@@ -1,4 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
+
+const NON_DTC_EVENT_TYPE_MAP = {
+  '1': 'File Pickup from Source',
+  '2': 'File Stored To Blob',
+  '3': 'File Subscribe',
+  '4': 'File Delivered',
+};
+const mapNonDtcEventType = (event) => {
+  const raw = String(event.eventType || event.event_type || '');
+  return event.description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
+};
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
@@ -172,7 +183,6 @@ const NonDtcAuditDetail = () => {
       { label: 'Subscription', value: raw.subscription },
       { label: 'Status', value: raw.status || selectedRecord.status },
       { label: 'Timestamp', value: raw.timestamp || selectedRecord.timestamp },
-      { label: 'Event Type', value: raw.eventType || selectedRecord.eventType },
       { label: 'Change Feed Status', value: raw.changeFeedStatus },
       { label: 'Request Status', value: raw.requestStatus },
       { label: 'Processed Time', value: raw.processedTime },
@@ -304,6 +314,47 @@ const NonDtcAuditDetail = () => {
                 ))}
               </div>
             </div>
+
+            {raw.events && raw.events.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Events ({raw.events.length})
+                </h3>
+                <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr>
+                        {['#', 'Event Type', 'Status', 'Timestamp', 'Application', 'Processed'].map(col => (
+                          <th key={col} style={{ padding: '8px 14px', background: '#27187e', color: '#fff', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left', whiteSpace: 'nowrap' }}>
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {raw.events.map((event, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafbff' }}>
+                          <td style={{ padding: '8px 14px', color: '#94a3b8', fontWeight: 600 }}>{idx + 1}</td>
+                          <td style={{ padding: '8px 14px' }}>{formatValue(mapNonDtcEventType(event))}</td>
+                          <td style={{ padding: '8px 14px' }}>
+                            <span style={{
+                              padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
+                              background: (event.status || '').toLowerCase() === 'success' ? '#dcfce7' : (event.status || '').toLowerCase().includes('fail') ? '#fef2f2' : '#f1f5f9',
+                              color: (event.status || '').toLowerCase() === 'success' ? '#16a34a' : (event.status || '').toLowerCase().includes('fail') ? '#dc2626' : '#475569',
+                            }}>
+                              {formatValue(event.status)}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}>{event.timestamp ? new Date(event.timestamp).toLocaleString('en-GB') : '-'}</td>
+                          <td style={{ padding: '8px 14px' }}>{formatValue(event.applicationName)}</td>
+                          <td style={{ padding: '8px 14px' }}>{event.processed !== undefined ? String(event.processed) : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

@@ -460,7 +460,7 @@ const DtcAuditFilter = () => {
           const flowVersionParts = formattedFlowVersion.split(' ');
           results.push({
             id: item.id,
-            fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+            fileId: item.id || pickId(item.File_ID, item.fileId, item.file_id, item.correlationId),
             fileName,
             sourcePath: item.Source_Path || item.source_path || item.SourcePath || '',
             headerString: headerStr,
