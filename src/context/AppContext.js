@@ -210,12 +210,15 @@ export const AppProvider = ({ children }) => {
     const hasCachedData = readCache(DTC_CACHE_KEY).length > 0;
     fetchAllData({ silent: hasCachedData });
 
+    // Pre-fetch subscriptions so app names are available everywhere on load
+    fetchSubscriptions();
+
     return () => {
       if (activeControllerRef.current) {
         activeControllerRef.current.abort();
       }
     };
-  }, [fetchAllData]);
+  }, [fetchAllData, fetchSubscriptions]);
 
   useEffect(() => {
     if (refreshTimerRef.current) {
