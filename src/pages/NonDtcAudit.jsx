@@ -8,9 +8,12 @@ import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 
-const NON_DTC_DEFAULT_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
-  ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
-);
+const NON_DTC_DEFAULT_COLUMNS = [
+  ...DEFAULT_COLUMNS_FULL.filter(
+    ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
+  ),
+  { key: 'fileType', label: 'File Type' }
+];
 
 const formatDateTimeCell = (timestamp) => {
   if (!timestamp) return '-';
@@ -35,6 +38,9 @@ const flattenNonDtcEvents = (data) => {
   const flatData = [];
   (data || []).forEach(item => {
     const events = item.events && item.events.length > 0 ? item.events : [{}];
+    const fileName = item.sourceFileName || '';
+    const fileType = fileName ? fileName.split('.').pop().toUpperCase() : '-';
+    
     events.forEach(event => {
       flatData.push({
         uniqueId: item.id || '',
@@ -48,9 +54,10 @@ const flattenNonDtcEvents = (data) => {
         toMPID: item.toMPID || '-',
         sourceApplication: item.sourceAppName || '-',
         application: event.applicationName || item.destinationApplication || item.subscription || '-',
-        fileName: item.sourceFileName || '-',
+        fileName: fileName || '-',
+        fileType: fileType,
         sourceApp: item.sourceAppName || item.subscription || '-',
-        sourceFile: item.sourceFileName || '',
+        sourceFile: fileName || '',
         subscription: item.subscription || '',
         sourcePath: item.sourcePath || '',
         destinationPath: event.destinationPath || event.Destination_Path || item.destinationPath || '',
