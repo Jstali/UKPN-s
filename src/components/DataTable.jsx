@@ -212,6 +212,7 @@ const DataTable = ({
   compactColumns,
   exportColumns,
   onDownload,
+  onPreview,
   exportConfig,
   onViewDetail,
   hideViewDetail = false,
@@ -549,19 +550,14 @@ const DataTable = ({
       joinPath(blobLocation, destinationFileName),
     ].map(toForwardSlashes).filter(Boolean).filter(p => isNonDtc ? true : isDtcArchivePath(p));
 
-    // For Non-DTC: use file ID as the primary identifier for both preview and download APIs
-    const nonDtcFileId = isNonDtc ? String(row.fileId || row.uniqueId || row.File_ID || row.id || '').trim() : '';
-
     // _blobPath is the blob storage path extracted from event type 2 — only valid for API calls
     const blobPathDirect = row._blobPath ? String(row._blobPath).trim() : '';
     // For DTC, also try destinationPath if it's a valid blob path (not UNC)
     const rawDestPath = row.destinationPath || row.Destination_Path || row.destination_path || '';
     const destinationPath = isNonDtc ? '' : (isValidBlobPath(rawDestPath) ? rawDestPath : '');
 
-    // Direct candidates: for Non-DTC file ID is primary; blob paths are secondary fallback
-    const directCandidates = isNonDtc
-      ? [nonDtcFileId, blobPathDirect].map(v => String(v || '').trim()).filter(Boolean)
-      : [blobPathDirect, destinationPath].map(v => String(v || '').trim()).filter(v => v && isValidBlobPath(v));
+    // Direct candidates: blob paths only — UNC/filesystem paths are excluded
+    const directCandidates = [blobPathDirect, destinationPath].map(v => String(v || '').trim()).filter(v => v && isValidBlobPath(v));
 
     const allCandidates = [...archiveCandidates, ...directCandidates];
     return allCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
@@ -576,6 +572,11 @@ const DataTable = ({
   };
 
   const handleViewFile = async (row) => {
+    if (typeof onPreview === 'function') {
+      const result = onPreview(row);
+      setFileViewModal({ show: true, fileName: result.fileName || 'record.json', fileContent: result.fileContent || '', loading: false, error: null, fileId: row.fileId || row.File_ID });
+      return;
+    }
     const fallbackFileName = row.fileName || row.Source_FileName || 'file.txt';
     const candidatePaths = getArchivePathCandidates(row);
     const previewCacheKey = getPreviewCacheKey(row, candidatePaths);
@@ -720,6 +721,7 @@ const DataTable = ({
   };
 
   const hasArchiveDownloadPath = (row) => {
+    if (typeof onPreview === 'function' || typeof onDownload === 'function') return true;
     return getArchivePathCandidates(row).length > 0;
   };
 
