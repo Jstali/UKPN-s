@@ -65,6 +65,30 @@ const getNonDtcBlobPath = (item) => {
   return '';
 };
 
+// All possible field names that could hold a destination path (for display — no blob filter)
+const DEST_PATH_FIELDS = [
+  'destinationPath', 'Destination_Path', 'destination_path',
+  'destinationContent', 'DestinationContent', 'destination_content',
+  'destPath', 'DestPath', 'dest_path',
+  'targetPath', 'TargetPath', 'target_path',
+  'outputPath', 'OutputPath', 'output_path',
+];
+
+const getNonDtcDisplayDestPath = (item) => {
+  const events = item.events || [];
+  // Search events in reverse priority order: prefer later events (delivery events have destination)
+  for (const e of [...events].reverse()) {
+    for (const f of DEST_PATH_FIELDS) {
+      if (e[f] && String(e[f]).trim()) return String(e[f]).trim();
+    }
+  }
+  // Fall back to top-level item fields
+  for (const f of DEST_PATH_FIELDS) {
+    if (item[f] && String(item[f]).trim()) return String(item[f]).trim();
+  }
+  return '';
+};
+
 const flattenNonDtcEvents = (data) => {
   const flatData = [];
   (data || []).forEach(item => {
@@ -72,6 +96,7 @@ const flattenNonDtcEvents = (data) => {
     const fileName = item.sourceFileName || '';
     const fileType = fileName ? fileName.split('.').pop().toUpperCase() : '-';
     const blobPath = getNonDtcBlobPath(item);
+    const displayDestPath = getNonDtcDisplayDestPath(item);
 
     events.forEach(event => {
       flatData.push({
@@ -93,7 +118,8 @@ const flattenNonDtcEvents = (data) => {
         sourceFile: fileName || '',
         subscription: item.subscription || '',
         sourcePath: item.sourcePath || '',
-        destinationPath: blobPath,
+        destinationPath: displayDestPath,
+        _blobPath: blobPath,
         eventType: mapNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
         startDate: item.events?.[0]?.timestamp ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
         endDate: item.events?.[item.events.length - 1]?.timestamp ? new Date(item.events[item.events.length - 1].timestamp).toLocaleString('en-GB') : '',

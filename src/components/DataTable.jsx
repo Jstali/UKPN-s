@@ -529,7 +529,10 @@ const DataTable = ({
     const blobArchiveLocation = row.Blob_Archive_Link_Location || row.blobArchiveLinkLocation || row.blob_archive_link_location || '';
     const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
     // Direct path from event Destination_Path field (used when blob archive fields are absent)
-    const destinationPath = row.destinationPath || row.Destination_Path || row.destination_path || '';
+    const rawDestPath = row._blobPath || row.destinationPath || row.Destination_Path || row.destination_path || '';
+    // Exclude UNC (//server or \\server) and absolute filesystem paths — those are not blob paths
+    const isValidBlobPath = (p) => { const s = String(p || '').trim(); return s.length > 0 && !s.startsWith('//') && !s.startsWith('\\\\') && !s.startsWith('/'); };
+    const destinationPath = isValidBlobPath(rawDestPath) ? rawDestPath : '';
 
     const joinPath = (base, name) => {
       const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
