@@ -493,10 +493,6 @@ const Home = () => {
             />
             <ApplicationStatusSection
               dashboardUpdatedAt={dashboardUpdatedAt}
-              loading={loading}
-              fetchError={fetchError}
-              nonDtcFetchError={nonDtcFetchError}
-              hasAuditData={auditData.length > 0 || nonDtcAuditData.length > 0}
             />
           </div>
           <div className="dashboard-col-right">

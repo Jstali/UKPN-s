@@ -7,6 +7,7 @@ const VIEW_FILE_API = `${API_HOST}/api/fileConnectViewBlobFile`;
 
 const DTC_AUDIT_API = `${API_HOST}/api/fileconnectDtcAuditData?code=${DTC_API_CODE}`;
 const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON_DTC_API_CODE}`;
+const APP_STATUS_API = `${API_HOST}/api/fileconnectApplicationStatus?code=REDACTED_APP_STATUS_API_CODE=`;
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
@@ -391,6 +392,18 @@ const api = {
   async health() {
     const res = await fetch(`${API_BASE}/api/health`);
     return handleResponse(res);
+  },
+
+  // Application status from Azure
+  async fetchApplicationStatus() {
+    try {
+      const res = await fetch(APP_STATUS_API, { method: 'GET' });
+      if (!res.ok) throw new Error(`Application status API error: ${res.status}`);
+      return await res.json();
+    } catch (error) {
+      console.error('❌ Application Status API Error:', error.message);
+      return null;
+    }
   },
 };
 

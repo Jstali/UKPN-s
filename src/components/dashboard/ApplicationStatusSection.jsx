@@ -1,109 +1,50 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Activity } from 'lucide-react';
+import api from '../../utils/api';
 
-const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
-const STALE_CHECK_INTERVAL_MS = 30 * 1000; // check every 30 seconds
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-const ApplicationStatusSection = ({
-  dashboardUpdatedAt,
-  loading = false,
-  fetchError = null,
-  nonDtcFetchError = null,
-  hasAuditData = false,
-}) => {
+const COLOR_MAP = {
+  green:  { dot: '#22c55e', label: '#16a34a', shadow: '0 0 0 3px rgba(34, 197, 94, 0.2), 0 0 8px rgba(34, 197, 94, 0.3)',  cardBg: null,      cardBorder: null },
+  yellow: { dot: '#f59e0b', label: '#d97706', shadow: '0 0 0 3px rgba(245, 158, 11, 0.2), 0 0 8px rgba(245, 158, 11, 0.3)', cardBg: null,      cardBorder: null },
+  red:    { dot: '#ef4444', label: '#dc2626', shadow: '0 0 0 3px rgba(239, 68, 68, 0.2), 0 0 8px rgba(239, 68, 68, 0.3)',   cardBg: '#fef2f2', cardBorder: '1.5px solid #ffffff' },
+};
+
+const LOADING_CONFIG = {
+  dot: '#94a3b8', label: '#475569',
+  shadow: '0 0 0 3px rgba(148, 163, 184, 0.2), 0 0 8px rgba(148, 163, 184, 0.3)',
+  cardBg: null, cardBorder: null,
+};
+
+const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
   const [hasAnimated, setHasAnimated] = React.useState(false);
-  const [isStale, setIsStale] = React.useState(false);
-  const lastUpdateRef = React.useRef(Date.now());
+  const [status, setStatus] = React.useState(null); // raw API response
+  const [fetchLoading, setFetchLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    setHasAnimated(true);
+  React.useEffect(() => { setHasAnimated(true); }, []);
+
+  const loadStatus = React.useCallback(async () => {
+    const data = await api.fetchApplicationStatus();
+    setStatus(data);
+    setFetchLoading(false);
   }, []);
 
-  // Reset the stale clock whenever data refreshes
+  // Initial fetch + 5-minute poll
   React.useEffect(() => {
-    lastUpdateRef.current = Date.now();
-    setIsStale(false);
-  }, [dashboardUpdatedAt]);
-
-  // Check every 30 seconds if it has been more than 5 minutes
-  React.useEffect(() => {
-    const tick = () => {
-      const elapsed = Date.now() - lastUpdateRef.current;
-      setIsStale(elapsed > STALE_THRESHOLD_MS);
-    };
-    const interval = setInterval(tick, STALE_CHECK_INTERVAL_MS);
+    loadStatus();
+    const interval = setInterval(loadStatus, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadStatus]);
 
-  const hasDtcError = Boolean(fetchError);
-  const hasNonDtcError = Boolean(nonDtcFetchError);
-  const hasAnyError = hasDtcError || hasNonDtcError;
+  const colors = React.useMemo(() => {
+    if (fetchLoading || !status) return LOADING_CONFIG;
+    return COLOR_MAP[status.overallColor] || COLOR_MAP.yellow;
+  }, [fetchLoading, status]);
 
-  const statusConfig = React.useMemo(() => {
-    if (loading && !hasAuditData) {
-      return {
-        label: 'Checking systems',
-        state: 'Loading',
-        stateColor: '#475569',
-        dotColor: '#94a3b8',
-        dotShadow: '0 0 0 3px rgba(148, 163, 184, 0.2), 0 0 8px rgba(148, 163, 184, 0.3)',
-        cardBg: null,
-        cardBorder: null,
-      };
-    }
-
-    if (hasAnyError && !hasAuditData) {
-      return {
-        label: 'Audit APIs unavailable',
-        state: 'Unavailable',
-        stateColor: '#dc2626',
-        dotColor: '#ef4444',
-        dotShadow: '0 0 0 3px rgba(239, 68, 68, 0.2), 0 0 8px rgba(239, 68, 68, 0.3)',
-        cardBg: '#fef2f2',
-        cardBorder: '1.5px solid #ffffff',
-      };
-    }
-
-    if (hasAnyError) {
-      const degradedParts = [
-        hasDtcError ? 'DTC' : null,
-        hasNonDtcError ? 'Non-DTC' : null,
-      ].filter(Boolean);
-
-      return {
-        label: `${degradedParts.join(' + ')} API issue detected`,
-        state: 'Degraded',
-        stateColor: '#d97706',
-        dotColor: '#f59e0b',
-        dotShadow: '0 0 0 3px rgba(245, 158, 11, 0.2), 0 0 8px rgba(245, 158, 11, 0.3)',
-        cardBg: null,
-        cardBorder: null,
-      };
-    }
-
-    if (isStale) {
-      return {
-        label: 'No data update in 5+ minutes',
-        state: 'Unhealthy',
-        stateColor: '#dc2626',
-        dotColor: '#ef4444',
-        dotShadow: '0 0 0 3px rgba(239, 68, 68, 0.2), 0 0 8px rgba(239, 68, 68, 0.3)',
-        cardBg: '#fef2f2',
-        cardBorder: '1.5px solid #ffffff',
-      };
-    }
-
-    return {
-      label: 'All Systems Operational',
-      state: 'Healthy',
-      stateColor: '#16a34a',
-      dotColor: '#22c55e',
-      dotShadow: '0 0 0 3px rgba(34, 197, 94, 0.2), 0 0 8px rgba(34, 197, 94, 0.3)',
-      cardBg: null,
-      cardBorder: null,
-    };
-  }, [loading, hasAuditData, hasAnyError, hasDtcError, hasNonDtcError, isStale]);
+  const headline  = fetchLoading || !status ? 'Checking systems...' : (status.headline || status.summary || 'Status unknown');
+  const badgeText = fetchLoading || !status ? 'Loading'            : (status.badgeText || status.overallStatus || '—');
+  const updatedLabel = status?.updatedTimeLabel || `Updated: ${dashboardUpdatedAt}`;
 
   return (
     <motion.div
@@ -112,8 +53,8 @@ const ApplicationStatusSection = ({
       transition={{ delay: 0.4 }}
       className="dashboard-section-card"
       style={{
-        ...(statusConfig.cardBg ? { background: statusConfig.cardBg } : {}),
-        ...(statusConfig.cardBorder ? { border: statusConfig.cardBorder } : {}),
+        ...(colors.cardBg     ? { background: colors.cardBg }    : {}),
+        ...(colors.cardBorder ? { border: colors.cardBorder }     : {}),
       }}
     >
       {/* Header */}
@@ -122,25 +63,21 @@ const ApplicationStatusSection = ({
           <Activity size={16} color="#667eea" />
           <h3 className="dashboard-section-title">Application Status</h3>
         </div>
-        <span className="dashboard-section-meta">
-          Updated: {dashboardUpdatedAt}
-        </span>
+        <span className="dashboard-section-meta">{updatedLabel}</span>
       </div>
 
-      {/* Compact overall status */}
+      {/* Status row */}
       <div style={{ padding: '12px 16px 14px' }}>
         <div className="app-status-summary">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="dashboard-pulse-dot" style={{
-              width: '12px', height: '12px', background: statusConfig.dotColor,
-              boxShadow: statusConfig.dotShadow,
-            }} />
-            <div>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{statusConfig.label}</span>
-            </div>
+            <div
+              className="dashboard-pulse-dot"
+              style={{ width: '12px', height: '12px', background: colors.dot, boxShadow: colors.shadow }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{headline}</span>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: statusConfig.stateColor }}>{statusConfig.state}</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: colors.label }}>{badgeText}</span>
           </div>
         </div>
       </div>
