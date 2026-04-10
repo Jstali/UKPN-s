@@ -225,12 +225,12 @@ const NonDtcAudit = () => {
         <div className="dtc-header-actions" style={{ marginLeft: 'auto' }}>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <BarChart3 size={13} color="#6366f1" />
-            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Records</span>
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Events</span>
             <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{auditData.length.toLocaleString()}</span>
           </div>
           <div className="dtc-kpi-chip" style={{ padding: '6px 12px', fontSize: '13px' }}>
             <Activity size={13} color="#0ea5e9" />
-            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Apps</span>
+            <span className="dtc-kpi-label" style={{ fontSize: '13px' }}>Flow</span>
             <span className="dtc-kpi-value" style={{ fontSize: '14px' }}>{uniqueFlows}</span>
           </div>
           {hasQueried && (
