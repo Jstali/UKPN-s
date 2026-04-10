@@ -529,6 +529,8 @@ const DataTable = ({
     const blobLocation = row.Blob_Location || row.blobLocation || row.blob_location || '';
     // Direct path from event Destination_Path field (used when blob archive fields are absent)
     const destinationPath = row.destinationPath || row.Destination_Path || row.destination_path || '';
+    // Source path — used by Non-DTC records
+    const sourcePath = row.sourcePath || row.Source_Path || row.source_path || '';
 
     const joinPath = (base, name) => {
       const cleanBase = String(base || '').trim().replace(/[\\/]+$/, '');
@@ -549,8 +551,8 @@ const DataTable = ({
       joinPath(blobLocation, destinationFileName),
     ].map(toForwardSlashes).filter(Boolean).filter(isArchivePath);
 
-    // Direct destination path from event data — accepted as-is without archive restriction
-    const directCandidates = [destinationPath].map(toForwardSlashes).filter(Boolean);
+    // Direct paths — accepted as-is without archive restriction (covers Non-DTC sourcePath)
+    const directCandidates = [sourcePath, destinationPath].map(toForwardSlashes).filter(Boolean);
 
     const allCandidates = [...archiveCandidates, ...directCandidates];
     return allCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
