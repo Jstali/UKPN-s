@@ -549,14 +549,14 @@ const DataTable = ({
       joinPath(blobLocation, destinationFileName),
     ].map(toForwardSlashes).filter(Boolean).filter(p => isNonDtc ? true : isDtcArchivePath(p));
 
-    // _blobPath is the highest-priority direct path (blob storage path extracted from event type 2)
+    // _blobPath is the blob storage path extracted from event type 2 — only valid for API calls
     const blobPathDirect = row._blobPath ? String(row._blobPath).trim() : '';
-    // destinationPath is used as fallback — for Non-DTC allow UNC paths through to the API
+    // For DTC, also try destinationPath if it's a valid blob path (not UNC)
     const rawDestPath = row.destinationPath || row.Destination_Path || row.destination_path || '';
-    const destinationPath = isNonDtc ? String(rawDestPath || '').trim() : (isValidBlobPath(rawDestPath) ? rawDestPath : '');
+    const destinationPath = isNonDtc ? '' : (isValidBlobPath(rawDestPath) ? rawDestPath : '');
 
-    // Direct candidates: _blobPath first (valid blob), then destinationPath
-    const directCandidates = [blobPathDirect, destinationPath].map(v => String(v || '').trim()).filter(Boolean);
+    // Direct candidates: blob paths only — UNC/filesystem paths are excluded
+    const directCandidates = [blobPathDirect, destinationPath].map(v => String(v || '').trim()).filter(v => v && isValidBlobPath(v));
 
     const allCandidates = [...archiveCandidates, ...directCandidates];
     return allCandidates.filter((val, idx, arr) => val && arr.indexOf(val) === idx);
