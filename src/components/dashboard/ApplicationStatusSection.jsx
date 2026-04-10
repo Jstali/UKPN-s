@@ -61,7 +61,7 @@ const ApplicationStatusSection = ({
         dotColor: '#ef4444',
         dotShadow: '0 0 0 3px rgba(239, 68, 68, 0.2), 0 0 8px rgba(239, 68, 68, 0.3)',
         cardBg: '#fef2f2',
-        cardBorder: '1.5px solid #fca5a5',
+        cardBorder: '1.5px solid #ffffff',
       };
     }
 
@@ -90,7 +90,7 @@ const ApplicationStatusSection = ({
         dotColor: '#ef4444',
         dotShadow: '0 0 0 3px rgba(239, 68, 68, 0.2), 0 0 8px rgba(239, 68, 68, 0.3)',
         cardBg: '#fef2f2',
-        cardBorder: '1.5px solid #fca5a5',
+        cardBorder: '1.5px solid #ffffff',
       };
     }
 
