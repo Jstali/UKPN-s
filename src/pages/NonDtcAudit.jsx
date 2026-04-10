@@ -127,6 +127,14 @@ const NonDtcAudit = () => {
 
   const uniqueFlows = [...new Set(filteredData.map(r => r.sourceApp))].filter(Boolean).length;
 
+  // Filter options always computed from full dataset (not filtered subset)
+  const filterOptions = useMemo(() => ({
+    sourceApp:    [...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort(),
+    subscription: [...new Set(auditData.map(r => r.subscription).filter(Boolean))].sort(),
+    status:       [...new Set(auditData.map(r => r.status).filter(Boolean))].sort(),
+    eventType:    [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort(),
+  }), [auditData]);
+
   const eventTypeCounts = useMemo(() => {
     const counts = {};
     filteredData.forEach(row => {
@@ -258,7 +266,7 @@ const NonDtcAudit = () => {
                     <MultiCheckboxDropdown
                       value={filters.sourceApp}
                       onChange={value => setFilters(prev => ({ ...prev, sourceApp: value }))}
-                      options={[...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort()}
+                      options={filterOptions.sourceApp}
                     />
                   </div>
                   <div>
@@ -266,7 +274,7 @@ const NonDtcAudit = () => {
                     <MultiCheckboxDropdown
                       value={filters.subscription}
                       onChange={value => setFilters(prev => ({ ...prev, subscription: value }))}
-                      options={[...new Set(auditData.map(r => r.subscription).filter(Boolean))].sort()}
+                      options={filterOptions.subscription}
                     />
                   </div>
                   <div>
@@ -274,7 +282,7 @@ const NonDtcAudit = () => {
                     <MultiCheckboxDropdown
                       value={filters.status}
                       onChange={value => setFilters(prev => ({ ...prev, status: value }))}
-                      options={[...new Set(auditData.map(r => r.status).filter(Boolean))].sort()}
+                      options={filterOptions.status}
                     />
                   </div>
                   <div>
@@ -282,7 +290,7 @@ const NonDtcAudit = () => {
                     <MultiCheckboxDropdown
                       value={filters.eventType}
                       onChange={value => setFilters(prev => ({ ...prev, eventType: value }))}
-                      options={[...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort()}
+                      options={filterOptions.eventType}
                     />
                   </div>
                 </div>
