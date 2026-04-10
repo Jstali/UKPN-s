@@ -109,9 +109,7 @@ export const AppProvider = ({ children }) => {
     activeControllerRef.current = controller;
     isFetchingRef.current = true;
 
-    // Only show loading spinner if we don't have cached data
-    const hasCachedData = auditData.length > 0 || nonDtcAuditData.length > 0;
-    if (!silent && !hasCachedData) setLoading(true);
+    if (!silent) setLoading(true);
 
     try {
       // ── Step 1: Fetch first page of both APIs in parallel ──────────────────
@@ -199,7 +197,7 @@ export const AppProvider = ({ children }) => {
         fetchAllData(queuedOptions);
       }
     }
-  }, [commitAuditData, commitNonDtcData, auditData.length, nonDtcAuditData.length]);
+  }, [commitAuditData, commitNonDtcData]);
 
   useEffect(() => {
     if (mountedRef.current) {

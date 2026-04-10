@@ -11,25 +11,7 @@ const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
 const AUDIT_API_TIMEOUT_MS = 60000;
-const AUDIT_PAGE_SIZE = 100; // Reduced from 200 for safer queries
-
-// Validate filters to prevent backend 400 errors
-const validateAuditFilters = (filters = {}, options = {}) => {
-  const { includeCount } = options;
-  const { id, fileName, fileId, fromTimestamp, toTimestamp } = filters;
-
-  // Rule 1: includeCount requires id OR time range
-  if (includeCount && !id && (!fromTimestamp || !toTimestamp)) {
-    throw new Error('includeCount requires either an "id" filter or both "fromTimestamp" and "toTimestamp"');
-  }
-
-  // Rule 2: fileName/fileId text search requires time range OR exact filter
-  if ((fileName || fileId) && !id && (!fromTimestamp || !toTimestamp)) {
-    throw new Error('Text search on fileName/fileId requires both "fromTimestamp" and "toTimestamp"');
-  }
-
-  return true;
-};
+const AUDIT_PAGE_SIZE = 200;
 
 const withTimeoutSignal = (externalSignal, timeoutMs = AUDIT_API_TIMEOUT_MS) => {
   const controller = new AbortController();
@@ -70,15 +52,9 @@ const handleResponse = async (res) => {
   return res.json();
 };
 
-export const fetchDtcSubscriptions = async (continuationToken = null, pageSize = 100) => {
+export const fetchDtcSubscriptions = async () => {
   try {
-    const params = new URLSearchParams();
-    params.append('pageSize', pageSize);
-    if (continuationToken) {
-      params.append('continuationToken', continuationToken);
-    }
-
-    const apiUrl = `${API_HOST}/api/dtcSubscriptionAPI?code=${SUBSCROPTION_API}&${params.toString()}`;
+    const apiUrl = `${API_HOST}/api/dtcSubscriptionAPI?code=${SUBSCROPTION_API}`;
 
     const res = await fetch(apiUrl, { method: 'GET' });
 
@@ -89,20 +65,13 @@ export const fetchDtcSubscriptions = async (continuationToken = null, pageSize =
     }
 
     const data = await res.json();
-    const subscriptions = Array.isArray(data?.data) ? data.data : [];
-    console.log(`✅ Subscriptions API: Fetched ${subscriptions.length} subscriptions, hasMore: ${data.hasMore || false}`);
-    
-    return { 
-      data: subscriptions, 
-      continuationToken: data.continuationToken || null,
-      hasMore: data.hasMore || false,
-      pageSize: data.pageSize || pageSize,
-      resultCount: data.resultCount || subscriptions.length,
-      isLocal: false 
-    };
+    const subscriptions = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    console.log(`✅ Subscriptions API: Fetched ${subscriptions.length} subscriptions`);
+    return { data: subscriptions, isLocal: false };
   } catch (error) {
     console.error('❌ Subscription API Error:', error.message);
-    return { data: [], continuationToken: null, hasMore: false, isLocal: false, error: error.message };
+    // Return empty data instead of throwing
+    return { data: [], isLocal: false, error: error.message };
   }
 };
 
@@ -162,20 +131,10 @@ const api = {
   // Fetch performance data from Azure or calculate from audit data
   async fetchPerformanceData() {
     try {
-      // Use last 24 hours time range to avoid broad query
-      const now = new Date();
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      
       let allAuditData = [];
       let token = null;
       do {
-        const response = await this.fetchDtcAuditData(token, 100, {
-          filters: {
-            fromTimestamp: yesterday.toISOString(),
-            toTimestamp: now.toISOString()
-          },
-          includeEvents: true // Need events for performance calculation
-        });
+        const response = await this.fetchDtcAuditData(token, 50);
         allAuditData = [...allAuditData, ...(response.data || [])];
         token = response.continuationToken || null;
       } while (token);
@@ -186,7 +145,7 @@ const api = {
       }
 
       const appStats = new Map();
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000; // last 24 hours
 
       auditData.forEach((item) => {
         const events = Array.isArray(item.events) ? item.events : [];
@@ -199,6 +158,7 @@ const api = {
         const end = new Date(event4.timestamp).getTime();
         if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
 
+        // Only include files received within last 24 hours
         if (start < cutoff) return;
 
         const durationSec = (end - start) / 1000;
@@ -235,45 +195,15 @@ const api = {
     return handleResponse(res);
   },
 
-  // Fetch real audit data from Azure Function App with pagination and filters
-  // 
-  // BACKEND RESTRICTIONS (to prevent 504 timeouts):
-  // 1. includeCount=true requires 'id' filter OR narrow time range
-  // 2. fileName/fileId text search requires fromTimestamp/toTimestamp OR exact filter
-  // 3. Broad queries without filters may timeout on large datasets (100k+ records)
-  // 4. Always use pagination with reasonable pageSize (100-200)
+  // Fetch real audit data from Azure Function App with pagination
   async fetchDtcAuditData(continuationToken = null, pageSize = 500, options = {}) {
     let cleanup = () => {};
     try {
-      // Validate filters before making request
-      validateAuditFilters(options.filters, options);
-
       const effectivePageSize = pageSize || AUDIT_PAGE_SIZE;
-      const params = new URLSearchParams();
-      params.append('pageSize', effectivePageSize);
-      
+      let apiUrl = `${DTC_AUDIT_API}&pageSize=${effectivePageSize}`;
       if (continuationToken) {
-        params.append('continuationToken', continuationToken);
+        apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
-
-      // Add filter parameters if provided
-      const filters = options.filters || {};
-      if (filters.id) params.append('id', filters.id);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.flow) params.append('flow', filters.flow);
-      if (filters.application) params.append('application', filters.application);
-      if (filters.sourceApplication) params.append('sourceApplication', filters.sourceApplication);
-      if (filters.eventType) params.append('eventType', filters.eventType);
-      if (filters.fileName) params.append('fileName', filters.fileName);
-      if (filters.fileId) params.append('fileId', filters.fileId);
-      if (filters.fromTimestamp) params.append('fromTimestamp', filters.fromTimestamp);
-      if (filters.toTimestamp) params.append('toTimestamp', filters.toTimestamp);
-      
-      // Optional flags
-      if (options.includeEvents !== undefined) params.append('includeEvents', options.includeEvents);
-      if (options.includeCount) params.append('includeCount', 'true');
-
-      const apiUrl = `${DTC_AUDIT_API}&${params.toString()}`;
 
       const timeoutControl = withTimeoutSignal(options.signal, options.timeoutMs);
       const signal = timeoutControl.signal;
@@ -290,30 +220,20 @@ const api = {
       if (!res.ok) {
         const errorText = await res.text();
         console.error(`❌ DTC API Error ${res.status}:`, errorText.substring(0, 200));
-        
-        // Handle backend validation errors (400 Bad Request)
-        if (res.status === 400) {
-          const errorMsg = errorText || 'Invalid query parameters';
-          throw new Error(errorMsg);
-        }
-        
         throw new Error(`Failed to fetch audit data: ${res.status} ${res.statusText}`);
       }
 
       const data = await res.json();
       const records = Array.isArray(data.data) ? data.data : [];
       
-      console.log(`✅ DTC API: Fetched ${records.length} records, hasMore: ${data.hasMore || false}`);
+      console.log(`✅ DTC API: Fetched ${records.length} records, hasMore: ${!!data.continuationToken}`);
 
       return {
         data: records,
         continuationToken: data.continuationToken || null,
         totalCount: data.totalCount || 0,
         pageSize: data.pageSize || effectivePageSize,
-        resultCount: data.resultCount || records.length,
-        hasMore: data.hasMore || false,
-        requestCharge: data.requestCharge || 0,
-        filters: data.filters || {},
+        resultCount: records.length,
         error: null,
       };
     } catch (error) {
@@ -334,45 +254,15 @@ const api = {
     }
   },
 
-  // Fetch Non-DTC audit data with filters
-  // 
-  // BACKEND RESTRICTIONS (to prevent 504 timeouts):
-  // 1. includeCount=true requires 'id' filter OR narrow time range
-  // 2. fileName/fileId text search requires fromTimestamp/toTimestamp OR exact filter
-  // 3. Broad queries without filters may timeout on large datasets (100k+ records)
-  // 4. Always use pagination with reasonable pageSize (100-200)
+  // Fetch Non-DTC audit data
   async fetchNonDtcAuditData(continuationToken = null, pageSize = 500, options = {}) {
     let cleanup = () => {};
     try {
-      // Validate filters before making request
-      validateAuditFilters(options.filters, options);
-
       const effectivePageSize = pageSize || AUDIT_PAGE_SIZE;
-      const params = new URLSearchParams();
-      params.append('pageSize', effectivePageSize);
-      
+      let apiUrl = `${NON_DTC_AUDIT_API}&pageSize=${effectivePageSize}`;
       if (continuationToken) {
-        params.append('continuationToken', continuationToken);
+        apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
-
-      // Add filter parameters if provided
-      const filters = options.filters || {};
-      if (filters.id) params.append('id', filters.id);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.flow) params.append('flow', filters.flow);
-      if (filters.application) params.append('application', filters.application);
-      if (filters.sourceApplication) params.append('sourceApplication', filters.sourceApplication);
-      if (filters.eventType) params.append('eventType', filters.eventType);
-      if (filters.fileName) params.append('fileName', filters.fileName);
-      if (filters.fileId) params.append('fileId', filters.fileId);
-      if (filters.fromTimestamp) params.append('fromTimestamp', filters.fromTimestamp);
-      if (filters.toTimestamp) params.append('toTimestamp', filters.toTimestamp);
-      
-      // Optional flags
-      if (options.includeEvents !== undefined) params.append('includeEvents', options.includeEvents);
-      if (options.includeCount) params.append('includeCount', 'true');
-
-      const apiUrl = `${NON_DTC_AUDIT_API}&${params.toString()}`;
 
       const timeoutControl = withTimeoutSignal(options.signal, options.timeoutMs);
       const signal = timeoutControl.signal;
@@ -389,30 +279,18 @@ const api = {
       if (!res.ok) {
         const errorText = await res.text();
         console.error(`❌ Non-DTC API Error ${res.status}:`, errorText.substring(0, 200));
-        
-        // Handle backend validation errors (400 Bad Request)
-        if (res.status === 400) {
-          const errorMsg = errorText || 'Invalid query parameters';
-          throw new Error(errorMsg);
-        }
-        
         throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
       }
       
       const data = await res.json();
       const records = Array.isArray(data.data) ? data.data : [];
       
-      console.log(`✅ Non-DTC API: Fetched ${records.length} records, hasMore: ${data.hasMore || false}`);
+      console.log(`✅ Non-DTC API: Fetched ${records.length} records, hasMore: ${!!data.continuationToken}`);
       
       return {
         data: records,
         continuationToken: data.continuationToken || null,
         totalCount: data.totalCount || 0,
-        pageSize: data.pageSize || effectivePageSize,
-        resultCount: data.resultCount || records.length,
-        hasMore: data.hasMore || false,
-        requestCharge: data.requestCharge || 0,
-        filters: data.filters || {},
         error: null,
         aborted: false,
       };
