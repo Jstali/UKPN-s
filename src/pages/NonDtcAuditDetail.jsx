@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
+import FileViewModal from '../components/FileViewModal';
 import { useApp } from '../context/AppContext';
+import api from '../utils/api';
 
 const NON_DTC_EVENT_TYPE_MAP = {
   '1': 'File Pickup from Source',
@@ -76,6 +78,54 @@ const NonDtcAuditDetail = () => {
   const [pageSize, setPageSize] = useState(25);
   const [searchTerm, setSearchTerm] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [fileViewModal, setFileViewModal] = useState({ show: false, fileName: '', fileContent: '', loading: false, error: null });
+
+  const getFilePath = (rawRecord) => {
+    // Try sourcePath first, then check each event's destinationPath
+    if (rawRecord?.sourcePath) return rawRecord.sourcePath;
+    const events = Array.isArray(rawRecord?.events) ? rawRecord.events : [];
+    for (const e of events) {
+      const p = e?.destinationPath || e?.Destination_Path;
+      if (p) return p;
+    }
+    return rawRecord?.destinationPath || '';
+  };
+
+  const handlePreview = async (rawRecord) => {
+    const path = getFilePath(rawRecord);
+    const fallbackName = rawRecord?.sourceFileName || rawRecord?.id || 'file';
+    if (!path) {
+      setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: false, error: 'No file path available for this record.' });
+      return;
+    }
+    setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: true, error: null });
+    try {
+      const { content, filename } = await api.viewBlobFileByPath(path);
+      setFileViewModal({ show: true, fileName: filename || fallbackName, fileContent: content || '', loading: false, error: null });
+    } catch (err) {
+      setFileViewModal({ show: true, fileName: fallbackName, fileContent: '', loading: false, error: err?.message || 'Failed to load preview.' });
+    }
+  };
+
+  const handleDownload = async (rawRecord) => {
+    const path = getFilePath(rawRecord);
+    const fallbackName = rawRecord?.sourceFileName || rawRecord?.id || 'non_dtc_file';
+    if (!path) {
+      alert('No file path available for download.');
+      return;
+    }
+    try {
+      const { blob, filename } = await api.downloadFileByPath(path);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || fallbackName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Download failed: ${err?.message || 'Unknown error'}`);
+    }
+  };
 
   const auditData = useMemo(() => (nonDtcAuditData || []).map(mapItem), [nonDtcAuditData]);
   const selectedRecord = useMemo(() => {
@@ -208,22 +258,14 @@ const NonDtcAuditDetail = () => {
             Back
           </button>
           <button
-            onClick={() => setShowPreview(true)}
+            onClick={() => handlePreview(raw)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}
           >
             <Eye size={16} />
             Preview
           </button>
           <button
-            onClick={() => {
-              const blob = new Blob([JSON.stringify(raw, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${selectedRecord.sourceFile || selectedRecord.uniqueId || 'non_dtc_audit_details'}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
+            onClick={() => handleDownload(raw)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}
           >
             <Download size={16} />
@@ -231,70 +273,15 @@ const NonDtcAuditDetail = () => {
           </button>
         </div>
 
-        {showPreview && (
-          <div
-            onClick={() => setShowPreview(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999,
-              padding: '20px',
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: 'white',
-                borderRadius: '12px',
-                maxWidth: '900px',
-                width: '100%',
-                maxHeight: '90vh',
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-              }}
-            >
-              <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb' }}>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Record Preview</h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    onClick={() => {
-                      const blob = new Blob([JSON.stringify(raw, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${selectedRecord.sourceFile || selectedRecord.uniqueId || 'non_dtc_audit_details'}.json`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                    style={{ background: '#10b981', border: 'none', cursor: 'pointer', color: '#fff', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '6px', fontSize: '13px', fontWeight: 600 }}
-                  >
-                    <Download size={16} />
-                    Download
-                  </button>
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b', padding: '0', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-              <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-                <pre style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', fontSize: '12px', lineHeight: '1.6', overflow: 'auto', margin: 0, border: '1px solid #e2e8f0', color: '#1e293b', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  {JSON.stringify(raw, null, 2)}
-                </pre>
-              </div>
-            </div>
-          </div>
+        {fileViewModal.show && (
+          <FileViewModal
+            fileName={fileViewModal.fileName}
+            fileContent={fileViewModal.fileContent}
+            loading={fileViewModal.loading}
+            error={fileViewModal.error}
+            onClose={() => setFileViewModal({ show: false, fileName: '', fileContent: '', loading: false, error: null })}
+            onDownload={() => handleDownload(raw)}
+          />
         )}
 
         <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.08)' }}>
