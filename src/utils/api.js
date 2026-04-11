@@ -437,18 +437,8 @@ const api = {
       const data = await res.json();
       console.log('🔍 Flows API raw response:', data);
       
-      // Try different possible response structures
-      let flows = [];
-      if (Array.isArray(data)) {
-        flows = data;
-      } else if (data.flows && Array.isArray(data.flows)) {
-        flows = data.flows;
-      } else if (data.data && Array.isArray(data.data)) {
-        flows = data.data;
-      } else if (typeof data === 'object') {
-        // If it's an object, try to extract flow names from keys or values
-        flows = Object.keys(data);
-      }
+      // API returns { "DTC-flows": [...], "count": 48 }
+      const flows = data['DTC-flows'] || data.flows || data.data || [];
       
       console.log(`✅ Flows API: Fetched ${flows.length} flows`, flows);
       return flows;
