@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
+import api from '../utils/api';
 
 // Event Type mapping
 const EVENT_TYPE_MAP = {
@@ -219,6 +220,16 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 
 const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
   const [dateError, setDateError] = React.useState('');
+  const [flowsFromApi, setFlowsFromApi] = React.useState([]);
+
+  // Fetch flows from API on mount
+  React.useEffect(() => {
+    const loadFlows = async () => {
+      const flows = await api.fetchFlows();
+      setFlowsFromApi(flows);
+    };
+    loadFlows();
+  }, []);
 
   // Validate date range
   const validateDateRange = () => {
@@ -251,12 +262,15 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
 
   // Extract unique values dynamically from audit data
   const uniqueValues = useMemo(() => {
+    // Use API flows if available, otherwise fall back to audit data
+    const apiFlows = flowsFromApi.length > 0 ? flowsFromApi : [];
+    
     if (!auditData || auditData.length === 0) {
       return {
         sourceApplication: subscriptionAppNames.length ? [...subscriptionAppNames].sort() : [],
         destinationApplication: subscriptionAppNames.length ? [...subscriptionAppNames].sort() : [],
         eventType: [],
-        flow: [],
+        flow: apiFlows.sort(),
         version: [],
         fromRole: [],
         fromMPID: [],
@@ -270,7 +284,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
       sourceApplication: new Set(subscriptionAppNames),
       destinationApplication: new Set(subscriptionAppNames),
       eventType: new Set(),
-      flow: new Set(),
+      flow: new Set(apiFlows), // Use API flows
       version: new Set(),
       fromRole: new Set(),
       fromMPID: new Set(),
@@ -328,7 +342,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
     return Object.fromEntries(
       Object.entries(values).map(([key, set]) => [key, Array.from(set).sort()])
     );
-  }, [auditData, subscriptionAppNames]);
+  }, [auditData, subscriptionAppNames, flowsFromApi]);
 
   // Reordered fields based on priority
   const orderedFields = [

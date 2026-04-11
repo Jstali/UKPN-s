@@ -2,12 +2,32 @@ const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net'
 const DTC_API_CODE = 'REDACTED_DTC_API_CODE=';
 const NON_DTC_API_CODE = 'REDACTED_SAP_API_CODE=';
 const SUBSCROPTION_API = 'REDACTED_SUBSCRIPTION_CODE=';
+const FLOWS_API_CODE = 'REDACTED_FLOWS_API_CODE=';
 const DOWNLOAD_FILE_API = `${API_HOST}/api/fileConnectDownloadFileByID`;
 const VIEW_FILE_API = `${API_HOST}/api/fileConnectViewBlobFile`;
 
 const DTC_AUDIT_API = `${API_HOST}/api/fileconnectDtcAuditData?code=${DTC_API_CODE}`;
 const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON_DTC_API_CODE}`;
+const FLOWS_API = `${API_HOST}/api/getFlowsAPI?code=${FLOWS_API_CODE}`;
 const APP_STATUS_API = `${API_HOST}/api/fileconnectApplicationStatus?code=REDACTED_APP_STATUS_API_CODE=`;
+
+export const fetchFlows = async () => {
+  try {
+    const res = await fetch(FLOWS_API, { method: 'GET' });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`❌ Flows API Error ${res.status}:`, errorText.substring(0, 200));
+      throw new Error(`Failed to fetch flows: ${res.status} ${res.statusText}`);
+    }
+    const data = await res.json();
+    const flows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    console.log(`✅ Flows API: Fetched ${flows.length} flows`);
+    return { data: flows, error: null };
+  } catch (error) {
+    console.error('❌ Flows API Error:', error.message);
+    return { data: [], error: error.message };
+  }
+};
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const USE_API = process.env.REACT_APP_USE_API === 'true';
@@ -403,6 +423,25 @@ const api = {
     } catch (error) {
       console.error('❌ Application Status API Error:', error.message);
       return null;
+    }
+  },
+
+  // Fetch flows from Azure
+  async fetchFlows() {
+    try {
+      const res = await fetch(FLOWS_API, { method: 'GET' });
+      if (!res.ok) {
+        console.error(`❌ Flows API Error ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      // Assuming API returns array of flow names or objects with flow property
+      const flows = Array.isArray(data) ? data : (data.flows || []);
+      console.log(`✅ Flows API: Fetched ${flows.length} flows`);
+      return flows;
+    } catch (error) {
+      console.error('❌ Flows API Error:', error.message);
+      return [];
     }
   },
 };

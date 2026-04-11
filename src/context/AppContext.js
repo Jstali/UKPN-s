@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import api, { fetchDtcSubscriptions } from '../utils/api';
+import api, { fetchDtcSubscriptions, fetchFlows } from '../utils/api';
 
 const AppContext = createContext(null);
 
@@ -65,6 +65,7 @@ export const AppProvider = ({ children }) => {
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [isLocalSubscription, setIsLocalSubscription] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
+  const [flowsData, setFlowsData] = useState([]);
 
   // Strict in-flight lock. Only one refresh cycle may run at a time.
   const isFetchingRef = useRef(false);
@@ -93,6 +94,15 @@ export const AppProvider = ({ children }) => {
     const trimmed = trimRecords(records);
     setNonDtcAuditData(trimmed);
     writeCache(NON_DTC_CACHE_KEY, trimmed);
+  }, []);
+
+  const fetchFlowsData = useCallback(async () => {
+    try {
+      const { data } = await fetchFlows();
+      setFlowsData(Array.isArray(data) ? data : []);
+    } catch {
+      setFlowsData([]);
+    }
   }, []);
 
   const fetchSubscriptions = useCallback(async () => {
@@ -229,15 +239,16 @@ export const AppProvider = ({ children }) => {
     const hasCachedData = readCache(DTC_CACHE_KEY).length > 0;
     fetchAllData({ silent: hasCachedData });
 
-    // Pre-fetch subscriptions so app names are available everywhere on load
+    // Pre-fetch subscriptions and flows so they are available everywhere on load
     fetchSubscriptions();
+    fetchFlowsData();
 
     return () => {
       if (activeControllerRef.current) {
         activeControllerRef.current.abort();
       }
     };
-  }, [fetchAllData, fetchSubscriptions]);
+  }, [fetchAllData, fetchSubscriptions, fetchFlowsData]);
 
   useEffect(() => {
     if (refreshTimerRef.current) {
