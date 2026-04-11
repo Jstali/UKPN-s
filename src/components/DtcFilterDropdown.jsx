@@ -222,16 +222,19 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
   const [dateError, setDateError] = React.useState('');
   const [flowsFromApi, setFlowsFromApi] = React.useState([]);
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
+  const [destAppsFromApi, setDestAppsFromApi] = React.useState([]);
 
-  // Fetch flows and source apps from API on mount
+  // Fetch flows, source apps, and destination apps from API on mount
   React.useEffect(() => {
     const loadData = async () => {
-      const [flows, sourceApps] = await Promise.all([
+      const [flows, sourceApps, destApps] = await Promise.all([
         api.fetchFlows(),
-        api.fetchSourceApplications()
+        api.fetchSourceApplications(),
+        api.fetchDestinationApplications()
       ]);
       setFlowsFromApi(flows);
       setSourceAppsFromApi(sourceApps);
+      setDestAppsFromApi(destApps);
     };
     loadData();
   }, []);
@@ -270,11 +273,12 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
     // Use API data if available
     const apiFlows = flowsFromApi.length > 0 ? flowsFromApi : [];
     const apiSourceApps = sourceAppsFromApi.length > 0 ? sourceAppsFromApi : [];
+    const apiDestApps = destAppsFromApi.length > 0 ? destAppsFromApi : [];
     
     if (!auditData || auditData.length === 0) {
       return {
         sourceApplication: apiSourceApps.length > 0 ? apiSourceApps.sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
-        destinationApplication: subscriptionAppNames.length ? [...subscriptionAppNames].sort() : [],
+        destinationApplication: apiDestApps.length > 0 ? apiDestApps.sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
         eventType: [],
         flow: apiFlows.sort(),
         version: [],
@@ -288,7 +292,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
 
     const values = {
       sourceApplication: new Set(apiSourceApps.length > 0 ? apiSourceApps : subscriptionAppNames),
-      destinationApplication: new Set(subscriptionAppNames),
+      destinationApplication: new Set(apiDestApps.length > 0 ? apiDestApps : subscriptionAppNames),
       eventType: new Set(),
       flow: new Set(apiFlows), // Use API flows
       version: new Set(),
@@ -317,22 +321,17 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
 
       item.events?.forEach(event => {
         // Source application: Use API data, don't extract from events
+        // Destination application: Use API data, don't extract from events
         // (Commented out to use API data only)
-        // if (event.Event_Type === '1' || event.Event_Type === 1) {
-        //   const sourceApp = event.applicationName;
-        //   if (sourceApp) values.sourceApplication.add(sourceApp);
+        // if (event.Event_Type === '2' || event.Event_Type === 2 ||
+        //     event.Event_Type === '3' || event.Event_Type === 3 ||
+        //     event.Event_Type === '4' || event.Event_Type === 4) {
+        //   const destApp = event.applicationName;
+        //   if (destApp) values.destinationApplication.add(destApp);
         // }
-
-        // Destination application: from later events (Event_Type '2','3','4') or Destination_Application
-        if (event.Event_Type === '2' || event.Event_Type === 2 ||
-            event.Event_Type === '3' || event.Event_Type === 3 ||
-            event.Event_Type === '4' || event.Event_Type === 4) {
-          const destApp = event.applicationName;
-          if (destApp) values.destinationApplication.add(destApp);
-        }
-        if (event.Destination_Application) {
-          values.destinationApplication.add(event.Destination_Application);
-        }
+        // if (event.Destination_Application) {
+        //   values.destinationApplication.add(event.Destination_Application);
+        // }
         
         // Map event types to readable names
         const eventTypeKey = event.Event_Type;
@@ -349,7 +348,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
     return Object.fromEntries(
       Object.entries(values).map(([key, set]) => [key, Array.from(set).sort()])
     );
-  }, [auditData, subscriptionAppNames, flowsFromApi, sourceAppsFromApi]);
+  }, [auditData, subscriptionAppNames, flowsFromApi, sourceAppsFromApi, destAppsFromApi]);
 
   // Reordered fields based on priority
   const orderedFields = [
