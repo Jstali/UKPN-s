@@ -16,7 +16,7 @@ const formatDateTimeCell = (timestamp) => {
   if (!timestamp) return '-';
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return String(timestamp);
-  return date.toLocaleString('en-GB');
+  return date.toLocaleString('en-GB', { timeZone: 'Europe/London' });
 };
 
 const NON_DTC_EVENT_TYPE_MAP = {
