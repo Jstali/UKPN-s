@@ -435,9 +435,22 @@ const api = {
         return [];
       }
       const data = await res.json();
-      // Assuming API returns array of flow names or objects with flow property
-      const flows = Array.isArray(data) ? data : (data.flows || []);
-      console.log(`✅ Flows API: Fetched ${flows.length} flows`);
+      console.log('🔍 Flows API raw response:', data);
+      
+      // Try different possible response structures
+      let flows = [];
+      if (Array.isArray(data)) {
+        flows = data;
+      } else if (data.flows && Array.isArray(data.flows)) {
+        flows = data.flows;
+      } else if (data.data && Array.isArray(data.data)) {
+        flows = data.data;
+      } else if (typeof data === 'object') {
+        // If it's an object, try to extract flow names from keys or values
+        flows = Object.keys(data);
+      }
+      
+      console.log(`✅ Flows API: Fetched ${flows.length} flows`, flows);
       return flows;
     } catch (error) {
       console.error('❌ Flows API Error:', error.message);
