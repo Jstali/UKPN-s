@@ -3,12 +3,14 @@ const DTC_API_CODE = 'REDACTED_DTC_API_CODE=';
 const NON_DTC_API_CODE = 'REDACTED_SAP_API_CODE=';
 const SUBSCROPTION_API = 'REDACTED_SUBSCRIPTION_CODE=';
 const FLOWS_API_CODE = 'REDACTED_FLOWS_API_CODE=';
+const SOURCE_APP_API_CODE = 'REDACTED_SOURCE_APP_API_CODE=';
 const DOWNLOAD_FILE_API = `${API_HOST}/api/fileConnectDownloadFileByID`;
 const VIEW_FILE_API = `${API_HOST}/api/fileConnectViewBlobFile`;
 
 const DTC_AUDIT_API = `${API_HOST}/api/fileconnectDtcAuditData?code=${DTC_API_CODE}`;
 const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON_DTC_API_CODE}`;
 const FLOWS_API = `${API_HOST}/api/getFlowsAPI?code=${FLOWS_API_CODE}`;
+const SOURCE_APP_API = `${API_HOST}/api/getSourceAppNamesAPI?code=${SOURCE_APP_API_CODE}`;
 const APP_STATUS_API = `${API_HOST}/api/fileconnectApplicationStatus?code=REDACTED_APP_STATUS_API_CODE=`;
 
 export const fetchFlows = async () => {
@@ -444,6 +446,28 @@ const api = {
       return flows;
     } catch (error) {
       console.error('❌ Flows API Error:', error.message);
+      return [];
+    }
+  },
+
+  // Fetch source applications from Azure
+  async fetchSourceApplications() {
+    try {
+      const res = await fetch(SOURCE_APP_API, { method: 'GET' });
+      if (!res.ok) {
+        console.error(`❌ Source App API Error ${res.status}`);
+        return [];
+      }
+      const data = await res.json();
+      console.log('🔍 Source App API raw response:', data);
+      
+      // Extract source apps from response (adjust based on actual structure)
+      const apps = data['source-applications'] || data.applications || data.data || data || [];
+      
+      console.log(`✅ Source App API: Fetched ${apps.length} applications`, apps);
+      return apps;
+    } catch (error) {
+      console.error('❌ Source App API Error:', error.message);
       return [];
     }
   },
