@@ -227,6 +227,7 @@ const DataTable = ({
   groupByKey = null,
   tableId = null,
   isNonDtc = false,
+  navigationState = {},
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -442,6 +443,11 @@ const DataTable = ({
     e.stopPropagation();
     setActiveFilter(prev => prev === key ? null : key);
   };
+
+  const handleSetColumnFilters = useCallback((fn) => {
+    setColumnFilters(fn);
+    setCurrentPage(1);
+  }, []);
 
   const activeFilterCount = Object.keys(columnFilters).filter(k => columnFilters[k]).length;
 
@@ -948,7 +954,7 @@ const DataTable = ({
                     <ColumnFilterPopover
                       col={col}
                       columnFilters={columnFilters}
-                      setColumnFilters={(fn) => { setColumnFilters(fn); setCurrentPage(1); }}
+                      setColumnFilters={handleSetColumnFilters}
                       onClose={() => setActiveFilter(null)}
                       allData={data}
                       anchorRef={{ current: filterBtnRefs.current[col.key] }}
@@ -999,7 +1005,7 @@ const DataTable = ({
                             onClick={() => {
                               sessionStorage.setItem('dataTablePage', String(currentPage));
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
-                              navigate(detailPagePath, { state: { record: row, uniqueId: row.uniqueId || row.id || row.eventId, returnPath: window.location.hash.slice(1) || window.location.pathname } });
+                              navigate(detailPagePath, { state: { record: row, uniqueId: row.uniqueId || row.id || row.eventId, returnPath: window.location.hash.slice(1) || window.location.pathname, ...navigationState } });
                             }}
                           >
                             {row[col.key]}
@@ -1011,7 +1017,7 @@ const DataTable = ({
                               sessionStorage.setItem('dataTablePage', String(currentPage));
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
                               sessionStorage.setItem('dtcAuditScrollPos', String(window.scrollY));
-                              navigate(detailPagePath, { state: { record: row, uniqueId: row.id || row.eventId, returnPath: window.location.hash.slice(1) || window.location.pathname } });
+                              navigate(detailPagePath, { state: { record: row, uniqueId: row.id || row.eventId, returnPath: window.location.hash.slice(1) || window.location.pathname, ...navigationState } });
                             }}
                           >
                             {row[col.key]}

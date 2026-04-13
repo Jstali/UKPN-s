@@ -569,6 +569,7 @@ const NonDtcAudit = () => {
               showBars,
             }
           })}
+          navigationState={{ filters, appliedFilters, hasQueried, showBars }}
           detailPagePath="/non-dtc-audit-detail"
         />
       )}
