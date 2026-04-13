@@ -7,17 +7,11 @@ import ColorBar, { EVENT_TYPE_COLORS } from '../components/ColorBar';
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
+import { formatDateTime } from '../utils/auditUtils';
 
 const NON_DTC_DEFAULT_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
   ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
 );
-
-const formatDateTimeCell = (timestamp) => {
-  if (!timestamp) return '-';
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return String(timestamp);
-  return date.toLocaleString('en-GB', { timeZone: 'Europe/London' });
-};
 
 const NON_DTC_EVENT_TYPE_MAP = {
   '1': 'File Pickup from Source',
@@ -120,7 +114,7 @@ const flattenNonDtcEvents = (data) => {
         flow: item.flow || item.sourceAppName || '-',
         version: item.version || item.subscription || '-',
         fileId: item.id || '-',
-        timestamp: formatDateTimeCell(event.timestamp || item.timestamp || ''),
+        timestamp: formatDateTime(event.timestamp || item.timestamp || ''),
         fromRole: item.fromRole || '-',
         fromMPID: item.fromMPID || '-',
         toRole: item.toRole || '-',
