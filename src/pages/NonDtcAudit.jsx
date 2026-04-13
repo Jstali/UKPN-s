@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, BarChart3, Activity, Filter, RotateCcw, ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import ColorBar, { EVENT_TYPE_COLORS } from '../components/ColorBar';
@@ -165,10 +165,13 @@ const NON_DTC_COLUMNS = [
 
 const NonDtcAudit = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { nonDtcAuditData, loading, dataComplete, nonDtcFetchError } = useApp();
   const [showBars, setShowBars] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
+  
+  // Initialize filters from location state if returning from detail page
+  const initialFilters = location.state?.filters || {
     sourceApp: 'All',
     subscription: 'All',
     status: 'All',
@@ -176,9 +179,18 @@ const NonDtcAudit = () => {
     sourceFile: '',
     fileId: '',
     fileCreated: '',
-  });
-  const [appliedFilters, setAppliedFilters] = useState(filters);
-  const [hasQueried, setHasQueried] = useState(false);
+  };
+  
+  const [filters, setFilters] = useState(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState(location.state?.appliedFilters || initialFilters);
+  const [hasQueried, setHasQueried] = useState(location.state?.hasQueried || false);
+  
+  // Restore UI state when coming back
+  useEffect(() => {
+    if (location.state?.showBars !== undefined) {
+      setShowBars(location.state.showBars);
+    }
+  }, [location.state]);
 
   const auditData = useMemo(() => flattenNonDtcEvents(nonDtcAuditData || []), [nonDtcAuditData]);
 
@@ -538,7 +550,14 @@ const NonDtcAudit = () => {
               cellPadding: 2,
             },
           }}
-          onViewDetail={() => navigate('/non-dtc-audit-detail')}
+          onViewDetail={() => navigate('/non-dtc-audit-detail', {
+            state: {
+              filters,
+              appliedFilters,
+              hasQueried,
+              showBars,
+            }
+          })}
           detailPagePath="/non-dtc-audit-detail"
         />
       )}

@@ -223,7 +223,9 @@ const NonDtcAuditDetail = () => {
 
         <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
           <button
-            onClick={() => navigate(location.state?.returnPath || '/non-dtc-audit')}
+            onClick={() => navigate(location.state?.returnPath || '/non-dtc-audit', {
+              state: location.state
+            })}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: '#4c4ebd', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}
           >
             <ArrowLeft size={16} />
@@ -330,7 +332,9 @@ const NonDtcAuditDetail = () => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <button
-          onClick={() => navigate('/non-dtc-audit')}
+          onClick={() => navigate('/non-dtc-audit', {
+            state: location.state
+          })}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', background: '#667eea', color: 'white',
