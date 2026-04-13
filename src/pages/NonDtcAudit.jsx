@@ -108,10 +108,14 @@ const flattenNonDtcEvents = (data) => {
     const evtBlobLocation = blobEvent ? (blobEvent.Blob_Location || blobEvent.blobLocation || blobEvent.storagePath || blobEvent.StoragePath || blobEvent.filePath || '') : '';
     const evtBlobFileName = blobEvent ? (blobEvent.Blob_File_Name || blobEvent.blobFileName || blobEvent.destinationContent || blobEvent.DestinationContent || '') : '';
 
+    // Get subscription from Event Type 3 for flow column
+    const subscriptionEvent = (item.events || []).find(e => String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '') === '3');
+    const flowValue = subscriptionEvent?.subscription || item.subscription || item.description || '-';
+
     events.forEach(event => {
       flatData.push({
         uniqueId: item.id || '',
-        flow: item.flow || item.sourceAppName || '-',
+        flow: flowValue,
         version: item.version || item.subscription || '-',
         fileId: item.id || '-',
         timestamp: formatDateTime(event.timestamp || item.timestamp || ''),
@@ -120,8 +124,8 @@ const flattenNonDtcEvents = (data) => {
         toRole: item.toRole || '-',
         toMPID: item.toMPID || '-',
         sourceApplication: item.sourceAppName || '-',
-        application: event.applicationName || item.destinationApplication || item.subscription || '-',
-        status: event.status || item.status || '',
+        application: event.destinationApplication || event.applicationName || '-',
+        status: event.status || event.Status || item.status || '',
         fileType: fileType,
         fileName: fileName || '-',
         sourceApp: item.sourceAppName || item.subscription || '-',
