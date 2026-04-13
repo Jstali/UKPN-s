@@ -74,7 +74,8 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
       else delete next[col.key];
       return next;
     });
-    onClose();
+    // Small delay to ensure state update before closing
+    setTimeout(() => onClose(), 0);
   };
 
   const handleClearFilter = (e) => {
@@ -166,7 +167,11 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
           {matchingValues.map((val) => (
             <div
               key={val}
-              onClick={() => handleSelect(val)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSelect(val);
+              }}
               style={{
                 padding: '7px 10px', fontSize: '12px', color: '#334155',
                 cursor: 'pointer', borderBottom: '1px solid #f1f5f9',

@@ -176,6 +176,7 @@ const NonDtcAudit = () => {
     subscription: 'All',
     status: 'All',
     eventType: 'All',
+    destination: 'All',
     sourceFile: '',
     fileId: '',
     fileCreated: '',
@@ -200,6 +201,7 @@ const NonDtcAudit = () => {
     result = result.filter(r => matchesMultiSelect(appliedFilters.subscription, r.subscription));
     result = result.filter(r => matchesMultiSelect(appliedFilters.status, r.status));
     result = result.filter(r => matchesMultiSelect(appliedFilters.eventType, r.eventType));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.destination, r.application));
     if (appliedFilters.sourceFile)
       result = result.filter(r => r.sourceFile?.toLowerCase().includes(appliedFilters.sourceFile.toLowerCase()));
     if (appliedFilters.fileId)
@@ -216,7 +218,7 @@ const NonDtcAudit = () => {
   const resetFilters = () => {
     const empty = {
       sourceApp: 'All', subscription: 'All', status: 'All',
-      eventType: 'All', sourceFile: '', fileId: '', fileCreated: '',
+      eventType: 'All', destination: 'All', sourceFile: '', fileId: '', fileCreated: '',
     };
     setFilters(empty);
     setAppliedFilters(empty);
@@ -231,6 +233,7 @@ const NonDtcAudit = () => {
     subscription: [...new Set(auditData.map(r => r.subscription).filter(Boolean))].sort(),
     status:       [...new Set(auditData.map(r => r.status).filter(Boolean))].sort(),
     eventType:    [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort(),
+    destination:  [...new Set(auditData.map(r => r.application).filter(Boolean))].sort(),
   }), [auditData]);
 
   const eventTypeCounts = useMemo(() => {
@@ -358,9 +361,9 @@ const NonDtcAudit = () => {
                 }}>
                   Primary Filters
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
                   <div>
-                    <label style={labelStyle}>Source Application</label>
+                    <label style={labelStyle}>Source</label>
                     <MultiCheckboxDropdown
                       value={filters.sourceApp}
                       onChange={value => setFilters(prev => ({ ...prev, sourceApp: value }))}
@@ -373,6 +376,14 @@ const NonDtcAudit = () => {
                       value={filters.subscription}
                       onChange={value => setFilters(prev => ({ ...prev, subscription: value }))}
                       options={filterOptions.subscription}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Destination</label>
+                    <MultiCheckboxDropdown
+                      value={filters.destination}
+                      onChange={value => setFilters(prev => ({ ...prev, destination: value }))}
+                      options={filterOptions.destination}
                     />
                   </div>
                   <div>
