@@ -86,14 +86,14 @@ export const formatTimestamp = (timestamp) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-// Format date with time (DD/MM/YYYY HH:MM:SS)
+// Format date with time (DD/MM/YYYY HH:MM:SS) - Always in UK/London timezone
 export const formatDateTime = (timestamp) => {
   if (!timestamp) return '';
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return timestamp;
   
-  const dateStr = date.toLocaleDateString('en-GB');
-  const timeStr = formatTimestamp(timestamp);
+  // Force UK timezone for both date and time
+  const ukDateTime = date.toLocaleString('en-GB', { timeZone: 'Europe/London' });
   
-  return `${dateStr} ${timeStr}`;
+  return ukDateTime;
 };
