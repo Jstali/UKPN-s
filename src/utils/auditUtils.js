@@ -86,21 +86,41 @@ export const formatTimestamp = (timestamp) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-// Format date with time (DD-MM-YYYY HH:MM:SS) - Always in UK/London timezone
+// Format date with time (DD-MM-YYYY HH:MM:SS)
 export const formatDateTime = (timestamp) => {
   if (!timestamp) return '';
+  
+  // Try parsing as UK format first (DD/MM/YYYY or DD-MM-YYYY)
+  const ukMatch = String(timestamp).match(/^(\d{2})[-/](\d{2})[-/](\d{4})\s*(\d{2}):(\d{2}):(\d{2})/);
+  if (ukMatch) {
+    const [, day, month, year, hours, minutes, seconds] = ukMatch;
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+  }
+  
+  // Otherwise parse as standard date
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return timestamp;
   
-  // Use UK timezone to get correct date parts
-  const ukDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/London' }));
+  // Get date parts directly in UK timezone
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(date);
   
-  const day = String(ukDate.getDate()).padStart(2, '0');
-  const month = String(ukDate.getMonth() + 1).padStart(2, '0');
-  const year = ukDate.getFullYear();
-  const hours = String(ukDate.getHours()).padStart(2, '0');
-  const minutes = String(ukDate.getMinutes()).padStart(2, '0');
-  const seconds = String(ukDate.getSeconds()).padStart(2, '0');
+  const getValue = (type) => parts.find(p => p.type === type)?.value || '';
+  
+  const day = getValue('day');
+  const month = getValue('month');
+  const year = getValue('year');
+  const hours = getValue('hour');
+  const minutes = getValue('minute');
+  const seconds = getValue('second');
   
   return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
 };
