@@ -96,6 +96,9 @@ const flattenAuditEvents = (data) => {
         const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
+        const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
+        const applicationValue = event.applicationName || event.Destination_Application || 'NA';
+        
         flatData.push({
           ...item,
           id: item.id,
@@ -110,8 +113,8 @@ const flattenAuditEvents = (data) => {
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
-          application: event.applicationName || event.Destination_Application || 'NA event',
-          eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
+          application: applicationValue,
+          eventType: eventTypeValue,
           status: event.Status || 'Unknown',
           processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           timestamp: event.timestamp || '',
@@ -145,6 +148,10 @@ const buildFilteredResults = (data, filtersToUse) => {
         const resolvedFromMPID = parsed.fromMPID || item.From_MPID || item.from_mpid || item.fromMPID || event.fromMPID || event.From_MPID || '';
         const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
+        
+        const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
+        const applicationValue = event.applicationName || event.Destination_Application || 'NA';
+        
         results.push({
           ...item, // Include all original fields
           id: item.id,
@@ -160,8 +167,8 @@ const buildFilteredResults = (data, filtersToUse) => {
           recApp: parsed.recApp,
           fileName: item.Source_FileName,
           sourceApplication: sourceApplication,
-          eventType: event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown'),
-          application: event.applicationName || event.Destination_Application || 'NA event',
+          eventType: eventTypeValue,
+          application: applicationValue,
           timestamp: event.timestamp || '',
           status: event.Status || 'Unknown',
           processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),

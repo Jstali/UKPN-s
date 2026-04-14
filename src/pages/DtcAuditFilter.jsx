@@ -462,6 +462,10 @@ const DtcAuditFilter = () => {
         item.events.forEach(event => {
           const formattedFlowVersion = formatFlowVersion(rawFlow) || '-';
           const flowVersionParts = formattedFlowVersion.split(' ');
+          
+          const eventTypeValue = event.Event_Type || event.event_type || event.eventType || 'Unknown';
+          const applicationValue = event.applicationName || event.Destination_Application || event.destinationApplication || 'NA';
+          
           results.push({
             id: item.id,
             fileId: item.id || pickId(item.File_ID, item.fileId, item.file_id, item.correlationId),
@@ -477,8 +481,8 @@ const DtcAuditFilter = () => {
             toMPID: parsed.toMPID || event.toMPID || event.To_MPID || '',
             recApp: parsed.recApp || event.Receiving_Application || event.receivingApp || '',
             sourceApp: item.Source_Application || item.source_application || item.SourceApplication || 'Unknown',
-            application: event.applicationName || event.Destination_Application || event.destinationApplication || 'Unknown',
-            eventType: event.Event_Type || event.event_type || event.eventType || 'Unknown',
+            application: applicationValue,
+            eventType: eventTypeValue,
             status: event.Status || event.status || 'Unknown',
             processed: event.processed || 'false',
             timestamp: formatDateTime(event.timestamp || event.Timestamp || event.created || event.Created),
