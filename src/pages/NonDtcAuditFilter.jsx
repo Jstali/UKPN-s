@@ -5,15 +5,18 @@ import { Search, RotateCcw, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const DEFAULT_FILTERS = {
+  flow: 'All',
   sourceApp: 'All',
-  subscription: 'All',
-  status: 'All',
+  destinationApp: 'All',
   eventType: 'All',
-  fileId: '',
-  sourceFile: '',
-  fileCreated: '',
   eventFrom: '',
+  eventFromTime: '',
   eventTo: '',
+  eventToTime: '',
+  fileCreated: '',
+  fileCreatedTime: '',
+  publishDate: '',
+  fileId: 'All',
 };
 
 const NonDtcAuditFilter = () => {
@@ -23,13 +26,11 @@ const NonDtcAuditFilter = () => {
 
   const auditData = useMemo(() => (nonDtcAuditData || []).map(item => ({
     uniqueId: item.id || '',
+    flow: item.flow || '-',
     sourceApp: item.sourceAppName || item.subscription || '-',
-    subscription: item.subscription || '',
-    sourceFile: item.sourceFileName || '',
-    fileId: item.id || '',
-    sourcePath: item.sourcePath || '',
+    destinationApp: item.destinationApp || '-',
     eventType: item.events?.[0]?.eventType || '',
-    status: item.status || '',
+    fileId: item.id || '',
     timestamp: item.timestamp || '',
     events: item.events || [],
     rawData: item
@@ -48,10 +49,11 @@ const NonDtcAuditFilter = () => {
   };
 
   // Build dropdown options
+  const flowOptions = ['All', ...new Set(auditData.map(r => r.flow).filter(Boolean))].sort();
   const sourceAppOptions = ['All', ...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort();
-  const subscriptionOptions = ['All', ...new Set(auditData.map(r => r.subscription).filter(Boolean))].sort();
-  const statusOptions = ['All', ...new Set(auditData.map(r => r.status).filter(Boolean))].sort();
+  const destinationAppOptions = ['All', ...new Set(auditData.map(r => r.destinationApp).filter(Boolean))].sort();
   const eventTypeOptions = ['All', ...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort();
+  const fileIdOptions = ['All', ...new Set(auditData.map(r => r.fileId).filter(Boolean))].sort();
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' };
   const selectStyle = { width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', color: '#1e293b', background: '#fff', cursor: 'pointer', outline: 'none' };
@@ -99,12 +101,15 @@ const NonDtcAuditFilter = () => {
           background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px',
           padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         }}>
-          {/* Primary Filters */}
+          {/* All Filters */}
           <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Primary Filters
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={labelStyle}>Flow</label>
+                <select value={filters.flow} onChange={(e) => handleFilterChange('flow', e.target.value)} style={selectStyle}>
+                  {flowOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+              </div>
               <div>
                 <label style={labelStyle}>Source Application</label>
                 <select value={filters.sourceApp} onChange={(e) => handleFilterChange('sourceApp', e.target.value)} style={selectStyle}>
@@ -112,15 +117,9 @@ const NonDtcAuditFilter = () => {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Subscription</label>
-                <select value={filters.subscription} onChange={(e) => handleFilterChange('subscription', e.target.value)} style={selectStyle}>
-                  {subscriptionOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Status</label>
-                <select value={filters.status} onChange={(e) => handleFilterChange('status', e.target.value)} style={selectStyle}>
-                  {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                <label style={labelStyle}>Destination Application</label>
+                <select value={filters.destinationApp} onChange={(e) => handleFilterChange('destinationApp', e.target.value)} style={selectStyle}>
+                  {destinationAppOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
               </div>
               <div>
@@ -130,64 +129,72 @@ const NonDtcAuditFilter = () => {
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Additional Filters */}
-          <div style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Additional Filters
-            </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               <div>
-                <label style={labelStyle}>Source File</label>
-                <input
-                  type="text"
-                  value={filters.sourceFile}
-                  onChange={(e) => handleFilterChange('sourceFile', e.target.value)}
-                  placeholder="Enter source file name"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>File ID</label>
-                <input
-                  type="text"
-                  value={filters.fileId}
-                  onChange={(e) => handleFilterChange('fileId', e.target.value)}
-                  placeholder="Enter File ID"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>File Created</label>
-                <input
-                  type="date"
-                  value={filters.fileCreated}
-                  onChange={(e) => handleFilterChange('fileCreated', e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
                 <label style={labelStyle}>Event From</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="date"
                     value={filters.eventFrom}
                     onChange={(e) => handleFilterChange('eventFrom', e.target.value)}
                     style={{ ...inputStyle, flex: 1 }}
                   />
+                  <input
+                    type="time"
+                    value={filters.eventFromTime}
+                    onChange={(e) => handleFilterChange('eventFromTime', e.target.value)}
+                    style={{ ...inputStyle, width: '120px' }}
+                  />
                 </div>
               </div>
               <div>
                 <label style={labelStyle}>Event To</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="date"
                     value={filters.eventTo}
                     onChange={(e) => handleFilterChange('eventTo', e.target.value)}
                     style={{ ...inputStyle, flex: 1 }}
                   />
+                  <input
+                    type="time"
+                    value={filters.eventToTime}
+                    onChange={(e) => handleFilterChange('eventToTime', e.target.value)}
+                    style={{ ...inputStyle, width: '120px' }}
+                  />
                 </div>
+              </div>
+              <div>
+                <label style={labelStyle}>File Created</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="date"
+                    value={filters.fileCreated}
+                    onChange={(e) => handleFilterChange('fileCreated', e.target.value)}
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  <input
+                    type="time"
+                    value={filters.fileCreatedTime}
+                    onChange={(e) => handleFilterChange('fileCreatedTime', e.target.value)}
+                    style={{ ...inputStyle, width: '120px' }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Publish Date</label>
+                <input
+                  type="date"
+                  value={filters.publishDate}
+                  onChange={(e) => handleFilterChange('publishDate', e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>File ID</label>
+                <select value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} style={selectStyle}>
+                  {fileIdOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
               </div>
             </div>
           </div>

@@ -172,14 +172,18 @@ const NonDtcAudit = () => {
   
   // Initialize filters from location state if returning from detail page
   const initialFilters = location.state?.filters || {
+    flow: 'All',
     sourceApp: 'All',
-    subscription: 'All',
-    status: 'All',
+    destinationApp: 'All',
     eventType: 'All',
-    destination: 'All',
-    sourceFile: '',
-    fileId: '',
+    eventFrom: '',
+    eventFromTime: '',
+    eventTo: '',
+    eventToTime: '',
     fileCreated: '',
+    fileCreatedTime: '',
+    publishDate: '',
+    fileId: 'All',
   };
   
   const [filters, setFilters] = useState(initialFilters);
@@ -197,15 +201,11 @@ const NonDtcAudit = () => {
 
   const filteredData = useMemo(() => {
     let result = [...auditData];
+    result = result.filter(r => matchesMultiSelect(appliedFilters.flow, r.flow));
     result = result.filter(r => matchesMultiSelect(appliedFilters.sourceApp, r.sourceApp));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.subscription, r.subscription));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.status, r.status));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.destinationApp, r.application));
     result = result.filter(r => matchesMultiSelect(appliedFilters.eventType, r.eventType));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.destination, r.application));
-    if (appliedFilters.sourceFile)
-      result = result.filter(r => r.sourceFile?.toLowerCase().includes(appliedFilters.sourceFile.toLowerCase()));
-    if (appliedFilters.fileId)
-      result = result.filter(r => r.fileId?.includes(appliedFilters.fileId));
+    result = result.filter(r => matchesMultiSelect(appliedFilters.fileId, r.fileId));
     return result;
   }, [auditData, appliedFilters]);
 
@@ -217,8 +217,9 @@ const NonDtcAudit = () => {
 
   const resetFilters = () => {
     const empty = {
-      sourceApp: 'All', subscription: 'All', status: 'All',
-      eventType: 'All', destination: 'All', sourceFile: '', fileId: '', fileCreated: '',
+      flow: 'All', sourceApp: 'All', destinationApp: 'All',
+      eventType: 'All', eventFrom: '', eventFromTime: '', eventTo: '', eventToTime: '',
+      fileCreated: '', fileCreatedTime: '', publishDate: '', fileId: 'All',
     };
     setFilters(empty);
     setAppliedFilters(empty);
@@ -229,11 +230,11 @@ const NonDtcAudit = () => {
 
   // Filter options always computed from full dataset (not filtered subset)
   const filterOptions = useMemo(() => ({
-    sourceApp:    [...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort(),
-    subscription: [...new Set(auditData.map(r => r.subscription).filter(Boolean))].sort(),
-    status:       [...new Set(auditData.map(r => r.status).filter(Boolean))].sort(),
-    eventType:    [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort(),
-    destination:  [...new Set(auditData.map(r => r.application).filter(Boolean))].sort(),
+    flow:           [...new Set(auditData.map(r => r.flow).filter(Boolean))].sort(),
+    sourceApp:      [...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort(),
+    destinationApp: [...new Set(auditData.map(r => r.application).filter(Boolean))].sort(),
+    eventType:      [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort(),
+    fileId:         [...new Set(auditData.map(r => r.fileId).filter(Boolean))].sort(),
   }), [auditData]);
 
   const eventTypeCounts = useMemo(() => {
@@ -354,16 +355,18 @@ const NonDtcAudit = () => {
               background: 'white', borderRadius: '12px', padding: '20px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
             }}>
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{
-                  fontSize: '11px', fontWeight: 700, color: '#64748b',
-                  marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px',
-                }}>
-                  Primary Filters
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <label style={labelStyle}>Source</label>
+                    <label style={labelStyle}>Flow</label>
+                    <MultiCheckboxDropdown
+                      value={filters.flow}
+                      onChange={value => setFilters(prev => ({ ...prev, flow: value }))}
+                      options={filterOptions.flow}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Source Application</label>
                     <MultiCheckboxDropdown
                       value={filters.sourceApp}
                       onChange={value => setFilters(prev => ({ ...prev, sourceApp: value }))}
@@ -371,27 +374,11 @@ const NonDtcAudit = () => {
                     />
                   </div>
                   <div>
-                    <label style={labelStyle}>Subscription</label>
+                    <label style={labelStyle}>Destination Application</label>
                     <MultiCheckboxDropdown
-                      value={filters.subscription}
-                      onChange={value => setFilters(prev => ({ ...prev, subscription: value }))}
-                      options={filterOptions.subscription}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Destination</label>
-                    <MultiCheckboxDropdown
-                      value={filters.destination}
-                      onChange={value => setFilters(prev => ({ ...prev, destination: value }))}
-                      options={filterOptions.destination}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Status</label>
-                    <MultiCheckboxDropdown
-                      value={filters.status}
-                      onChange={value => setFilters(prev => ({ ...prev, status: value }))}
-                      options={filterOptions.status}
+                      value={filters.destinationApp}
+                      onChange={value => setFilters(prev => ({ ...prev, destinationApp: value }))}
+                      options={filterOptions.destinationApp}
                     />
                   </div>
                   <div>
@@ -403,42 +390,73 @@ const NonDtcAudit = () => {
                     />
                   </div>
                 </div>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{
-                  fontSize: '11px', fontWeight: 700, color: '#64748b',
-                  marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px',
-                }}>
-                  Additional Filters
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.8fr 0.8fr', gap: '12px' }}>
                   <div>
-                    <label style={labelStyle}>Source File</label>
+                    <label style={labelStyle}>Event From</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="date"
+                        value={filters.eventFrom}
+                        onChange={e => setFilters({ ...filters, eventFrom: e.target.value })}
+                        style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
+                      />
+                      <input
+                        type="time"
+                        value={filters.eventFromTime}
+                        onChange={e => setFilters({ ...filters, eventFromTime: e.target.value })}
+                        style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Event To</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="date"
+                        value={filters.eventTo}
+                        onChange={e => setFilters({ ...filters, eventTo: e.target.value })}
+                        style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
+                      />
+                      <input
+                        type="time"
+                        value={filters.eventToTime}
+                        onChange={e => setFilters({ ...filters, eventToTime: e.target.value })}
+                        style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>File Created</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="date"
+                        value={filters.fileCreated}
+                        onChange={e => setFilters({ ...filters, fileCreated: e.target.value })}
+                        style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
+                      />
+                      <input
+                        type="time"
+                        value={filters.fileCreatedTime}
+                        onChange={e => setFilters({ ...filters, fileCreatedTime: e.target.value })}
+                        style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Publish Date</label>
                     <input
-                      type="text"
-                      value={filters.sourceFile}
-                      onChange={e => setFilters({ ...filters, sourceFile: e.target.value })}
-                      placeholder="Enter source file name"
-                      style={inputStyle}
+                      type="date"
+                      value={filters.publishDate}
+                      onChange={e => setFilters({ ...filters, publishDate: e.target.value })}
+                      style={{ ...inputStyle, padding: '7px 8px', fontSize: '12px' }}
                     />
                   </div>
                   <div>
                     <label style={labelStyle}>File ID</label>
-                    <input
-                      type="text"
+                    <MultiCheckboxDropdown
                       value={filters.fileId}
-                      onChange={e => setFilters({ ...filters, fileId: e.target.value })}
-                      placeholder="Enter File ID"
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>File Created</label>
-                    <input
-                      type="date"
-                      value={filters.fileCreated}
-                      onChange={e => setFilters({ ...filters, fileCreated: e.target.value })}
-                      style={inputStyle}
+                      onChange={value => setFilters(prev => ({ ...prev, fileId: value }))}
+                      options={filterOptions.fileId}
                     />
                   </div>
                 </div>
