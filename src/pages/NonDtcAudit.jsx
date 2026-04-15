@@ -169,7 +169,7 @@ const NonDtcAudit = () => {
   const { nonDtcAuditData, loading, dataComplete, nonDtcFetchError } = useApp();
   const [showBars, setShowBars] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Initialize filters from location state if returning from detail page
   const initialFilters = location.state?.filters || {
     flow: 'All',
@@ -185,11 +185,11 @@ const NonDtcAudit = () => {
     publishDate: '',
     fileId: 'All',
   };
-  
+
   const [filters, setFilters] = useState(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState(location.state?.appliedFilters || initialFilters);
   const [hasQueried, setHasQueried] = useState(location.state?.hasQueried || false);
-  
+
   // Restore UI state when coming back
   useEffect(() => {
     if (location.state?.showBars !== undefined) {
@@ -225,6 +225,31 @@ const NonDtcAudit = () => {
     setAppliedFilters(empty);
     setHasQueried(false);
   };
+
+  // Selection criteria display config - matches Non-DTC filter fields
+  const CRITERIA_FIELDS = [
+    { label: 'Flow', key: 'flow' },
+    { label: 'Source Application', key: 'sourceApp' },
+    { label: 'Destination Application', key: 'destinationApp' },
+    { label: 'Event Type', key: 'eventType' },
+    { label: 'Event From Date', key: 'eventFrom' },
+    { label: 'Event From Time', key: 'eventFromTime' },
+    { label: 'Event To Date', key: 'eventTo' },
+    { label: 'Event To Time', key: 'eventToTime' },
+    { label: 'File Creation Date', key: 'fileCreated' },
+    { label: 'File Creation Time', key: 'fileCreatedTime' },
+    { label: 'Publish Date', key: 'publishDate' },
+    { label: 'File ID', key: 'fileId' },
+  ];
+
+  const appliedCriteria = useMemo(() => {
+    if (!appliedFilters) return [];
+
+    return CRITERIA_FIELDS.filter(({ key }) => {
+      const value = appliedFilters[key];
+      return value && value !== 'All' && value !== '';
+    });
+  }, [appliedFilters]);
 
   const uniqueFlows = [...new Set(filteredData.map(r => r.sourceApp))].filter(Boolean).length;
 
@@ -492,7 +517,61 @@ const NonDtcAudit = () => {
       </AnimatePresence>
 
       {/* ── Filter summary — same as DTC Audit's criteria bar ── */}
-      {hasQueried && (
+      {hasQueried && appliedCriteria.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{
+            background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '8px',
+            marginBottom: '8px', overflow: 'hidden',
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
+          }}
+        >
+          <div style={{
+            padding: '8px 16px', borderBottom: '1px solid #f1f5f9',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>Your Selection Criteria is</h3>
+          </div>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '6px 16px', padding: '10px 16px'
+          }}>
+            {appliedCriteria.map(({ label, key }) => {
+              let displayValue = appliedFilters[key];
+
+              // Format datetime fields if they contain T separator
+              if (key === 'eventFrom' || key === 'eventTo' || key === 'fileCreated') {
+                if (displayValue && displayValue.includes('T')) {
+                  displayValue = displayValue.replace('T', ' ');
+                }
+              }
+
+              return (
+                <div key={key} style={{ fontSize: '12px', color: '#475569', padding: '2px 0' }}>
+                  <span style={{ fontWeight: 700, color: '#1e293b' }}>{label}:</span>{' '}
+                  {displayValue}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{
+            padding: '8px 16px', borderTop: '1px solid #f1f5f9',
+            textAlign: 'center', fontSize: '12px', color: '#475569'
+          }}>
+            {filteredData.length === 0
+              ? 'No Non-DTC audit records found matching your criteria'
+              : <>Found <span style={{ fontWeight: 700, color: '#10b981' }}>{filteredData.length}</span> Non-DTC audit record{filteredData.length !== 1 ? 's' : ''} matching your criteria</>
+            }
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Fallback: show simple count when no criteria applied but hasQueried is true ── */}
+      {hasQueried && appliedCriteria.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
