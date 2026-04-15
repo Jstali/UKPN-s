@@ -425,6 +425,7 @@ code {
   flex: 1;
   overflow: auto;
   min-height: 0;
+  max-height: 650px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
