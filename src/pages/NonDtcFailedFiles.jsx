@@ -27,19 +27,29 @@ const NonDtcFailedFiles = () => {
 
   const failedFiles = useMemo(() => {
     let filtered = auditData.filter(row => isNonDtcFailedRecord(row.rawData));
-    
+
     // Apply flow filter
     if (flowFilter && flowFilter !== 'All') {
       filtered = filtered.filter(row => row.flow === flowFilter);
     }
-    
+
     // Apply file name filter
     if (fileNameFilter) {
-      filtered = filtered.filter(row => 
-        row.sourceFile && row.sourceFile.toLowerCase().includes(fileNameFilter.toLowerCase())
-      );
+      console.log('[NonDtcFailedFiles] Filtering by fileName:', fileNameFilter, 'Filter length:', fileNameFilter.length);
+      console.log('[NonDtcFailedFiles] Sample row.sourceFile:', filtered[0]?.sourceFile, 'Type:', typeof filtered[0]?.sourceFile);
+      
+      const beforeFilter = filtered.length;
+      filtered = filtered.filter(row => {
+        const sourceFile = row.sourceFile;
+        const matches = sourceFile && sourceFile.toLowerCase().includes(fileNameFilter.toLowerCase());
+        if (!matches && sourceFile) {
+          console.log('[NonDtcFailedFiles] No match - sourceFile:', sourceFile, 'Filter:', fileNameFilter);
+        }
+        return matches;
+      });
+      console.log('[NonDtcFailedFiles] Before filter:', beforeFilter, 'After filter:', filtered.length);
     }
-    
+
     return filtered;
   }, [auditData, flowFilter, fileNameFilter]);
 

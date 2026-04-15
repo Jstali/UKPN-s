@@ -226,9 +226,19 @@ const DtcFailedFiles = () => {
     }
 
     if (fileNameFilter) {
-      filtered = filtered.filter(row =>
-        row.fileName && row.fileName.toLowerCase().includes(fileNameFilter.toLowerCase())
-      );
+      console.log('[DtcFailedFiles] Filtering by fileName:', fileNameFilter, 'Filter length:', fileNameFilter.length);
+      console.log('[DtcFailedFiles] Sample row.fileName:', failedRecords[0]?.fileName, 'Type:', typeof failedRecords[0]?.fileName);
+      
+      const beforeFilter = filtered.length;
+      filtered = filtered.filter(row => {
+        const fileName = row.fileName;
+        const matches = fileName && fileName.toLowerCase().includes(fileNameFilter.toLowerCase());
+        if (!matches && fileName) {
+          console.log('[DtcFailedFiles] No match - fileName:', fileName, 'Filter:', fileNameFilter);
+        }
+        return matches;
+      });
+      console.log('[DtcFailedFiles] Before filter:', beforeFilter, 'After filter:', filtered.length);
     }
 
     return filtered;
