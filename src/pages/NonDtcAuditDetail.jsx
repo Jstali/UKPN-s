@@ -64,11 +64,18 @@ const NonDtcAuditDetail = () => {
   const location = useLocation();
 
   const defaultFilters = {
+    flow: 'All',
     sourceApp: 'All',
-    subscription: 'All',
+    destinationApp: 'All',
     eventType: 'All',
-    status: 'All',
-    fileId: '',
+    eventFrom: '',
+    eventFromTime: '',
+    eventTo: '',
+    eventToTime: '',
+    fileCreated: '',
+    fileCreatedTime: '',
+    publishDate: '',
+    fileId: 'All',
   };
 
   const { nonDtcAuditData, loading, dataComplete, nonDtcFetchError } = useApp();
@@ -108,6 +115,15 @@ const NonDtcAuditDetail = () => {
     return matched ? mapItem(matched) : navRecord;
   }, [location.state, nonDtcAuditData]);
 
+  // Build filter options from audit data
+  const filterOptions = useMemo(() => ({
+    flow:           [...new Set(auditData.map(r => r.flow).filter(Boolean))].sort(),
+    sourceApp:      [...new Set(auditData.map(r => r.sourceApp).filter(Boolean))].sort(),
+    destinationApp: [...new Set(auditData.map(r => r.application).filter(Boolean))].sort(),
+    eventType:      [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort(),
+    fileId:         [...new Set(auditData.map(r => r.fileId).filter(Boolean))].sort(),
+  }), [auditData]);
+
   // Initialise filteredResults when data loads (no nav-state filters)
   useEffect(() => {
     if (!location.state?.filters && auditData.length > 0 && filteredResults.length === 0) {
@@ -120,20 +136,15 @@ const NonDtcAuditDetail = () => {
     if (location.state?.filters && auditData.length > 0) {
       const incomingFilters = location.state.filters;
       setFilters(incomingFilters);
-      
+
       let results = [...auditData];
-      results = results.filter(r => matchesMultiSelect(incomingFilters.sourceApp, r.sourceAppName));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.subscription, r.subscription));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.status, r.status));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.flow, r.flow));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.sourceApp, r.sourceApp));
+      results = results.filter(r => matchesMultiSelect(incomingFilters.destinationApp, r.application));
       results = results.filter(r => matchesMultiSelect(incomingFilters.eventType, r.eventType));
-      if (incomingFilters.sourceFile) results = results.filter(r => r.sourceFileName?.toLowerCase().includes(incomingFilters.sourceFile.toLowerCase()));
-      if (incomingFilters.fileId) results = results.filter(r => r.fileId?.includes(incomingFilters.fileId));
-      if (incomingFilters.fileCreated) {
-        results = results.filter(r => {
-          const fileDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-          return fileDate === incomingFilters.fileCreated;
-        });
-      }
+      results = results.filter(r => matchesMultiSelect(incomingFilters.fileId, r.fileId));
+      
+      // Date filters
       if (incomingFilters.eventFrom) {
         results = results.filter(r => {
           const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
@@ -146,7 +157,13 @@ const NonDtcAuditDetail = () => {
           return eventDate <= incomingFilters.eventTo;
         });
       }
-      
+      if (incomingFilters.fileCreated) {
+        results = results.filter(r => {
+          const fileDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+          return fileDate === incomingFilters.fileCreated;
+        });
+      }
+
       setFilteredResults(results);
       setHasQueried(true);
       window.history.replaceState({}, document.title);
@@ -166,25 +183,47 @@ const NonDtcAuditDetail = () => {
 
   const handleQuery = () => {
     let results = [...auditData];
-    results = results.filter(r => matchesMultiSelect(filters.sourceApp, r.sourceAppName));
-    results = results.filter(r => matchesMultiSelect(filters.subscription, r.subscription));
+    results = results.filter(r => matchesMultiSelect(filters.flow, r.flow));
+    results = results.filter(r => matchesMultiSelect(filters.sourceApp, r.sourceApp));
+    results = results.filter(r => matchesMultiSelect(filters.destinationApp, r.application));
     results = results.filter(r => matchesMultiSelect(filters.eventType, r.eventType));
-    results = results.filter(r => matchesMultiSelect(filters.status, r.status));
-    if (filters.fileId) results = results.filter(r => r.fileId && r.fileId.includes(filters.fileId));
+    results = results.filter(r => matchesMultiSelect(filters.fileId, r.fileId));
+    
+    // Date filters
+    if (filters.eventFrom) {
+      results = results.filter(r => {
+        const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+        return eventDate >= filters.eventFrom;
+      });
+    }
+    if (filters.eventTo) {
+      results = results.filter(r => {
+        const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+        return eventDate <= filters.eventTo;
+      });
+    }
+    if (filters.fileCreated) {
+      results = results.filter(r => {
+        const fileDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
+        return fileDate === filters.fileCreated;
+      });
+    }
+    
     setFilteredResults(results);
     setCurrentPage(1);
     setHasQueried(true);
   };
 
-  // Build dropdown options
-  const flowOptions = [...new Set(auditData.map(r => r.sourceAppName).filter(Boolean))].sort();
-  const eventTypeOptions = [...new Set(auditData.map(r => r.eventType).filter(Boolean))].sort();
-  const statusOptions = [...new Set(auditData.map(r => r.status).filter(Boolean))].sort();
+  const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
+  const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
 
   // Search + paginate
-  const searchedResults = filteredResults.filter(row =>
-    !searchTerm || Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const searchedResults = useMemo(() => {
+    return filteredResults.filter(row =>
+      !searchTerm || Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [filteredResults, searchTerm]);
+  
   const totalPages = Math.ceil(searchedResults.length / pageSize) || 1;
   const startIndex = (currentPage - 1) * pageSize;
   const currentData = searchedResults.slice(startIndex, startIndex + pageSize);
@@ -192,9 +231,6 @@ const NonDtcAuditDetail = () => {
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
-
-  const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
-  const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
 
   if (selectedRecord) {
     const raw = selectedRecord.rawData || {};
@@ -354,13 +390,29 @@ const NonDtcAuditDetail = () => {
         boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
       }}>
         <div style={{ padding: '16px 20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' }}>
+            <div>
+              <label style={labelStyle}>Flow</label>
+              <MultiCheckboxDropdown
+                value={filters.flow}
+                onChange={(value) => handleFilterChange('flow', value)}
+                options={filterOptions.flow}
+              />
+            </div>
             <div>
               <label style={labelStyle}>Source Application</label>
               <MultiCheckboxDropdown
                 value={filters.sourceApp}
                 onChange={(value) => handleFilterChange('sourceApp', value)}
-                options={flowOptions}
+                options={filterOptions.sourceApp}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Destination Application</label>
+              <MultiCheckboxDropdown
+                value={filters.destinationApp}
+                onChange={(value) => handleFilterChange('destinationApp', value)}
+                options={filterOptions.destinationApp}
               />
             </div>
             <div>
@@ -368,20 +420,78 @@ const NonDtcAuditDetail = () => {
               <MultiCheckboxDropdown
                 value={filters.eventType}
                 onChange={(value) => handleFilterChange('eventType', value)}
-                options={eventTypeOptions}
+                options={filterOptions.eventType}
               />
             </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 0.8fr 0.8fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Status</label>
-              <MultiCheckboxDropdown
-                value={filters.status}
-                onChange={(value) => handleFilterChange('status', value)}
-                options={statusOptions}
+              <label style={labelStyle}>Event From</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="date"
+                  value={filters.eventFrom}
+                  onChange={(e) => handleFilterChange('eventFrom', e.target.value)}
+                  style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
+                />
+                <input
+                  type="time"
+                  value={filters.eventFromTime}
+                  onChange={(e) => handleFilterChange('eventFromTime', e.target.value)}
+                  style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Event To</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="date"
+                  value={filters.eventTo}
+                  onChange={(e) => handleFilterChange('eventTo', e.target.value)}
+                  style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
+                />
+                <input
+                  type="time"
+                  value={filters.eventToTime}
+                  onChange={(e) => handleFilterChange('eventToTime', e.target.value)}
+                  style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>File Creation</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="date"
+                  value={filters.fileCreated}
+                  onChange={(e) => handleFilterChange('fileCreated', e.target.value)}
+                  style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
+                />
+                <input
+                  type="time"
+                  value={filters.fileCreatedTime}
+                  onChange={(e) => handleFilterChange('fileCreatedTime', e.target.value)}
+                  style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Publish Date</label>
+              <input
+                type="date"
+                value={filters.publishDate}
+                onChange={(e) => handleFilterChange('publishDate', e.target.value)}
+                style={inputStyle}
               />
             </div>
             <div>
               <label style={labelStyle}>File ID</label>
-              <input type="text" value={filters.fileId} onChange={(e) => handleFilterChange('fileId', e.target.value)} placeholder="Enter File ID" style={inputStyle} />
+              <MultiCheckboxDropdown
+                value={filters.fileId}
+                onChange={(value) => handleFilterChange('fileId', value)}
+                options={filterOptions.fileId}
+              />
             </div>
           </div>
         </div>
