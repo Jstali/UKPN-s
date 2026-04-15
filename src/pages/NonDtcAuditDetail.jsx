@@ -597,7 +597,7 @@ const NonDtcAuditDetail = () => {
           </div>
 
           {/* Horizontally scrollable table */}
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '500px' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '650px' }}>
             <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
