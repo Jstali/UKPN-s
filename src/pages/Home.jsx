@@ -104,6 +104,7 @@ const Home = () => {
     };
 
     const appStats = new Map();
+    const debugCalculations = [];
 
     auditData.forEach((item) => {
       const events = Array.isArray(item.events) ? item.events : [];
@@ -118,6 +119,23 @@ const Home = () => {
       if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
 
       const durationSec = (end - start) / 1000;
+      
+      // Log first 5 items for debugging
+      if (debugCalculations.length < 5) {
+        const startTs = getTs(event1);
+        const endTs = getTs(event4);
+        debugCalculations.push({
+          file: item.Source_FileName || item.id,
+          startTs,
+          endTs,
+          startSec: Math.floor(start / 1000),
+          endSec: Math.floor(end / 1000),
+          durationSec: durationSec.toFixed(2),
+          durationFormatted: formatDurationHMS(durationSec),
+          skipped: durationSec > 3600
+        });
+      }
+      
       // Skip anomalous durations > 1 hour (likely stale/mismatched event pairs)
       if (durationSec > 3600) return;
 
@@ -130,6 +148,12 @@ const Home = () => {
       current.totalDuration += durationSec;
       current.files += 1;
     });
+
+    // Print debug table to console
+    if (debugCalculations.length > 0) {
+      console.log('[Performance] Debug - Timestamp to Seconds Conversion:');
+      console.table(debugCalculations);
+    }
 
     return Array.from(appStats.entries()).map(([name, stats]) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
