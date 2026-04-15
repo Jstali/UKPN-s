@@ -632,7 +632,7 @@ const DtcAudit = () => {
               cellPadding: 2,
             },
           }}
-          onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters } })}
+          onViewDetail={() => navigate('/dtc-audit-filter', { state: { filters: appliedFilters || filters } })}
         />
       )}
     </motion.div>
