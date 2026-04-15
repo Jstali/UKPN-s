@@ -389,11 +389,20 @@ const DataTable = ({
       return activeFilters.every(([key, val]) => {
         const cellVal = String(item[key] || '');
         if (DATE_COLUMNS.includes(key)) {
-          const parts = cellVal.split(' ')[0]?.split('/');
-          if (parts && parts.length === 3) {
-            const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-            return cellDate === val;
+          // Extract date part (before time) and normalize to YYYY-MM-DD for comparison
+          const datePart = cellVal.split(' ')[0];  // Get "DD-MM-YYYY" or "DD/MM/YYYY"
+          if (datePart) {
+            // Support both DD-MM-YYYY and DD/MM/YYYY formats
+            const parts = datePart.split(/[-\/]/);  // Split by - or /
+            if (parts && parts.length === 3) {
+              const [day, month, year] = parts;
+              const cellDate = `${year}-${month}-${day}`;
+              console.log('[DataTable] Date filter - cellVal:', cellVal, 'Filter val:', val, 'Normalized cellDate:', cellDate, 'Match:', cellDate.includes(val));
+              // Allow partial matching (e.g., "2026-04" matches April 2026)
+              return cellDate.includes(val) || cellDate === val;
+            }
           }
+          // Fallback: simple string includes
           return cellVal.includes(val);
         }
         if (!val.includes('*')) {
