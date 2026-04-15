@@ -352,8 +352,22 @@ const DtcAuditFilter = () => {
     () => [...new Set((subscriptionData || []).map(app => app.Application || app.application || app.filterId || app.id).filter(Boolean))].sort(),
     [subscriptionData]
   );
-  const [filters, setFilters] = useState(defaultFilters);
-  const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
+  
+  // Helper function to convert DtcAudit filters to DtcAuditFilter format
+  const convertFiltersFromAudit = (auditFilters) => {
+    if (!auditFilters) return defaultFilters;
+    return {
+      ...defaultFilters,
+      ...auditFilters,
+      sourceApp: auditFilters.sourceApplication ?? auditFilters.sourceApp ?? 'All',
+      destinationApp: auditFilters.destinationApplication ?? auditFilters.destinationApp ?? 'All',
+    };
+  };
+
+  // Initialize filters from navigation state (from DtcAudit page) or use defaults
+  const initialFilters = convertFiltersFromAudit(location.state?.filters);
+  const [filters, setFilters] = useState(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [hasQueried, setHasQueried] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
   const [exceptionCount, setExceptionCount] = useState(0);
@@ -366,10 +380,10 @@ const DtcAuditFilter = () => {
   const [dateError, setDateError] = useState('');
   const filterBtnRefs = useRef({});
 
-  // Auto-query on data load — use default filters (show all)
+  // Auto-query on data load — use filters from navigation state or defaults
   useEffect(() => {
     if (auditData.length > 0) {
-      handleQuery(defaultFilters);
+      handleQuery(initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auditData.length]);
@@ -650,6 +664,7 @@ const DtcAuditFilter = () => {
         onFilterChange={handleDropdownFilterChange}
         onReset={handleReset}
         onApply={handleDropdownApply}
+        disableAnimation={true}
       />
 
       {/* Results Table */}

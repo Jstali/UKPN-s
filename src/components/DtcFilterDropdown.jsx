@@ -218,7 +218,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
+const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply, disableAnimation = false }) => {
   const [dateError, setDateError] = React.useState('');
   const [flowsFromApi, setFlowsFromApi] = React.useState([]);
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
@@ -380,10 +380,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
 
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={disableAnimation ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+      animate={disableAnimation ? { opacity: 1, height: 'auto' } : { opacity: 1, height: 'auto' }}
+      exit={disableAnimation ? undefined : { opacity: 0, height: 0 }}
+      transition={disableAnimation ? { duration: 0 } : { duration: 0.2 }}
       style={{
         background: 'white', borderRadius: '8px',
         border: '1px solid #e5e7eb', overflow: 'hidden',
