@@ -16,11 +16,12 @@ export const parseHeader = (headerStr) => {
   };
 };
 
-// Format flow version: D0132001 → D0132 001
+// Format flow version: FDB01002 → FDB01 002 (split at last 3 digits)
 export const formatFlowVersion = (flowVersion) => {
   if (!flowVersion || flowVersion === 'UNKNOWN') return '';
-  // Match pattern: letters followed by digits, split at last 3 digits
-  const match = flowVersion.match(/^([A-Z]+\d{4})(\d{3})$/);
+  // Match pattern: letters/digits followed by last 3 digits (version)
+  // Examples: FDB01002 → FDB01 002, D0132001 → D0132 001
+  const match = flowVersion.match(/^(.+)(\d{3})$/);
   if (match) {
     return `${match[1]} ${match[2]}`;
   }
