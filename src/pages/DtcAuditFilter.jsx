@@ -383,6 +383,9 @@ const DtcAuditFilter = () => {
   // Auto-query on data load — use filters from navigation state or defaults
   useEffect(() => {
     if (auditData.length > 0) {
+      console.log('[DtcAuditFilter] Auto-query triggered');
+      console.log('[DtcAuditFilter] auditData length:', auditData.length);
+      console.log('[DtcAuditFilter] initialFilters:', initialFilters);
       handleQuery(initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -458,6 +461,9 @@ const DtcAuditFilter = () => {
     }
     setDateError('');
     let results = [];
+    console.log('[DtcAuditFilter] handleQuery - auditData length:', auditData.length);
+    console.log('[DtcAuditFilter] handleQuery - filters:', f);
+    
     auditData.forEach(item => {
       const headerStr = getHeaderString(item);
       const parsed = parseHeader(headerStr);
@@ -512,16 +518,30 @@ const DtcAuditFilter = () => {
     });
 
     // Apply filters
+    console.log('[DtcAuditFilter] Before filtering - results length:', results.length);
+    
     if (f.sourceApp && f.sourceApp !== 'All') {
       const selectedApps = f.sourceApp.split(',');
       results = results.filter(r => selectedApps.includes(r.sourceApp));
+      console.log('[DtcAuditFilter] After sourceApp filter:', results.length);
     }
     if (f.destinationApp && f.destinationApp !== 'All') {
       const selectedApps = f.destinationApp.split(',');
       results = results.filter(r => selectedApps.includes(r.application));
+      console.log('[DtcAuditFilter] After destinationApp filter:', results.length);
     }
-    if (f.eventType && f.eventType !== 'All') { const v = f.eventType.split(','); results = results.filter(r => v.includes(r.eventType)); }
-    if (f.flow && f.flow !== 'All') { const v = f.flow.split(','); results = results.filter(r => v.includes(r.flow)); }
+    if (f.eventType && f.eventType !== 'All') { 
+      const v = f.eventType.split(','); 
+      results = results.filter(r => v.includes(r.eventType)); 
+      console.log('[DtcAuditFilter] After eventType filter:', results.length);
+    }
+    if (f.flow && f.flow !== 'All') { 
+      const v = f.flow.split(','); 
+      console.log('[DtcAuditFilter] Filtering by flow:', v);
+      console.log('[DtcAuditFilter] Sample flows in data:', results.slice(0, 5).map(r => r.flow));
+      results = results.filter(r => v.includes(r.flow)); 
+      console.log('[DtcAuditFilter] After flow filter:', results.length);
+    }
     if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(','); results = results.filter(r => v.includes(r.fromRole)); }
     if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(','); results = results.filter(r => v.includes(r.fromMPID)); }
     if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(','); results = results.filter(r => v.includes(r.toRole)); }
