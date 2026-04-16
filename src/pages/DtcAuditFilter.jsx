@@ -577,14 +577,18 @@ const DtcAuditFilter = () => {
 
     // Apply filters
     console.log('[DtcAuditFilter] Before filtering - results length:', results.length);
+    console.log('[DtcAuditFilter] Filters to apply:', f);
     
     if (f.sourceApp && f.sourceApp !== 'All') {
       const selectedApps = f.sourceApp.split(',').map(normalizeFilterValue).filter(Boolean);
+      console.log('[DtcAuditFilter] sourceApp filter values:', selectedApps);
+      console.log('[DtcAuditFilter] Sample sourceApp in data:', results.slice(0, 5).map(r => `"${r.sourceApp}"`));
       results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.sourceApp)));
       console.log('[DtcAuditFilter] After sourceApp filter:', results.length);
     }
     if (f.destinationApp && f.destinationApp !== 'All') {
       const selectedApps = f.destinationApp.split(',').map(normalizeFilterValue).filter(Boolean);
+      console.log('[DtcAuditFilter] destinationApp filter values:', selectedApps);
       results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.application)));
       console.log('[DtcAuditFilter] After destinationApp filter:', results.length);
     }
