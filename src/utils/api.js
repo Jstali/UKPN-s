@@ -292,6 +292,9 @@ const api = {
         apiUrl += `&continuationToken=${encodeURIComponent(continuationToken)}`;
       }
 
+      console.log('🔍 Non-DTC API URL:', apiUrl);
+      console.log('🔍 Non-DTC API Code:', NON_DTC_API_CODE ? 'Present' : 'Missing');
+
       const timeoutControl = withTimeoutSignal(options.signal, options.timeoutMs);
       const signal = timeoutControl.signal;
       cleanup = timeoutControl.cleanup;
@@ -300,9 +303,13 @@ const api = {
         method: 'GET',
         signal,
         headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'Accept-Encoding': 'gzip, deflate, br'
         }
       });
+
+      console.log('🔍 Non-DTC API Response Status:', res.status);
 
       if (!res.ok) {
         const errorText = await res.text();
