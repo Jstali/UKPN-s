@@ -385,7 +385,9 @@ const DtcAuditFilter = () => {
     if (auditData.length > 0) {
       console.log('[DtcAuditFilter] Auto-query triggered');
       console.log('[DtcAuditFilter] auditData length:', auditData.length);
+      console.log('[DtcAuditFilter] location.state?.filters:', location.state?.filters);
       console.log('[DtcAuditFilter] initialFilters:', initialFilters);
+      console.log('[DtcAuditFilter] appliedFilters:', appliedFilters);
       handleQuery(initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -592,6 +594,7 @@ const DtcAuditFilter = () => {
     }
 
     setFilteredResults(results);
+    setAppliedFilters({ ...f });
     setExceptionCount(0);
     setHasQueried(true);
     setCurrentPage(1);
