@@ -474,6 +474,11 @@ const DtcAuditFilter = () => {
       const flowFromFilename = extractFlowFromFilename(fileName);
       const rawFlow = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || item.FlowVersion || flowFromFilename;
 
+      // Get source application from first event (same as DtcAudit.jsx)
+      const sourceApplication = (item.events && item.events.length > 0) 
+        ? (item.events[0]?.applicationName || 'Unknown')
+        : (item.Source_Application || item.source_application || item.SourceApplication || 'Unknown');
+
       if (!headerStr && !_missingHeaderLogged) {
         _missingHeaderLogged = true;
         console.log('[DtcAuditFilter] Sample item missing Header_String — all available fields:', Object.keys(item));
@@ -502,7 +507,7 @@ const DtcAuditFilter = () => {
             toRole: parsed.toRole || event.toRole || event.To_Role || '',
             toMPID: parsed.toMPID || event.toMPID || event.To_MPID || '',
             recApp: parsed.recApp || event.Receiving_Application || event.receivingApp || '',
-            sourceApp: item.Source_Application || item.source_application || item.SourceApplication || 'Unknown',
+            sourceApp: sourceApplication,
             application: applicationValue,
             eventType: eventTypeValue,
             status: event.Status || event.status || 'Unknown',
