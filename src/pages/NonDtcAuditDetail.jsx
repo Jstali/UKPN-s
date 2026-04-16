@@ -174,8 +174,6 @@ const NonDtcAuditDetail = () => {
   const handleReset = () => {
     setFilters({ ...defaultFilters });
     setFilteredResults(auditData);
-    setSearchTerm('');
-    setCurrentPage(1);
   };
 
   const handleQuery = () => {
@@ -207,7 +205,6 @@ const NonDtcAuditDetail = () => {
     }
     
     setFilteredResults(results);
-    setCurrentPage(1);
     setHasQueried(true);
   };
 
