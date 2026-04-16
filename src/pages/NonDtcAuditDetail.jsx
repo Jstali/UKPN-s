@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Download, Eye } from 'lucide-react';
 import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import FileViewModal from '../components/FileViewModal';
+import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 
 const NON_DTC_EVENT_TYPE_MAP = {
@@ -82,10 +83,6 @@ const NonDtcAuditDetail = () => {
   const [filters, setFilters] = useState({ ...defaultFilters });
   const [hasQueried, setHasQueried] = useState(true);
   const [filteredResults, setFilteredResults] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
   const [fileViewModal, setFileViewModal] = useState({ show: false, fileName: '', fileContent: '', loading: false, error: null });
 
   const handlePreview = (rawRecord) => {
@@ -216,21 +213,6 @@ const NonDtcAuditDetail = () => {
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
   const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
-
-  // Search + paginate
-  const searchedResults = useMemo(() => {
-    return filteredResults.filter(row =>
-      !searchTerm || Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  }, [filteredResults, searchTerm]);
-  
-  const totalPages = Math.ceil(searchedResults.length / pageSize) || 1;
-  const startIndex = (currentPage - 1) * pageSize;
-  const currentData = searchedResults.slice(startIndex, startIndex + pageSize);
-
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [currentPage, totalPages]);
 
   if (selectedRecord) {
     const raw = selectedRecord.rawData || {};
@@ -556,123 +538,29 @@ const NonDtcAuditDetail = () => {
 
       {/* Results Table */}
       {!loading && dataComplete && hasQueried && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px',
-            overflow: 'hidden', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+        <DataTable
+          tableId="non_dtc_audit_detail"
+          data={filteredResults}
+          columns={ALL_COLUMNS}
+          exportColumns={ALL_COLUMNS}
+          compactColumns={ALL_COLUMNS}
+          defaultSort={{ key: 'timestamp', direction: 'desc' }}
+          defaultPageSize={25}
+          onDownload={true}
+          exportConfig={{
+            filename: 'Non_DTC_Audit_Detail_Export',
+            pdfOptions: {
+              orientation: 'landscape',
+              pageFormat: 'a4',
+              fontSize: 6,
+              overflow: 'linebreak',
+              horizontalPageBreak: true,
+              horizontalPageBreakRepeat: [0, 1, 2],
+              minCellWidth: 12,
+              cellPadding: 2,
+            },
           }}
-        >
-          {/* Table toolbar */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '12px 16px', borderBottom: '1px solid #f1f5f9',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
-                Results: {searchedResults.length} records
-              </span>
-              <input
-                type="text"
-                placeholder="Search results..."
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                style={{
-                  padding: '6px 12px', border: '1.5px solid #e2e8f0', borderRadius: '6px',
-                  fontSize: '12px', outline: 'none', width: '200px',
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-                style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px' }}>
-                <option value={10}>10 per page</option>
-                <option value={25}>25 per page</option>
-                <option value={50}>50 per page</option>
-                <option value={100}>100 per page</option>
-                <option value={200}>200 per page</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Horizontally scrollable table */}
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '650px' }}>
-            <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  {ALL_COLUMNS.map(col => (
-                    <th key={col.key} style={{
-                      position: 'sticky', top: 0, zIndex: 10,
-                      background: '#27187e', color: '#fff',
-                      padding: '8px 14px', fontSize: '11px', fontWeight: 700,
-                      textTransform: 'uppercase', letterSpacing: '0.04em',
-                      whiteSpace: 'nowrap', textAlign: 'left',
-                      borderBottom: '2px solid #1a1160',
-                    }}>
-                      {col.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.length === 0 ? (
-                  <tr>
-                    <td colSpan={ALL_COLUMNS.length} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>
-                      No records found
-                    </td>
-                  </tr>
-                ) : (
-                  currentData.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafbff' }}>
-                      {ALL_COLUMNS.map(col => (
-                        <td key={col.key} style={{
-                          padding: '7px 14px', fontSize: '12px', color: '#334155',
-                          whiteSpace: 'nowrap', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}
-                        title={String(row[col.key] || '')}
-                        >
-                          {col.key === 'status' ? (
-                            <span style={{
-                              padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
-                              background: (row[col.key] || '').toLowerCase() === 'success' ? '#dcfce7' : (row[col.key] || '').toLowerCase() === 'failed' ? '#fef2f2' : '#f1f5f9',
-                              color: (row[col.key] || '').toLowerCase() === 'success' ? '#16a34a' : (row[col.key] || '').toLowerCase() === 'failed' ? '#dc2626' : '#475569',
-                            }}>
-                              {row[col.key] || ''}
-                            </span>
-                          ) : (
-                            row[col.key] || ''
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '10px 16px', borderTop: '1px solid #f1f5f9', background: '#fff',
-          }}>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>
-              Showing {searchedResults.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + pageSize, searchedResults.length)} of {searchedResults.length} entries
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                style={{ padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', background: currentPage === 1 ? '#f3f4f6' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '12px' }}>
-                <ChevronLeft size={14} />
-              </button>
-              <span style={{ fontSize: '12px', color: '#334155', fontWeight: 500 }}>Page {currentPage} of {totalPages}</span>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                style={{ padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', background: currentPage === totalPages ? '#f3f4f6' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '12px' }}>
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        </motion.div>
+        />
       )}
     </motion.div>
   );
