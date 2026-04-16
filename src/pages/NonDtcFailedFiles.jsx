@@ -6,6 +6,7 @@ import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { formatDateTime } from '../utils/auditUtils';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
+import { isNonDtcFailedRecord } from '../utils/statusUtils';
 
 const NON_DTC_DEFAULT_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
   ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
@@ -113,7 +114,11 @@ const NonDtcFailedFiles = () => {
   const auditData = useMemo(() => flattenNonDtcEvents(nonDtcAuditData || []), [nonDtcAuditData]);
 
   const failedFiles = useMemo(() => {
-    let filtered = auditData.filter(row => row.status === 'Failed');
+    // Filter using the same logic as Home page
+    let filtered = auditData.filter(row => {
+      // Check if the original raw data (before flattening) is a failed record
+      return row.rawData && isNonDtcFailedRecord(row.rawData);
+    });
 
     if (filters.flow && filters.flow !== 'All') {
       filtered = filtered.filter(row => row.flow === filters.flow);
@@ -129,7 +134,7 @@ const NonDtcFailedFiles = () => {
   }, [auditData, filters]);
 
   const uniqueFlows = useMemo(() => {
-    const failed = auditData.filter(row => row.status === 'Failed');
+    const failed = auditData.filter(row => row.rawData && isNonDtcFailedRecord(row.rawData));
     return ['All', ...new Set(failed.map(row => row.flow).filter(Boolean))];
   }, [auditData]);
 
