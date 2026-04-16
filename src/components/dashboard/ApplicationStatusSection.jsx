@@ -21,6 +21,7 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
   const [hasAnimated, setHasAnimated] = React.useState(false);
   const [status, setStatus] = React.useState(null); // raw API response
   const [fetchLoading, setFetchLoading] = React.useState(true);
+  const [lastUpdated, setLastUpdated] = React.useState('');
 
   React.useEffect(() => { setHasAnimated(true); }, []);
 
@@ -28,6 +29,11 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
     const data = await api.fetchApplicationStatus();
     setStatus(data);
     setFetchLoading(false);
+    
+    // Update timestamp when data is fetched
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLastUpdated(`Updated: ${timeStr} UTC`);
   }, []);
 
   // Initial fetch + 5-minute poll
@@ -44,7 +50,7 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
 
   const headline  = fetchLoading || !status ? 'Checking systems...' : (status.headline || status.summary || 'Status unknown');
   const badgeText = fetchLoading || !status ? 'Loading'            : (status.badgeText || status.overallStatus || '—');
-  const updatedLabel = status?.updatedTimeLabel || `Updated: ${dashboardUpdatedAt}`;
+  const updatedLabel = status?.updatedTimeLabel || lastUpdated || `Updated: ${dashboardUpdatedAt}`;
 
   return (
     <motion.div
