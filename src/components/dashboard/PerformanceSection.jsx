@@ -11,7 +11,7 @@ const formatDurationHMS = (seconds) => {
   return `${hours}:${minutes}:${secs}`;
 };
 
-const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
+const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [], allFileDurations = [] }) => {
   const navigate = useNavigate();
   const [hasAnimated, setHasAnimated] = React.useState(false);
 
@@ -19,17 +19,17 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     setHasAnimated(true);
   }, []);
   
-  // Calculate correct overall average: total duration / total files
+  // Calculate overall average from individual file durations (DTC + Non-DTC combined)
   const overallAverage = React.useMemo(() => {
-    if (performanceItems.length === 0) return '00:00:00';
+    if (allFileDurations.length === 0) return '00:00:00';
     
-    const totalDuration = performanceItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
-    const totalFiles = performanceItems.reduce((sum, app) => sum + app.files, 0);
+    const totalDuration = allFileDurations.reduce((sum, duration) => sum + duration, 0);
+    const totalFiles = allFileDurations.length;
     
     if (totalFiles === 0) return '00:00:00';
     const avg = totalDuration / totalFiles;
     return formatDurationHMS(avg);
-  }, [performanceItems]);
+  }, [allFileDurations]);
 
   return (
     <motion.div

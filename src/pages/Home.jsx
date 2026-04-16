@@ -104,8 +104,9 @@ const Home = () => {
     };
 
     const appStats = new Map();
-    const debugCalculations = [];
+    const allFileDurations = []; // Store all individual file durations
 
+    // Process DTC data
     auditData.forEach((item) => {
       const events = Array.isArray(item.events) ? item.events : [];
       const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
@@ -120,24 +121,10 @@ const Home = () => {
 
       const durationSec = (end - start) / 1000;
       
-      // Log first 5 items for debugging
-      if (debugCalculations.length < 5) {
-        const startTs = getTs(event1);
-        const endTs = getTs(event4);
-        debugCalculations.push({
-          file: item.Source_FileName || item.id,
-          startTs,
-          endTs,
-          startSec: Math.floor(start / 1000),
-          endSec: Math.floor(end / 1000),
-          durationSec: durationSec.toFixed(2),
-          durationFormatted: formatDurationHMS(durationSec),
-          skipped: durationSec > 3600
-        });
-      }
-      
-      // Skip anomalous durations > 1 hour (likely stale/mismatched event pairs)
+      // Skip anomalous durations > 1 hour
       if (durationSec > 3600) return;
+
+      allFileDurations.push(durationSec); // Add to overall calculation
 
       const appName = event1.applicationName || item.Application_Name || 'Unknown';
 
@@ -149,13 +136,37 @@ const Home = () => {
       current.files += 1;
     });
 
-    // Print debug table to console
-    if (debugCalculations.length > 0) {
-      console.log('[Performance] Debug - Timestamp to Seconds Conversion:');
-      console.table(debugCalculations);
-    }
+    // Process Non-DTC data
+    nonDtcAuditData.forEach((item) => {
+      const events = Array.isArray(item.events) ? item.events : [];
+      const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
+      const event1 = events.find((e) => String(e.eventType) === '1' && getTs(e));
+      const event4 = events.find((e) => String(e.eventType) === '4' && getTs(e));
 
-    return Array.from(appStats.entries()).map(([name, stats]) => {
+      if (!event1 || !event4) return;
+
+      const start = new Date(getTs(event1)).getTime();
+      const end = new Date(getTs(event4)).getTime();
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
+
+      const durationSec = (end - start) / 1000;
+      
+      // Skip anomalous durations > 1 hour
+      if (durationSec > 3600) return;
+
+      allFileDurations.push(durationSec); // Add to overall calculation
+
+      const appName = item.sourceAppName || 'Unknown';
+
+      if (!appStats.has(appName)) {
+        appStats.set(appName, { totalDuration: 0, files: 0 });
+      }
+      const current = appStats.get(appName);
+      current.totalDuration += durationSec;
+      current.files += 1;
+    });
+
+    const systemStats = Array.from(appStats.entries()).map(([name, stats]) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
       return {
         name,
@@ -165,7 +176,9 @@ const Home = () => {
         totalDuration: stats.totalDuration,
       };
     });
-  }, [auditData]);
+
+    return { systemStats, allFileDurations };
+  }, [auditData, nonDtcAuditData]);
 
   const duplicateChecksumFiles = React.useMemo(() => {
     return auditData.filter(item =>
@@ -520,7 +533,12 @@ const Home = () => {
             />
           </div>
           <div className="dashboard-col-right">
-            <PerformanceSection dashboardUpdatedAt={dashboardUpdatedAt} performanceItems={performanceItems} loading={loading} />
+            <PerformanceSection 
+              dashboardUpdatedAt={dashboardUpdatedAt} 
+              performanceItems={performanceItems.systemStats} 
+              allFileDurations={performanceItems.allFileDurations}
+              loading={loading} 
+            />
           </div>
         </div>
       </div>
