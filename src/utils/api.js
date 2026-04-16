@@ -173,7 +173,7 @@ const api = {
       }
 
       const appStats = new Map();
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000; // last 24 hours
+      const cutoff = Date.now() - 24 * 60 * 60 ; // last 24 hours
 
       auditData.forEach((item) => {
         const events = Array.isArray(item.events) ? item.events : [];

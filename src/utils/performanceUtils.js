@@ -63,6 +63,8 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   const appStats = new Map();
   const allFileDurations = [];
 
+  console.log('[Performance] Processing DTC audit data:', auditData.length, 'files');
+  
   auditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
     const boundaries = getBoundaryEvents(events);
@@ -78,6 +80,8 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
 
     addDurationToStats(appStats, allFileDurations, appName, durationSec);
   });
+
+  console.log('[Performance] Processing Non-DTC audit data:', nonDtcAuditData.length, 'files');
 
   nonDtcAuditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
@@ -106,6 +110,9 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
       };
     })
     .sort((a, b) => b.actual - a.actual);
+
+  console.log('[Performance] Final stats:', systemStats.length, 'applications');
+  console.log('[Performance] Applications:', systemStats.map(s => `${s.name} (${s.files} files)`).join(', '));
 
   return { systemStats, allFileDurations };
 };
