@@ -9,6 +9,53 @@ import { useApp } from '../context/AppContext';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+const EVENT_TYPE_MAP = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  '21': 'Invalid Flow',
+  '22': 'File Transferred',
+  '32': 'File Processed',
+  'Failed': 'Failed'
+};
+const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+const deriveFlowVersion = (item, parsedFlowVersion, flowFromFilename) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    item.FlowVersion ||
+    flowFromFilename ||
+    '';
+
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+
+  return '';
+};
+
+const resolveProcessedValue = (...candidates) => {
+  for (const candidate of candidates) {
+    if (candidate === true || candidate === false) return String(candidate);
+    if (candidate === null || candidate === undefined) continue;
+    const normalized = String(candidate).trim();
+    if (normalized && normalized.toLowerCase() !== 'unknown') return normalized;
+  }
+  return '';
+};
 
 // Try to extract DTC flow code from filename (e.g. D0132001_P_X_EPN.DTC → D0132001)
 const extractFlowFromFilename = (filename) => {
@@ -472,7 +519,7 @@ const DtcAuditFilter = () => {
       const fileName = getSourceFileName(item);
       // Extract flow from filename as last resort (e.g. D0132001_P_X_EPN.DTC)
       const flowFromFilename = extractFlowFromFilename(fileName);
-      const rawFlow = parsed.flowVersion || item.Flow_Version || item.flow_version || item.flow || item.FlowVersion || flowFromFilename;
+      const rawFlow = deriveFlowVersion(item, parsed.flowVersion, flowFromFilename);
 
       // Get source application from first event (same as DtcAudit.jsx)
       const sourceApplication = (item.events && item.events.length > 0) 
@@ -489,8 +536,11 @@ const DtcAuditFilter = () => {
         item.events.forEach(event => {
           const formattedFlowVersion = formatFlowVersion(rawFlow) || '-';
           const flowVersionParts = formattedFlowVersion.split(' ');
-          
-          const eventTypeValue = event.Event_Type || event.event_type || event.eventType || 'Unknown';
+          const rawTimestamp = event.timestamp || event.Timestamp || event.created || event.Created || '';
+          const eventTypeKey = event.Status === 'Failed'
+            ? 'Failed'
+            : (event.Event_Type || event.event_type || event.eventType || 'Unknown');
+          const eventTypeValue = EVENT_TYPE_MAP[eventTypeKey] || eventTypeKey;
           const applicationValue = event.applicationName || event.Destination_Application || event.destinationApplication || 'NA';
           
           results.push({
@@ -511,8 +561,9 @@ const DtcAuditFilter = () => {
             application: applicationValue,
             eventType: eventTypeValue,
             status: event.Status || event.status || 'Unknown',
-            processed: event.processed || 'false',
-            timestamp: formatDateTime(event.timestamp || event.Timestamp || event.created || event.Created),
+            processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
+            timestamp: formatDateTime(rawTimestamp),
+            rawTimestamp,
             eventId: event.id || event.eventId || '',
             destinationPath: event.Destination_Path || event.destination_path || '',
             destinationFileName: event.Destination_fileName || event.Destination_FileName || event.destinationFileName || '',
@@ -528,69 +579,64 @@ const DtcAuditFilter = () => {
     console.log('[DtcAuditFilter] Before filtering - results length:', results.length);
     
     if (f.sourceApp && f.sourceApp !== 'All') {
-      const selectedApps = f.sourceApp.split(',');
-      results = results.filter(r => selectedApps.includes(r.sourceApp));
+      const selectedApps = f.sourceApp.split(',').map(normalizeFilterValue).filter(Boolean);
+      results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.sourceApp)));
       console.log('[DtcAuditFilter] After sourceApp filter:', results.length);
     }
     if (f.destinationApp && f.destinationApp !== 'All') {
-      const selectedApps = f.destinationApp.split(',');
-      results = results.filter(r => selectedApps.includes(r.application));
+      const selectedApps = f.destinationApp.split(',').map(normalizeFilterValue).filter(Boolean);
+      results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.application)));
       console.log('[DtcAuditFilter] After destinationApp filter:', results.length);
     }
     if (f.eventType && f.eventType !== 'All') { 
-      const v = f.eventType.split(','); 
-      results = results.filter(r => v.includes(r.eventType)); 
+      const v = f.eventType.split(',').map(normalizeFilterValue).filter(Boolean); 
+      results = results.filter(r => v.includes(normalizeFilterValue(r.eventType))); 
       console.log('[DtcAuditFilter] After eventType filter:', results.length);
     }
     if (f.flow && f.flow !== 'All') { 
-      const v = f.flow.split(','); 
+      const v = f.flow.split(',').map(normalizeFilterValue).filter(Boolean); 
       console.log('[DtcAuditFilter] Filtering by flow:', v);
       console.log('[DtcAuditFilter] Sample flows in data:', results.slice(0, 5).map(r => r.flow));
-      results = results.filter(r => v.includes(r.flow)); 
+      results = results.filter(r => v.includes(normalizeFilterValue(r.flow))); 
       console.log('[DtcAuditFilter] After flow filter:', results.length);
     }
-    if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(','); results = results.filter(r => v.includes(r.fromRole)); }
-    if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(','); results = results.filter(r => v.includes(r.fromMPID)); }
-    if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(','); results = results.filter(r => v.includes(r.toRole)); }
-    if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(','); results = results.filter(r => v.includes(r.toMPID)); }
-    if (f.fileId) results = results.filter(r => r.fileId && r.fileId.includes(f.fileId));
+    if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromRole))); }
+    if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromMPID))); }
+    if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toRole))); }
+    if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toMPID))); }
+    if (f.fileId) {
+      const selectedValues = f.fileId.split(',').map(normalizeFilterValue).filter(Boolean);
+      results = results.filter(r => r.fileId && selectedValues.includes(normalizeFilterValue(r.fileId)));
+    }
     if (f.msgId) results = results.filter(r => r.eventId && r.eventId.includes(f.msgId));
-    if (f.version && f.version !== 'All') { const v = f.version.split(','); results = results.filter(r => v.includes(r.version)); }
+    if (f.version && f.version !== 'All') { const v = f.version.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.version))); }
     if (f.eventTimestampFrom) {
       const from = new Date(f.eventTimestampFrom);
       results = results.filter(r => {
-        if (!r.timestamp) return false;
-        const parts = r.timestamp.split(' ')[0]?.split('/');
-        if (parts && parts.length === 3) {
-          const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-          return d >= from;
-        }
-        return new Date(r.timestamp) >= from;
+        const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
+        return ts && ts >= from;
       });
     }
     if (f.eventTimestampTo) {
       const to = new Date(f.eventTimestampTo);
       results = results.filter(r => {
-        if (!r.timestamp) return false;
-        const parts = r.timestamp.split(' ')[0]?.split('/');
-        if (parts && parts.length === 3) {
-          const d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-          return d <= to;
-        }
-        return new Date(r.timestamp) <= to;
+        const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
+        return ts && ts <= to;
+      });
+    }
+    if (f.fileCreationDate) {
+      results = results.filter(r => {
+        const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
+        if (!ts) return false;
+        const dateStr = ts.toISOString().split('T')[0];
+        return dateStr === f.fileCreationDate;
       });
     }
     if (f.publishDate) {
       results = results.filter(r => {
-        // Only filter "Published" events (Event Type 3)
-        if (r.eventType === '3' || r.eventType === 3) {
-          if (!r.timestamp) return false;
-          const parts = r.timestamp.split(' ')[0]?.split('/');
-          if (parts && parts.length === 3) {
-            const cellDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-            return cellDate === f.publishDate;
-          }
-          const ts = new Date(r.timestamp);
+        if (r.eventType === 'Published') {
+          const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
+          if (!ts) return false;
           const dateStr = ts.toISOString().split('T')[0];
           return dateStr === f.publishDate;
         }
