@@ -54,10 +54,10 @@ async function clearCacheByPattern(pattern) {
 }
 
 // ─── Azure API constants ──────────────────────────────────────────────────────
-const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
-const API_CODE         = process.env.REACT_APP_DTC_API_CODE         || 'REDACTED_DTC_API_CODE_V2=';
-const SAP_API_CODE     = process.env.REACT_APP_SAP_API_CODE         || 'REDACTED_SAP_API_CODE_V2=';
-const SUBSCRIPTION_CODE = process.env.REACT_APP_SUBSCRIPTION_CODE   || 'REDACTED_SUBSCRIPTION_CODE=';
+const API_HOST = process.env.REACT_APP_API_HOST || 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
+const API_CODE         = process.env.REACT_APP_DTC_API_CODE         || '';
+const SAP_API_CODE     = process.env.REACT_APP_SAP_API_CODE         || '';
+const SUBSCRIPTION_CODE = process.env.REACT_APP_SUBSCRIPTION_CODE   || '';
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());

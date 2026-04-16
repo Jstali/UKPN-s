@@ -757,7 +757,7 @@ const DtcAuditFilter = () => {
                     Publish Date: {filters.publishDate}
                   </span>
                 )}
-                {filters.fileId && (
+                {filters.fileId && filters.fileId !== 'All' && (
                   <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
                     Unique ID: {filters.fileId}
                   </span>

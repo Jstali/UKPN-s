@@ -439,12 +439,13 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
                 <input type="date"
                   value={filters.eventTimestampFrom.split('T')[0] || ''}
                   onChange={(e) => {
-                    const time = filters.eventTimestampFrom.split('T')[1] || '00:00';
+                    const time = filters.eventTimestampFrom.split('T')[1] || '00:00:00';
                     onFilterChange('eventTimestampFrom', e.target.value ? `${e.target.value}T${time}` : '');
                   }}
                   style={smallInputStyle}
                 />
                 <input type="time"
+                  step="1"
                   value={filters.eventTimestampFrom.split('T')[1] || ''}
                   onChange={(e) => {
                     const date = filters.eventTimestampFrom.split('T')[0] || new Date().toISOString().split('T')[0];
@@ -462,12 +463,13 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
                 <input type="date"
                   value={filters.eventTimestampTo.split('T')[0] || ''}
                   onChange={(e) => {
-                    const time = filters.eventTimestampTo.split('T')[1] || '23:59';
+                    const time = filters.eventTimestampTo.split('T')[1] || '23:59:59';
                     onFilterChange('eventTimestampTo', e.target.value ? `${e.target.value}T${time}` : '');
                   }}
                   style={smallInputStyle}
                 />
                 <input type="time"
+                  step="1"
                   value={filters.eventTimestampTo.split('T')[1] || ''}
                   onChange={(e) => {
                     const date = filters.eventTimestampTo.split('T')[0] || new Date().toISOString().split('T')[0];

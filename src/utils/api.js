@@ -1,19 +1,22 @@
-const API_HOST = 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
-const DTC_API_CODE = 'REDACTED_DTC_API_CODE=';
-const NON_DTC_API_CODE = 'REDACTED_SAP_API_CODE=';
-const SUBSCROPTION_API = 'REDACTED_SUBSCRIPTION_CODE=';
-const FLOWS_API_CODE = 'REDACTED_FLOWS_API_CODE=';
-const SOURCE_APP_API_CODE = 'REDACTED_SOURCE_APP_API_CODE=';
-const DEST_APP_API_CODE = 'REDACTED_DEST_APP_API_CODE=';
+// API Configuration from environment variables
+const API_HOST = process.env.REACT_APP_API_HOST || 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
+const DTC_API_CODE = process.env.REACT_APP_DTC_API_CODE || '';
+const NON_DTC_API_CODE = process.env.REACT_APP_SAP_API_CODE || '';
+const SUBSCROPTION_API = process.env.REACT_APP_SUBSCRIPTION_CODE || '';
+const FLOWS_API_CODE = process.env.REACT_APP_FLOWS_API_CODE || '';
+const SOURCE_APP_API_CODE = process.env.REACT_APP_SOURCE_APP_API_CODE || '';
+const DEST_APP_API_CODE = process.env.REACT_APP_DEST_APP_API_CODE || '';
+const APP_STATUS_API_CODE = process.env.REACT_APP_APP_STATUS_API_CODE || '';
 const DOWNLOAD_FILE_API = `${API_HOST}/api/fileConnectDownloadFileByID`;
 const VIEW_FILE_API = `${API_HOST}/api/fileConnectViewBlobFile`;
 
+// Build API URLs with codes
 const DTC_AUDIT_API = `${API_HOST}/api/fileconnectDtcAuditData?code=${DTC_API_CODE}`;
 const NON_DTC_AUDIT_API = `${API_HOST}/api/fileconnectNonDtcAuditData?code=${NON_DTC_API_CODE}`;
 const FLOWS_API = `${API_HOST}/api/getFlowsAPI?code=${FLOWS_API_CODE}`;
 const SOURCE_APP_API = `${API_HOST}/api/getSourceAppNamesAPI?code=${SOURCE_APP_API_CODE}`;
 const DEST_APP_API = `${API_HOST}/api/getDestinationApplicationsListAPI?code=${DEST_APP_API_CODE}`;
-const APP_STATUS_API = `${API_HOST}/api/fileconnectApplicationStatus?code=REDACTED_APP_STATUS_API_CODE=`;
+const APP_STATUS_API = `${API_HOST}/api/fileconnectApplicationStatus?code=${APP_STATUS_API_CODE}`;
 
 export const fetchFlows = async () => {
   try {
