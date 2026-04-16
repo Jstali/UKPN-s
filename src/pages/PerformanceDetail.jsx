@@ -3,14 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-
-const formatDurationHMS = (seconds) => {
-  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
-  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
-  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
-  const secs = String(safeSeconds % 60).padStart(2, '0');
-  return `${hours}:${minutes}:${secs}`;
-};
+import { buildPerformanceStats, formatDurationHMS } from '../utils/performanceUtils';
 
 // Generate mini sparkline data for each app
 const generateSparkData = (appName, actualTime) => {
@@ -53,34 +46,16 @@ const Sparkline = ({ data, color, width = 120, height = 36 }) => {
 
 const PerformanceDetail = () => {
   const navigate = useNavigate();
-  const { auditData, loading } = useApp();
+  const { auditData, nonDtcAuditData, loading } = useApp();
   const [showFilter, setShowFilter] = useState(false);
   const [selectedApps, setSelectedApps] = useState(null); // null = all selected
 
   const performanceData = useMemo(() => {
-    const appStats = new Map();
-    auditData.forEach((item) => {
-      const events = Array.isArray(item.events) ? item.events : [];
-      const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
-      const event1 = events.find((e) => String(e.Event_Type) === '1' && getTs(e));
-      const event4 = events.find((e) => String(e.Event_Type) === '4' && getTs(e));
-      if (!event1 || !event4) return;
-      const start = new Date(getTs(event1)).getTime();
-      const end = new Date(getTs(event4)).getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
-      const durationSec = (end - start) / 1000;
-      if (durationSec > 3600) return;
-      const appName = event1.applicationName || item.Application_Name || 'Unknown';
-      if (!appStats.has(appName)) appStats.set(appName, { totalDuration: 0, files: 0 });
-      const cur = appStats.get(appName);
-      cur.totalDuration += durationSec;
-      cur.files += 1;
-    });
-    return Array.from(appStats.entries()).map(([name, stats]) => {
-      const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
-      return { name, avgTime: formatDurationHMS(actual), actual, threshold: 3, files: stats.files };
-    }).sort((a, b) => b.actual - a.actual);
-  }, [auditData]);
+    return buildPerformanceStats(auditData, nonDtcAuditData).systemStats.map((app) => ({
+      ...app,
+      threshold: 3,
+    }));
+  }, [auditData, nonDtcAuditData]);
 
   const sparkData = useMemo(() => {
     const map = {};

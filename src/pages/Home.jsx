@@ -11,6 +11,7 @@ import FailedFilesSection from '../components/dashboard/FailedFilesSection';
 import EditModal from '../components/dashboard/EditModal';
 import { parseHeader } from '../utils/auditUtils';
 import { isDtcFailedStatus, isNonDtcFailedRecord } from '../utils/statusUtils';
+import { buildPerformanceStats } from '../utils/performanceUtils';
 
 import { useApp } from '../context/AppContext';
 
@@ -95,89 +96,7 @@ const Home = () => {
   }, [auditData, nonDtcAuditData]);
 
   const performanceItems = React.useMemo(() => {
-    const formatDurationHMS = (seconds) => {
-      const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
-      const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
-      const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
-      const secs = String(safeSeconds % 60).padStart(2, '0');
-      return `${hours}:${minutes}:${secs}`;
-    };
-
-    const appStats = new Map();
-    const allFileDurations = []; // Store all individual file durations
-
-    // Process DTC data
-    auditData.forEach((item) => {
-      const events = Array.isArray(item.events) ? item.events : [];
-      const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
-      const event1 = events.find((e) => String(e.Event_Type) === '1' && getTs(e));
-      const event4 = events.find((e) => String(e.Event_Type) === '4' && getTs(e));
-
-      if (!event1 || !event4) return;
-
-      const start = new Date(getTs(event1)).getTime();
-      const end = new Date(getTs(event4)).getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
-
-      const durationSec = (end - start) / 1000;
-      
-      // Skip anomalous durations > 1 hour
-      if (durationSec > 3600) return;
-
-      allFileDurations.push(durationSec); // Add to overall calculation
-
-      const appName = event1.applicationName || item.Application_Name || 'Unknown';
-
-      if (!appStats.has(appName)) {
-        appStats.set(appName, { totalDuration: 0, files: 0 });
-      }
-      const current = appStats.get(appName);
-      current.totalDuration += durationSec;
-      current.files += 1;
-    });
-
-    // Process Non-DTC data
-    nonDtcAuditData.forEach((item) => {
-      const events = Array.isArray(item.events) ? item.events : [];
-      const getTs = (e) => e.timestamp || e.Timestamp || e.created || e.Created || '';
-      const event1 = events.find((e) => String(e.eventType) === '1' && getTs(e));
-      const event4 = events.find((e) => String(e.eventType) === '4' && getTs(e));
-
-      if (!event1 || !event4) return;
-
-      const start = new Date(getTs(event1)).getTime();
-      const end = new Date(getTs(event4)).getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
-
-      const durationSec = (end - start) / 1000;
-      
-      // Skip anomalous durations > 1 hour
-      if (durationSec > 3600) return;
-
-      allFileDurations.push(durationSec); // Add to overall calculation
-
-      const appName = item.sourceAppName || 'Unknown';
-
-      if (!appStats.has(appName)) {
-        appStats.set(appName, { totalDuration: 0, files: 0 });
-      }
-      const current = appStats.get(appName);
-      current.totalDuration += durationSec;
-      current.files += 1;
-    });
-
-    const systemStats = Array.from(appStats.entries()).map(([name, stats]) => {
-      const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
-      return {
-        name,
-        avgTime: formatDurationHMS(actual),
-        actual,
-        files: stats.files,
-        totalDuration: stats.totalDuration,
-      };
-    });
-
-    return { systemStats, allFileDurations };
+    return buildPerformanceStats(auditData, nonDtcAuditData);
   }, [auditData, nonDtcAuditData]);
 
   const duplicateChecksumFiles = React.useMemo(() => {
