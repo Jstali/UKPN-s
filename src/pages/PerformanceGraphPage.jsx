@@ -76,7 +76,7 @@ const PerformanceGraphPage = () => {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
         <button
-          onClick={() => navigate('/performance-detail')}
+          onClick={() => navigate('/')}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '6px 14px', background: '#667eea', color: 'white',
