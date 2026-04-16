@@ -307,6 +307,11 @@ const api = {
       if (!res.ok) {
         const errorText = await res.text();
         console.error(`❌ Non-DTC API Error ${res.status}:`, errorText.substring(0, 200));
+        
+        if (res.status === 401) {
+          throw new Error(`Authentication failed: Non-DTC API key may be expired or invalid. Please check REACT_APP_SAP_API_CODE in .env file.`);
+        }
+        
         throw new Error(`Failed to fetch non-DTC audit data: ${res.status}`);
       }
       
