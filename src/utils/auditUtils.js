@@ -1,4 +1,52 @@
-// Shared utility functions — extracted from duplicate code across pages
+export const EVENT_TYPE_MAP = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  '21': 'Invalid Flow',
+  '22': 'File Transferred',
+  '32': 'File Processed',
+  'Failed': 'Failed',
+};
+
+export const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+
+export const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+
+export const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+export const deriveFlowVersion = (item, parsedFlowVersion, flowFromFilename = '') => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    item.FlowVersion ||
+    flowFromFilename ||
+    '';
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+  return '';
+};
+
+export const resolveProcessedValue = (...candidates) => {
+  for (const candidate of candidates) {
+    if (candidate === true || candidate === false) return String(candidate);
+    if (candidate === null || candidate === undefined) continue;
+    const normalized = String(candidate).trim();
+    if (normalized && normalized.toLowerCase() !== 'unknown') return normalized;
+  }
+  return '';
+};
 
 // Parse header string: ZHV|D0132001|X|%|R|EELC|%|TR01
 export const parseHeader = (headerStr) => {
@@ -54,24 +102,14 @@ export const wildcardMatch = (value, pattern) => {
   return val.includes(core);
 };
 
-// Event type number-to-word mapping
 export const EVENT_TYPE_LABELS = {
-  '0': 'Zero',
-  '1': 'One',
-  '2': 'Two',
-  '3': 'Three',
-  '4': 'Four',
-  '5': 'Five',
-  '6': 'Six',
-  '7': 'Seven',
-  '8': 'Eight',
-  '9': 'Nine',
-  '10': 'Ten',
+  '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
+  '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine', '10': 'Ten',
 };
 
 export const formatEventType = (value) => {
   const str = String(value);
-  return EVENT_TYPE_LABELS[str] || str;
+  return EVENT_TYPE_MAP[str] || str;
 };
 
 // Format timestamp to show only HH:MM:SS (no milliseconds or timezone)
