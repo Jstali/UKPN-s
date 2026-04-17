@@ -11,15 +11,69 @@ import {
   DEFAULT_COLUMNS_BUSINESS,
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
-import {
-  parseHeader, formatDateTime, formatFlowVersion,
-  EVENT_TYPE_MAP, normalizeFilterValue, pickId, deriveFlowVersion, resolveProcessedValue,
-} from '../utils/auditUtils';
+import { parseHeader, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
 import { useApp } from '../context/AppContext';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION,
 } from '../data/dtcSummaryColumns';
+
+// Event Type mapping
+const EVENT_TYPE_MAP = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  '21': 'Invalid Flow',
+  '22': 'File Transferred',
+  '32': 'File Processed',
+  'Failed': 'Failed'
+};
+
+const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+
+// Pick the first non-empty, non-"UNKNOWN" value from a list of candidates
+const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+
+const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+const deriveFlowVersion = (item, parsedFlowVersion) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    '';
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+
+  return '';
+};
+
+const resolveProcessedValue = (...candidates) => {
+  for (const candidate of candidates) {
+    if (candidate === true || candidate === false) {
+      return String(candidate);
+    }
+    if (candidate === null || candidate === undefined) {
+      continue;
+    }
+    const normalized = String(candidate).trim();
+    if (normalized && normalized.toLowerCase() !== 'unknown') {
+      return normalized;
+    }
+  }
+  return '';
+};
 
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {

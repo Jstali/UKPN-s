@@ -1,16 +1,61 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calendar, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Search, RotateCcw, ArrowLeft, ChevronLeft, ChevronRight, Filter, Calendar, ArrowUp, ArrowDown, X, ChevronDown } from 'lucide-react';
 import ExportDropdown from '../components/ExportDropdown';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
-import ColumnFilterPopover from '../components/ColumnFilterPopover';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { useApp } from '../context/AppContext';
-import {
-  parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion,
-  EVENT_TYPE_MAP, normalizeFilterValue, pickId, deriveFlowVersion, resolveProcessedValue,
-} from '../utils/auditUtils';
+import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
+
+const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+const EVENT_TYPE_MAP = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  '21': 'Invalid Flow',
+  '22': 'File Transferred',
+  '32': 'File Processed',
+  'Failed': 'Failed'
+};
+const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+const deriveFlowVersion = (item, parsedFlowVersion, flowFromFilename) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version ||
+    item.flow_version ||
+    item.flowVersion ||
+    item.flow ||
+    item.FlowVersion ||
+    flowFromFilename ||
+    '';
+
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  if (flowOnly) return flowOnly;
+
+  return '';
+};
+
+const resolveProcessedValue = (...candidates) => {
+  for (const candidate of candidates) {
+    if (candidate === true || candidate === false) return String(candidate);
+    if (candidate === null || candidate === undefined) continue;
+    const normalized = String(candidate).trim();
+    if (normalized && normalized.toLowerCase() !== 'unknown') return normalized;
+  }
+  return '';
+};
 
 // Try to extract DTC flow code from filename (e.g. D0132001_P_X_EPN.DTC → D0132001)
 const extractFlowFromFilename = (filename) => {
@@ -28,7 +73,178 @@ const getSourceFileName = (item) =>
   item.Source_FileName || item.source_file_name || item.SourceFileName ||
   item.Source_File_Name || item.fileName || item.filename || '';
 
+// Log missing Header_String fields only once per session
 let _missingHeaderLogged = false;
+
+const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && searchable && searchRef.current) {
+      searchRef.current.focus();
+    }
+    if (!isOpen) setSearchQuery('');
+  }, [isOpen, searchable]);
+
+  const selectedValues = value === 'All' ? [] : (value ? value.split(',') : []);
+  const displayText = selectedValues.length === 0 ? 'All' :
+                      selectedValues.length === 1 ? selectedValues[0] :
+                      `${selectedValues.length} selected`;
+
+  const filteredOptions = searchable && searchQuery
+    ? options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()))
+    : options;
+
+  const handleToggle = (option) => {
+    let newSelected;
+    if (selectedValues.includes(option)) {
+      newSelected = selectedValues.filter(v => v !== option);
+    } else {
+      newSelected = [...selectedValues, option];
+    }
+    onChange(newSelected.length === 0 ? 'All' : newSelected.join(','));
+  };
+
+  const handleSelectAll = () => {
+    onChange('All');
+  };
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative' }}>
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-label={label}
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(!isOpen); } if (e.key === 'Escape') setIsOpen(false); }}
+        style={{
+          ...style,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {displayText}
+        </span>
+        <ChevronDown size={14} style={{ flexShrink: 0, marginLeft: '4px', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      </div>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          aria-multiselectable="true"
+          onMouseDown={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '4px',
+            background: '#fff',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            maxHeight: '250px',
+            overflowY: 'auto',
+            zIndex: 1000,
+            minWidth: '160px',
+          }}
+        >
+          {searchable && (
+            <div style={{ padding: '6px 8px', borderBottom: '1px solid #f1f5f9', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                placeholder={`Search ${label}...`}
+                aria-label={`Search ${label}`}
+                style={{
+                  width: '100%', padding: '4px 8px', border: '1px solid #e2e8f0',
+                  borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          )}
+          <div
+            onClick={handleSelectAll}
+            role="option"
+            aria-selected={selectedValues.length === 0}
+            style={{
+              padding: '8px 12px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              borderBottom: '1px solid #f1f5f9',
+              background: selectedValues.length === 0 ? '#f8fafc' : '#fff',
+              fontWeight: selectedValues.length === 0 ? 600 : 400
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+            onMouseLeave={(e) => e.currentTarget.style.background = selectedValues.length === 0 ? '#f8fafc' : '#fff'}
+          >
+            <input
+              type="checkbox"
+              checked={selectedValues.length === 0}
+              readOnly
+              style={{ marginRight: '8px', cursor: 'pointer' }}
+            />
+            All
+          </div>
+          {searchable && searchQuery && filteredOptions.length === 0 && (
+            <div style={{ padding: '8px 12px', fontSize: '12px', color: '#94a3b8', textAlign: 'center' }}>
+              No matches
+            </div>
+          )}
+          {filteredOptions.map(option => (
+            <div
+              key={option}
+              onClick={() => handleToggle(option)}
+              role="option"
+              aria-selected={selectedValues.includes(option)}
+              style={{
+                padding: '8px 12px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                borderBottom: '1px solid #f1f5f9',
+                background: selectedValues.includes(option) ? '#eef2ff' : '#fff'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#f8fafc'}
+              onMouseLeave={(e) => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#fff'}
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(option)}
+                readOnly
+                style={{ marginRight: '8px', cursor: 'pointer' }}
+              />
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ALL_COLUMNS = [
   { key: 'fileId', label: 'File ID' },
@@ -55,6 +271,106 @@ const ALL_COLUMNS = [
 ];
 
 const DATE_COLUMNS = ['timestamp'];
+
+const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, allData, anchorRef }) => {
+  const ref = useRef(null);
+  const isDateCol = DATE_COLUMNS.includes(col.key);
+  const filterVal = columnFilters[col.key] || '';
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (anchorRef?.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [anchorRef]);
+
+  useEffect(() => {
+    const handle = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [onClose]);
+
+  const handleChange = (val) => {
+    setColumnFilters(prev => {
+      const next = { ...prev };
+      if (val) next[col.key] = val;
+      else delete next[col.key];
+      return next;
+    });
+  };
+
+  const handleSelect = (val) => {
+    handleChange(val);
+    onClose();
+  };
+
+  const matchingValues = useMemo(() => {
+    if (isDateCol || !filterVal) return [];
+    const unique = [...new Set(allData.map(row => String(row[col.key] || '')).filter(Boolean))];
+    return unique.filter(v => wildcardMatch(v, filterVal)).sort();
+  }, [allData, col.key, filterVal, isDateCol]);
+
+  const showDropdown = !isDateCol && filterVal && matchingValues.length > 0;
+
+  return (
+    <div
+      ref={ref}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999,
+        background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.15)', padding: '12px',
+        minWidth: '240px', maxWidth: '320px',
+      }}
+    >
+      <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>
+        {isDateCol ? 'Filter by date' : `Filter ${col.label}`}
+      </div>
+      {!isDateCol && (
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '6px' }}>
+          Use * as wildcard: cos*, *cos, *cos*
+        </div>
+      )}
+      {isDateCol ? (
+        <input type="date" value={filterVal} onChange={(e) => handleChange(e.target.value)}
+          style={{ width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+          autoFocus />
+      ) : (
+        <input type="text" value={filterVal} onChange={(e) => handleChange(e.target.value)}
+          placeholder={`Search ${col.label}...`}
+          style={{ width: '100%', padding: '7px 10px', border: '1.5px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+          autoFocus />
+      )}
+      {showDropdown && (
+        <div style={{ marginTop: '6px', maxHeight: '180px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff' }}>
+          <div style={{ padding: '4px 10px', fontSize: '10px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0' }}>
+            {matchingValues.length} match{matchingValues.length !== 1 ? 'es' : ''} found
+          </div>
+          {matchingValues.map((val) => (
+            <div key={val} onClick={() => handleSelect(val)}
+              style={{ padding: '7px 10px', fontSize: '12px', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#eef2ff')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+              {val}
+            </div>
+          ))}
+        </div>
+      )}
+      {!isDateCol && filterVal && matchingValues.length === 0 && (
+        <div style={{ marginTop: '6px', fontSize: '11px', color: '#94a3b8', textAlign: 'center', padding: '6px 0' }}>No matches found</div>
+      )}
+      {filterVal && (
+        <button onClick={() => handleChange('')}
+          style={{ marginTop: '8px', padding: '5px 10px', fontSize: '11px', fontWeight: 600, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', width: '100%' }}>
+          Clear
+        </button>
+      )}
+    </div>
+  );
+};
 
 const DtcAuditFilter = () => {
   const navigate = useNavigate();
@@ -84,25 +400,14 @@ const DtcAuditFilter = () => {
     [subscriptionData]
   );
   
+  // Helper function to convert DtcAudit filters to DtcAuditFilter format
   const convertFiltersFromAudit = (auditFilters) => {
     if (!auditFilters) return defaultFilters;
-    const rawFileId = auditFilters.fileId ?? '';
     return {
+      ...defaultFilters,
+      ...auditFilters,
       sourceApp: auditFilters.sourceApplication ?? auditFilters.sourceApp ?? 'All',
       destinationApp: auditFilters.destinationApplication ?? auditFilters.destinationApp ?? 'All',
-      eventType: auditFilters.eventType ?? 'All',
-      flow: auditFilters.flow ?? 'All',
-      version: auditFilters.version ?? 'All',
-      fromRole: auditFilters.fromRole ?? 'All',
-      fromMPID: auditFilters.fromMPID ?? 'All',
-      toRole: auditFilters.toRole ?? 'All',
-      toMPID: auditFilters.toMPID ?? 'All',
-      eventTimestampFrom: auditFilters.eventTimestampFrom ?? '',
-      eventTimestampTo: auditFilters.eventTimestampTo ?? '',
-      fileCreationDate: auditFilters.fileCreationDate ?? '',
-      publishDate: auditFilters.publishDate ?? '',
-      fileId: rawFileId === 'All' ? '' : rawFileId,
-      msgId: auditFilters.msgId ?? '',
     };
   };
 
@@ -122,8 +427,14 @@ const DtcAuditFilter = () => {
   const [dateError, setDateError] = useState('');
   const filterBtnRefs = useRef({});
 
+  // Auto-query on data load — use filters from navigation state or defaults
   useEffect(() => {
     if (auditData.length > 0) {
+      console.log('[DtcAuditFilter] Auto-query triggered');
+      console.log('[DtcAuditFilter] auditData length:', auditData.length);
+      console.log('[DtcAuditFilter] location.state?.filters:', location.state?.filters);
+      console.log('[DtcAuditFilter] initialFilters:', initialFilters);
+      console.log('[DtcAuditFilter] appliedFilters:', appliedFilters);
       handleQuery(initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,15 +510,27 @@ const DtcAuditFilter = () => {
     }
     setDateError('');
     let results = [];
+    console.log('[DtcAuditFilter] handleQuery - auditData length:', auditData.length);
+    console.log('[DtcAuditFilter] handleQuery - filters:', f);
+    
     auditData.forEach(item => {
       const headerStr = getHeaderString(item);
       const parsed = parseHeader(headerStr);
       const fileName = getSourceFileName(item);
+      // Extract flow from filename as last resort (e.g. D0132001_P_X_EPN.DTC)
       const flowFromFilename = extractFlowFromFilename(fileName);
       const rawFlow = deriveFlowVersion(item, parsed.flowVersion, flowFromFilename);
-      const sourceApplication = (item.events && item.events.length > 0)
+
+      // Get source application from first event (same as DtcAudit.jsx)
+      const sourceApplication = (item.events && item.events.length > 0) 
         ? (item.events[0]?.applicationName || 'Unknown')
         : (item.Source_Application || item.source_application || item.SourceApplication || 'Unknown');
+
+      if (!headerStr && !_missingHeaderLogged) {
+        _missingHeaderLogged = true;
+        console.log('[DtcAuditFilter] Sample item missing Header_String — all available fields:', Object.keys(item));
+        console.log('[DtcAuditFilter] Sample item values:', JSON.stringify(item, null, 2).substring(0, 2000));
+      }
 
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {
@@ -252,27 +575,40 @@ const DtcAuditFilter = () => {
       }
     });
 
+    // Apply filters
+    console.log('[DtcAuditFilter] Before filtering - results length:', results.length);
+    console.log('[DtcAuditFilter] Filters to apply:', f);
+    
     if (f.sourceApp && f.sourceApp !== 'All') {
       const selectedApps = f.sourceApp.split(',').map(normalizeFilterValue).filter(Boolean);
+      console.log('[DtcAuditFilter] sourceApp filter values:', selectedApps);
+      console.log('[DtcAuditFilter] Sample sourceApp in data:', results.slice(0, 5).map(r => `"${r.sourceApp}"`));
       results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.sourceApp)));
+      console.log('[DtcAuditFilter] After sourceApp filter:', results.length);
     }
     if (f.destinationApp && f.destinationApp !== 'All') {
       const selectedApps = f.destinationApp.split(',').map(normalizeFilterValue).filter(Boolean);
+      console.log('[DtcAuditFilter] destinationApp filter values:', selectedApps);
       results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.application)));
+      console.log('[DtcAuditFilter] After destinationApp filter:', results.length);
     }
-    if (f.eventType && f.eventType !== 'All') {
-      const v = f.eventType.split(',').map(normalizeFilterValue).filter(Boolean);
-      results = results.filter(r => v.includes(normalizeFilterValue(r.eventType)));
+    if (f.eventType && f.eventType !== 'All') { 
+      const v = f.eventType.split(',').map(normalizeFilterValue).filter(Boolean); 
+      results = results.filter(r => v.includes(normalizeFilterValue(r.eventType))); 
+      console.log('[DtcAuditFilter] After eventType filter:', results.length);
     }
-    if (f.flow && f.flow !== 'All') {
-      const v = f.flow.split(',').map(normalizeFilterValue).filter(Boolean);
-      results = results.filter(r => v.includes(normalizeFilterValue(r.flow)));
+    if (f.flow && f.flow !== 'All') { 
+      const v = f.flow.split(',').map(normalizeFilterValue).filter(Boolean); 
+      console.log('[DtcAuditFilter] Filtering by flow:', v);
+      console.log('[DtcAuditFilter] Sample flows in data:', results.slice(0, 5).map(r => r.flow));
+      results = results.filter(r => v.includes(normalizeFilterValue(r.flow))); 
+      console.log('[DtcAuditFilter] After flow filter:', results.length);
     }
     if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromRole))); }
     if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromMPID))); }
     if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toRole))); }
     if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toMPID))); }
-    if (f.fileId && f.fileId !== 'All') {
+    if (f.fileId) {
       const selectedValues = f.fileId.split(',').map(normalizeFilterValue).filter(Boolean);
       results = results.filter(r => r.fileId && selectedValues.includes(normalizeFilterValue(r.fileId)));
     }

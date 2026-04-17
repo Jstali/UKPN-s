@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import '../styles/FileView.css';
+import './FileView.css';
 
 const FileView = () => {
   const { fileId } = useParams();
