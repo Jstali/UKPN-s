@@ -36,15 +36,39 @@ const NonDtcAuditFilter = () => {
     rawData: item
   })), [nonDtcAuditData]);
 
+  const [dateError, setDateError] = useState('');
+
+  const validateDateRange = (updatedFilters) => {
+    const f = updatedFilters || filters;
+    const fromDate = f.eventFrom;
+    const toDate = f.eventTo;
+    if (fromDate && toDate) {
+      const fromDateTime = new Date(`${fromDate}T${f.eventFromTime || '00:00:00'}`);
+      const toDateTime = new Date(`${toDate}T${f.eventToTime || '23:59:59'}`);
+      if (fromDateTime > toDateTime) {
+        setDateError('Event From date cannot be later than Event To date');
+        return false;
+      }
+    }
+    setDateError('');
+    return true;
+  };
+
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+    const updatedFilters = { ...filters, [field]: value };
+    setFilters(updatedFilters);
+    if (['eventFrom', 'eventFromTime', 'eventTo', 'eventToTime'].includes(field)) {
+      validateDateRange(updatedFilters);
+    }
   };
 
   const handleReset = () => {
     setFilters({ ...DEFAULT_FILTERS });
+    setDateError('');
   };
 
   const handleApply = () => {
+    if (!validateDateRange()) return;
     navigate('/non-dtc-audit-detail', { state: { filters } });
   };
 
@@ -201,31 +225,49 @@ const NonDtcAuditFilter = () => {
 
           {/* Action Buttons */}
           <div style={{
-            display: 'flex', justifyContent: 'flex-end', gap: '12px',
+            display: 'flex', flexDirection: 'column', gap: '12px',
             paddingTop: '20px', borderTop: '1px solid #f1f5f9',
           }}>
-            <button
-              onClick={handleReset}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '10px 20px', background: '#f1f5f9', color: '#475569',
-                border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
-                fontSize: '13px', fontWeight: 600,
-              }}
-            >
-              <RotateCcw size={14} /> Reset
-            </button>
-            <button
-              onClick={handleApply}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '10px 20px', background: '#667eea', color: 'white',
-                border: 'none', borderRadius: '8px', cursor: 'pointer',
-                fontSize: '13px', fontWeight: 600,
-              }}
-            >
-              <Search size={14} /> Apply Filters
-            </button>
+            {dateError && (
+              <div style={{
+                padding: '8px 12px',
+                background: '#fef2f2',
+                border: '1px solid #fca5a5',
+                borderRadius: '6px',
+                color: '#991b1b',
+                fontSize: '12px',
+                fontWeight: 500,
+              }}>
+                ⚠️ {dateError}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                onClick={handleReset}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 20px', background: '#f1f5f9', color: '#475569',
+                  border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '13px', fontWeight: 600,
+                }}
+              >
+                <RotateCcw size={14} /> Reset
+              </button>
+              <button
+                onClick={handleApply}
+                disabled={!!dateError}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 20px', background: '#667eea', color: 'white',
+                  border: 'none', borderRadius: '8px',
+                  fontSize: '13px', fontWeight: 600,
+                  opacity: dateError ? 0.5 : 1,
+                  cursor: dateError ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <Search size={14} /> Apply Filters
+              </button>
+            </div>
           </div>
         </div>
       )}
