@@ -157,10 +157,10 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
 
 const NON_DTC_COLUMNS = [
   ...NON_DTC_DEFAULT_COLUMNS.slice(0, -1), // All columns except fileName
-  { key: 'fileType', label: 'File Type' },
+  { key: 'fileType', label: 'File Type', width: 80 },
   NON_DTC_DEFAULT_COLUMNS[NON_DTC_DEFAULT_COLUMNS.length - 1], // fileName
-  { key: 'sourcePath', label: 'Source Path' },
-  { key: 'destinationPath', label: 'Destination Path' },
+  { key: 'sourcePath', label: 'Source Path', width: 150 },
+  { key: 'destinationPath', label: 'Destination Path', width: 150 },
 ];
 
 const NonDtcAudit = () => {

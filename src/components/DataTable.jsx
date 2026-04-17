@@ -254,6 +254,13 @@ const DataTable = ({
   const [activeFilter, setActiveFilter] = useState(null);
   const filterBtnRefs = useRef({});
   const [colWidths, setColWidths] = useState({});
+
+  // Merge column-definition defaults with user-resized widths
+  const effectiveColWidths = useMemo(() => {
+    const defaults = {};
+    (columns || []).forEach(col => { if (col.width) defaults[col.key] = col.width; });
+    return { ...defaults, ...colWidths };
+  }, [columns, colWidths]);
   const [viewAll, setViewAll] = useState(false);
   const resizing = useRef(null);
 
@@ -870,12 +877,12 @@ const DataTable = ({
       <div className="table-scroll-container">
         <table
           className="data-table"
-          style={Object.keys(colWidths).length > 0 ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : undefined}
+          style={Object.keys(effectiveColWidths).length > 0 ? { tableLayout: 'fixed', width: 'max-content', minWidth: '100%' } : undefined}
         >
-          {Object.keys(colWidths).length > 0 && (
+          {Object.keys(effectiveColWidths).length > 0 && (
             <colgroup>
               {orderedActiveColumns.map((col) => (
-                <col key={col.key} style={{ width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined }} />
+                <col key={col.key} style={{ width: effectiveColWidths[col.key] ? `${effectiveColWidths[col.key]}px` : undefined }} />
               ))}
               {onDownload && <col style={{ width: '80px' }} />}
             </colgroup>
@@ -892,10 +899,10 @@ const DataTable = ({
                   onDragEnd={handleDragEnd}
                   style={{
                     position: 'sticky', top: 0, zIndex: 20, userSelect: 'none',
-                    width: colWidths[col.key] ? `${colWidths[col.key]}px` : undefined,
-                    minWidth: '60px',
-                    padding: '8px 10px',
-                    fontSize: '11px',
+                    width: effectiveColWidths[col.key] ? `${effectiveColWidths[col.key]}px` : undefined,
+                    minWidth: '50px',
+                    padding: '6px 8px',
+                    fontSize: '10px',
                     background: sortConfig.key === col.key ? '#5b4fc7' : undefined,
                     borderLeft: dragOverKey === col.key ? '2px solid #4c4ebd' : undefined,
                     cursor: tableId ? 'grab' : undefined,
