@@ -7,6 +7,7 @@ const FLOWS_API_CODE = process.env.REACT_APP_FLOWS_API_CODE || '';
 const SOURCE_APP_API_CODE = process.env.REACT_APP_SOURCE_APP_API_CODE || '';
 const DEST_APP_API_CODE = process.env.REACT_APP_DEST_APP_API_CODE || '';
 const APP_STATUS_API_CODE = process.env.REACT_APP_APP_STATUS_API_CODE || '';
+const DROPDOWN_VALUES_API_CODE = process.env.REACT_APP_DROPDOWN_VALUES_API_CODE || '';
 const DOWNLOAD_FILE_API = `${API_HOST}/api/fileConnectDownloadFileByID`;
 const VIEW_FILE_API = `${API_HOST}/api/fileConnectViewBlobFile`;
 
@@ -17,6 +18,28 @@ const FLOWS_API = `${API_HOST}/api/getFlowsAPI?code=${FLOWS_API_CODE}`;
 const SOURCE_APP_API = `${API_HOST}/api/getSourceAppNamesAPI?code=${SOURCE_APP_API_CODE}`;
 const DEST_APP_API = `${API_HOST}/api/getDestinationApplicationsListAPI?code=${DEST_APP_API_CODE}`;
 const APP_STATUS_API = `${API_HOST}/api/fileconnectApplicationStatus?code=${APP_STATUS_API_CODE}`;
+const DROPDOWN_VALUES_API = `${API_HOST}/api/getDropdownValuesAPI?code=${DROPDOWN_VALUES_API_CODE}`;
+
+export const fetchDropdownValues = async () => {
+  try {
+    const res = await fetch(DROPDOWN_VALUES_API, { method: 'GET' });
+    if (!res.ok) {
+      console.error(`❌ Dropdown Values API Error ${res.status}`);
+      return { fromRole: [], fromMPID: [], toRole: [], toMPID: [] };
+    }
+    const data = await res.json();
+    console.log(`✅ Dropdown Values API: Fetched roles/MPIDs`);
+    return {
+      fromRole: Array.isArray(data.From_Role) ? data.From_Role : [],
+      fromMPID: Array.isArray(data.From_MPID) ? data.From_MPID : [],
+      toRole: Array.isArray(data.To_Role) ? data.To_Role : [],
+      toMPID: Array.isArray(data.To_MPID) ? data.To_MPID : [],
+    };
+  } catch (error) {
+    console.error('❌ Dropdown Values API Error:', error.message);
+    return { fromRole: [], fromMPID: [], toRole: [], toMPID: [] };
+  }
+};
 
 export const fetchFlows = async () => {
   try {
