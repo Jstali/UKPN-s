@@ -608,7 +608,7 @@ const DtcAuditFilter = () => {
     if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromMPID))); }
     if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toRole))); }
     if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toMPID))); }
-    if (f.fileId) {
+    if (f.fileId && f.fileId !== 'All') {
       const selectedValues = f.fileId.split(',').map(normalizeFilterValue).filter(Boolean);
       results = results.filter(r => r.fileId && selectedValues.includes(normalizeFilterValue(r.fileId)));
     }
