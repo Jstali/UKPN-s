@@ -12,6 +12,7 @@ import {
   DEFAULT_COLUMNS_FULL
 } from '../data/dashboardConfig';
 import { parseHeader, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
+import { applyDtcFilters } from '../utils/dtcFilterUtils';
 import { useApp } from '../context/AppContext';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
@@ -180,95 +181,7 @@ const buildFilteredResults = (data, filtersToUse) => {
     }
   });
 
-  const filterMap = {
-    application: 'application',
-    eventType: 'eventType',
-    flow: 'flow',
-    version: 'version',
-    fromRole: 'fromRole',
-    fromMPID: 'fromMPID',
-    toRole: 'toRole',
-    toMPID: 'toMPID',
-  };
-
-  // Handle multi-select for source and destination applications
-  if (filtersToUse.sourceApplication && filtersToUse.sourceApplication !== 'All') {
-    const selectedApps = filtersToUse.sourceApplication
-      .split(',')
-      .map(normalizeFilterValue)
-      .filter(Boolean);
-    results = results.filter(item => selectedApps.includes(normalizeFilterValue(item.sourceApplication)));
-  }
-
-  if (filtersToUse.destinationApplication && filtersToUse.destinationApplication !== 'All') {
-    const selectedApps = filtersToUse.destinationApplication
-      .split(',')
-      .map(normalizeFilterValue)
-      .filter(Boolean);
-    results = results.filter(item => selectedApps.includes(normalizeFilterValue(item.application)));
-  }
-
-  // Handle other filters (support comma-separated multi-select values)
-  Object.entries(filterMap).forEach(([filterKey, dataKey]) => {
-    if (filtersToUse[filterKey] && filtersToUse[filterKey] !== 'All') {
-      const selectedValues = filtersToUse[filterKey]
-        .split(',')
-        .map(normalizeFilterValue)
-        .filter(Boolean);
-      results = results.filter(item => selectedValues.includes(normalizeFilterValue(item[dataKey])));
-    }
-  });
-
-  if (filtersToUse.fileId && filtersToUse.fileId !== 'All') {
-    const selectedValues = filtersToUse.fileId
-      .split(',')
-      .map(normalizeFilterValue)
-      .filter(Boolean);
-    results = results.filter(item => item.fileId && selectedValues.includes(normalizeFilterValue(item.fileId)));
-  }
-  if (filtersToUse.msgId) {
-    results = results.filter(item => item.eventId && item.eventId.includes(filtersToUse.msgId));
-  }
-
-  // Timestamp filtering
-  if (filtersToUse.eventTimestampFrom) {
-    const from = new Date(filtersToUse.eventTimestampFrom);
-    results = results.filter(item => {
-      const ts = item.timestamp ? new Date(item.timestamp) : null;
-      return ts && ts >= from;
-    });
-  }
-  if (filtersToUse.eventTimestampTo) {
-    const to = new Date(filtersToUse.eventTimestampTo);
-    results = results.filter(item => {
-      const ts = item.timestamp ? new Date(item.timestamp) : null;
-      return ts && ts <= to;
-    });
-  }
-  if (filtersToUse.fileCreationDate) {
-    results = results.filter(item => {
-      const ts = item.timestamp ? new Date(item.timestamp) : null;
-      if (!ts) return false;
-      const dateStr = ts.toISOString().split('T')[0];
-      return dateStr === filtersToUse.fileCreationDate;
-    });
-  }
-
-  // Publish Date filtering (Event Type 3 - Published)
-  if (filtersToUse.publishDate) {
-    results = results.filter(item => {
-      // Check if this event is a "Published" event (Event Type 3)
-      if (item.eventType === 'Published') {
-        const ts = item.timestamp ? new Date(item.timestamp) : null;
-        if (!ts) return false;
-        const dateStr = ts.toISOString().split('T')[0];
-        return dateStr === filtersToUse.publishDate;
-      }
-      return false;
-    });
-  }
-
-  return results;
+  return applyDtcFilters(results, filtersToUse);
 };
 
 // Selection criteria display config - Reordered to match filter order

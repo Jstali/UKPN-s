@@ -7,6 +7,7 @@ import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { useApp } from '../context/AppContext';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
+import { applyDtcFilters } from '../utils/dtcFilterUtils';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 const EVENT_TYPE_MAP = {
@@ -575,78 +576,12 @@ const DtcAuditFilter = () => {
       }
     });
 
-    // Apply filters
-    console.log('[DtcAuditFilter] Before filtering - results length:', results.length);
-    console.log('[DtcAuditFilter] Filters to apply:', f);
-    
-    if (f.sourceApp && f.sourceApp !== 'All') {
-      const selectedApps = f.sourceApp.split(',').map(normalizeFilterValue).filter(Boolean);
-      console.log('[DtcAuditFilter] sourceApp filter values:', selectedApps);
-      console.log('[DtcAuditFilter] Sample sourceApp in data:', results.slice(0, 5).map(r => `"${r.sourceApp}"`));
-      results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.sourceApp)));
-      console.log('[DtcAuditFilter] After sourceApp filter:', results.length);
-    }
-    if (f.destinationApp && f.destinationApp !== 'All') {
-      const selectedApps = f.destinationApp.split(',').map(normalizeFilterValue).filter(Boolean);
-      console.log('[DtcAuditFilter] destinationApp filter values:', selectedApps);
-      results = results.filter(r => selectedApps.includes(normalizeFilterValue(r.application)));
-      console.log('[DtcAuditFilter] After destinationApp filter:', results.length);
-    }
-    if (f.eventType && f.eventType !== 'All') { 
-      const v = f.eventType.split(',').map(normalizeFilterValue).filter(Boolean); 
-      results = results.filter(r => v.includes(normalizeFilterValue(r.eventType))); 
-      console.log('[DtcAuditFilter] After eventType filter:', results.length);
-    }
-    if (f.flow && f.flow !== 'All') { 
-      const v = f.flow.split(',').map(normalizeFilterValue).filter(Boolean); 
-      console.log('[DtcAuditFilter] Filtering by flow:', v);
-      console.log('[DtcAuditFilter] Sample flows in data:', results.slice(0, 5).map(r => r.flow));
-      results = results.filter(r => v.includes(normalizeFilterValue(r.flow))); 
-      console.log('[DtcAuditFilter] After flow filter:', results.length);
-    }
-    if (f.fromRole && f.fromRole !== 'All') { const v = f.fromRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromRole))); }
-    if (f.fromMPID && f.fromMPID !== 'All') { const v = f.fromMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.fromMPID))); }
-    if (f.toRole && f.toRole !== 'All') { const v = f.toRole.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toRole))); }
-    if (f.toMPID && f.toMPID !== 'All') { const v = f.toMPID.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.toMPID))); }
-    if (f.fileId && f.fileId !== 'All') {
-      const selectedValues = f.fileId.split(',').map(normalizeFilterValue).filter(Boolean);
-      results = results.filter(r => r.fileId && selectedValues.includes(normalizeFilterValue(r.fileId)));
-    }
-    if (f.msgId) results = results.filter(r => r.eventId && r.eventId.includes(f.msgId));
-    if (f.version && f.version !== 'All') { const v = f.version.split(',').map(normalizeFilterValue).filter(Boolean); results = results.filter(r => v.includes(normalizeFilterValue(r.version))); }
-    if (f.eventTimestampFrom) {
-      const from = new Date(f.eventTimestampFrom);
-      results = results.filter(r => {
-        const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
-        return ts && ts >= from;
-      });
-    }
-    if (f.eventTimestampTo) {
-      const to = new Date(f.eventTimestampTo);
-      results = results.filter(r => {
-        const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
-        return ts && ts <= to;
-      });
-    }
-    if (f.fileCreationDate) {
-      results = results.filter(r => {
-        const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
-        if (!ts) return false;
-        const dateStr = ts.toISOString().split('T')[0];
-        return dateStr === f.fileCreationDate;
-      });
-    }
-    if (f.publishDate) {
-      results = results.filter(r => {
-        if (r.eventType === 'Published') {
-          const ts = r.rawTimestamp ? new Date(r.rawTimestamp) : null;
-          if (!ts) return false;
-          const dateStr = ts.toISOString().split('T')[0];
-          return dateStr === f.publishDate;
-        }
-        return false;
-      });
-    }
+    // Apply filters — normalize field names to match shared utility convention
+    results = applyDtcFilters(results, {
+      ...f,
+      sourceApplication: f.sourceApp,
+      destinationApplication: f.destinationApp,
+    });
 
     setFilteredResults(results);
     setAppliedFilters({ ...f });
