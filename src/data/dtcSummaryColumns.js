@@ -32,7 +32,6 @@ export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW = [
   w('application', 'Destination'),
   w('status', 'Status'),
   w('fileName', 'Source File Name'),
-  w('eventId', 'Message ID'),
 ];
 
 export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION = [...DTC_SUMMARY_COLUMNS_COMBINED_FLOW];
@@ -54,5 +53,4 @@ export const DTC_AUDIT_DETAIL_SUMMARY_FIELDS = [
   w('application', 'Destination'),
   w('status', 'Status'),
   w('fileName', 'Source File Name'),
-  w('eventId', 'Message ID'),
 ];

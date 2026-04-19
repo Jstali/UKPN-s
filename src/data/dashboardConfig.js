@@ -136,7 +136,6 @@ export const FILTERED_COLUMNS = [
   c('application', 'Destination'),
   c('status', 'Status'),
   c('fileName', 'Source File Name'),
-  c('eventId', 'Message ID'),
 ];
 
 export const DEFAULT_COLUMNS_BUSINESS = [
