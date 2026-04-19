@@ -23,6 +23,7 @@ const getEventTimeMs = (event) => {
 };
 
 const getBoundaryEvents = (events = []) => {
+  const allTimes = [];
   const event1Times = [];
   const event4Times = [];
 
@@ -31,16 +32,19 @@ const getBoundaryEvents = (events = []) => {
     const timeMs = getEventTimeMs(event);
     if (!Number.isFinite(timeMs)) return;
 
+    allTimes.push(timeMs);
     if (eventType === '1') event1Times.push(timeMs);
     if (eventType === '4') event4Times.push(timeMs);
   });
 
-  if (event1Times.length === 0 || event4Times.length === 0) return null;
+  if (allTimes.length === 0) return null;
 
-  return {
-    startMs: Math.min(...event1Times),
-    endMs: Math.max(...event4Times),
-  };
+  // Use Event Type 1 as start if present, otherwise earliest event
+  const startMs = event1Times.length > 0 ? Math.min(...event1Times) : Math.min(...allTimes);
+  // Use Event Type 4 as end if present, otherwise latest event
+  const endMs = event4Times.length > 0 ? Math.max(...event4Times) : Math.max(...allTimes);
+
+  return { startMs, endMs };
 };
 
 const addDurationToStats = (appStats, allFileDurations, appName, durationSec) => {
