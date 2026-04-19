@@ -98,8 +98,11 @@ const flattenAuditEvents = (data) => {
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
         const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
-        const applicationValue = event.applicationName || event.Destination_Application || 'NA';
-        
+        const eventTypeRaw = String(event.Event_Type ?? '');
+        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '4')
+          ? (event.applicationName || event.Destination_Application || '')
+          : '';
+
         flatData.push({
           ...item,
           id: item.id,
@@ -151,8 +154,11 @@ const buildFilteredResults = (data, filtersToUse) => {
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
         const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
-        const applicationValue = event.applicationName || event.Destination_Application || 'NA';
-        
+        const eventTypeRaw = String(event.Event_Type ?? '');
+        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '4')
+          ? (event.applicationName || event.Destination_Application || '')
+          : '';
+
         results.push({
           ...item, // Include all original fields
           id: item.id,
