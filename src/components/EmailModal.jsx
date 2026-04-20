@@ -121,7 +121,15 @@ const EmailModal = ({
     setSending(false);
 
     if (error) {
-      setApiError(error);
+      const is404 = error.includes('404');
+      const is405 = error.includes('405');
+      setApiError(
+        is404 || is405
+          ? 'The email export API endpoint is not available (server returned ' +
+            (is404 ? '404 Not Found' : '405 Method Not Allowed') +
+            '). Please ask the backend team to verify the endpoint URL and ensure it accepts POST requests.'
+          : error,
+      );
     } else {
       setSuccess(data);
     }
