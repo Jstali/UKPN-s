@@ -71,6 +71,18 @@ export const fetchDtcSubscriptions = () =>
     (d) => (Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []),
   ).then(r => ({ data: r.data ?? [], isLocal: false, error: r.error }));
 
+// File status summary — totalFiles, successFiles, pendingFiles
+export const fetchFileStatusSummary = () =>
+  fetchJson(
+    ENDPOINTS.fileStatusSummary,
+    'File Status Summary',
+    (d) => ({
+      totalFiles:   d?.totalFiles   ?? null,
+      successFiles: d?.successFiles ?? null,
+      pendingFiles: d?.pendingFiles ?? null,
+    }),
+  ).then(r => ({ data: r.data ?? { totalFiles: null, successFiles: null, pendingFiles: null }, error: r.error }));
+
 // ─── Paginated audit endpoints ───────────────────────────────────────────────
 
 export const fetchDtcAuditData = (continuationToken = null, pageSize = DTC_PAGE_SIZE, options = {}) =>
@@ -159,6 +171,7 @@ const apiService = {
   fetchDtcAuditData,
   fetchNonDtcAuditData,
   fetchDtcSubscriptions,
+  fetchFileStatusSummary,
   fetchFlows,
   fetchSourceApplications,
   fetchDestinationApplications,

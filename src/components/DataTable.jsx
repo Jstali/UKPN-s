@@ -228,6 +228,10 @@ const DataTable = ({
   tableId = null,
   isNonDtc = false,
   navigationState = {},
+  // Called with (page, pageSize) on every page or page-size change
+  onPageChange = null,
+  // When true shows a small loading indicator in the pagination bar
+  isLoadingMore = false,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -253,6 +257,11 @@ const DataTable = ({
   const [columnFilters, setColumnFilters] = useState({});
   const [activeFilter, setActiveFilter] = useState(null);
   const filterBtnRefs = useRef({});
+
+  // Notify parent whenever the visible page or page size changes
+  useEffect(() => {
+    onPageChange?.(currentPage, pageSize);
+  }, [currentPage, pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
   const [colWidths, setColWidths] = useState({});
 
   // Merge column-definition defaults with user-resized widths
@@ -1100,6 +1109,19 @@ const DataTable = ({
         <div className="pagination-info">
           {`Showing ${sortedData.length === 0 ? 0 : startIndex + 1} to ${Math.min(startIndex + pageSize, sortedData.length)} of ${sortedData.length} entries`}
         </div>
+
+        {/* Inline loading indicator shown while next batch is being fetched */}
+        {isLoadingMore && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748b' }}>
+            <div style={{
+              width: '13px', height: '13px', borderRadius: '50%',
+              border: '2px solid #e2e8f0', borderTopColor: '#667eea',
+              animation: 'spin 0.7s linear infinite', flexShrink: 0,
+            }} />
+            Loading more records...
+          </div>
+        )}
+
         <div className="pagination-buttons">
           <button
             className="pagination-button"

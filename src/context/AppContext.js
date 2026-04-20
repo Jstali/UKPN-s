@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import api, { fetchDtcSubscriptions, fetchFlows } from '../utils/api';
+import { fetchFileStatusSummary } from '../services/apiService';
 import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
 
 const AppContext = createContext(null);
@@ -69,12 +70,18 @@ export const AppProvider = ({ children }) => {
   const [subscriptionError,  setSubscriptionError]  = useState(null);
   const [flowsData,          setFlowsData]          = useState([]);
 
+  // File status summary from dedicated count API
+  const [fileStatusSummary,      setFileStatusSummary]      = useState({ totalFiles: null, successFiles: null, pendingFiles: null });
+  const [fileStatusSummaryError, setFileStatusSummaryError] = useState(null);
+
   // Strict in-flight lock — only one fetch cycle may run at a time
   const isFetchingRef         = useRef(false);
   const activeControllerRef   = useRef(null);
   const refreshTimerRef       = useRef(null);
   const mountedRef            = useRef(false);
   const queuedFetchOptionsRef = useRef(null);
+  // Tracks current auditData length so auto-refresh can decide whether to preserve loaded pages
+  const auditDataRef          = useRef([]);
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
@@ -86,6 +93,7 @@ export const AppProvider = ({ children }) => {
   // Cache only the first page of DTC data to keep localStorage small
   const commitAuditData = useCallback((records) => {
     const data = Array.isArray(records) ? records : [];
+    auditDataRef.current = data;
     setAuditData(data);
     writeCache(DTC_CACHE_KEY, data, MAX_CACHE_RECORDS);
   }, []);
@@ -118,6 +126,16 @@ export const AppProvider = ({ children }) => {
       setSubscriptionData([]);
     } finally {
       setSubscriptionLoading(false);
+    }
+  }, []);
+
+  const fetchFileStatus = useCallback(async () => {
+    const { data, error } = await fetchFileStatusSummary();
+    if (error) {
+      setFileStatusSummaryError(error);
+    } else {
+      setFileStatusSummary(data);
+      setFileStatusSummaryError(null);
     }
   }, []);
 
@@ -155,8 +173,13 @@ export const AppProvider = ({ children }) => {
       setFetchError(dtcFirst?.error || null);
       setNonDtcFetchError(nonDtcFirst?.error || null);
 
-      // DTC: store page 1 only; expose pagination state for user-triggered load more
-      commitAuditData(dtcRecords);
+      // DTC: store page 1 only; expose pagination state for auto-triggered load more.
+      // If the user has already loaded multiple pages (silent refresh), keep their
+      // dataset intact and only update the continuation token + hasMore flags.
+      const userHasLoadedMore = auditDataRef.current.length > dtcRecords.length;
+      if (!userHasLoadedMore) {
+        commitAuditData(dtcRecords);
+      }
       setDtcHasMore(dtcFirst?.hasMore ?? !!dtcFirst?.continuationToken);
       setDtcContinuationToken(dtcFirst?.continuationToken || null);
       setDtcPageMeta({
@@ -217,8 +240,14 @@ export const AppProvider = ({ children }) => {
 
       const newRecords = Array.isArray(result.data) ? result.data : [];
 
-      // Append without overwriting cache (page 1 cache remains intact)
-      setAuditData(prev => [...prev, ...newRecords]);
+      // Append without overwriting cache; dedupe by id to handle overlap between pages
+      setAuditData(prev => {
+        const existingIds = new Set(prev.map(r => r.id).filter(Boolean));
+        const deduped = newRecords.filter(r => !r.id || !existingIds.has(r.id));
+        const merged = [...prev, ...deduped];
+        auditDataRef.current = merged;
+        return merged;
+      });
       setDtcHasMore(result.hasMore ?? !!result.continuationToken);
       setDtcContinuationToken(result.continuationToken || null);
       setDtcPageMeta(prev => ({
@@ -246,11 +275,12 @@ export const AppProvider = ({ children }) => {
 
     fetchSubscriptions();
     fetchFlowsData();
+    fetchFileStatus();
 
     return () => {
       if (activeControllerRef.current) activeControllerRef.current.abort();
     };
-  }, [fetchAllData, fetchSubscriptions, fetchFlowsData]);
+  }, [fetchAllData, fetchSubscriptions, fetchFlowsData, fetchFileStatus]);
 
   // ── Auto-refresh ────────────────────────────────────────────────────────────
   // Silently re-fetches DTC page 1 only — resets pagination state so "Load More"
@@ -264,6 +294,7 @@ export const AppProvider = ({ children }) => {
 
     refreshTimerRef.current = setInterval(() => {
       fetchAllData({ silent: true });
+      fetchFileStatus();
     }, AUTO_REFRESH_INTERVAL_MS);
 
     return () => {
@@ -272,7 +303,7 @@ export const AppProvider = ({ children }) => {
         refreshTimerRef.current = null;
       }
     };
-  }, [autoRefresh, fetchAllData]);
+  }, [autoRefresh, fetchAllData, fetchFileStatus]);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const login = useCallback((userData) => {
@@ -320,6 +351,9 @@ export const AppProvider = ({ children }) => {
     isLocalSubscription,
     subscriptionError,
     fetchSubscriptions,
+    // File status summary (totalFiles, successFiles, pendingFiles)
+    fileStatusSummary,
+    fileStatusSummaryError,
   }), [
     user, login, logout,
     autoRefresh,
@@ -327,6 +361,7 @@ export const AppProvider = ({ children }) => {
     dtcHasMore, dtcLoadingMore, dtcPageMeta, loadMoreDtcData,
     nonDtcAuditData, nonDtcFetchError,
     subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions,
+    fileStatusSummary, fileStatusSummaryError,
   ]);
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;

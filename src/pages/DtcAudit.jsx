@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DataTable from '../components/DataTable';
@@ -49,8 +49,10 @@ const DtcAudit = () => {
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
-  const [showCharts,  setShowCharts]  = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showCharts,      setShowCharts]      = useState(false);
+  const [showFilters,     setShowFilters]     = useState(false);
+  const [currentTablePage, setCurrentTablePage] = useState(0);
+  const [tablePageSize,    setTablePageSize]    = useState(50);
 
   // Subscription app names used for autocomplete inside the filter dropdown
   const subscriptionAppNames = useMemo(
@@ -90,6 +92,28 @@ const DtcAudit = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
+  // Flatten ALL audit data for the default (unfiltered) table view
+  const flattenedAuditData = useMemo(
+    () => globalAuditData.length ? flattenDtcAuditData(globalAuditData) : [],
+    [globalAuditData]
+  );
+
+  // Auto-fetch next DTC page when the user navigates to a table page that needs more rows
+  useEffect(() => {
+    if (hasQueried) return;
+    if (!dtcHasMore || dtcLoadingMore) return;
+    const requiredRows = (currentTablePage + 1) * tablePageSize;
+    if (flattenedAuditData.length < requiredRows) {
+      loadMoreDtcData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTablePage, tablePageSize, flattenedAuditData.length, dtcHasMore, dtcLoadingMore, hasQueried]);
+
+  const handlePageChange = useCallback((page, size) => {
+    setCurrentTablePage(page);
+    setTablePageSize(size);
+  }, []);
+
   // Validate date range before applying
   const handleApply = (filterData) => {
     const f = filterData || filters;
@@ -102,12 +126,6 @@ const DtcAudit = () => {
     apply(f);
     setShowFilters(false);
   };
-
-  // Flatten ALL audit data for the default (unfiltered) table view
-  const flattenedAuditData = useMemo(
-    () => globalAuditData.length ? flattenDtcAuditData(globalAuditData) : [],
-    [globalAuditData]
-  );
 
   // Column set depends on role and whether a query has been run
   const isBusiness = user?.role === 'Business';
@@ -209,45 +227,9 @@ const DtcAudit = () => {
             onViewDetail={() =>
               navigate('/dtc-audit-filter', { state: { filters: appliedFilters || filters } })
             }
+            onPageChange={handlePageChange}
+            isLoadingMore={!hasQueried && dtcLoadingMore}
           />
-
-          {/* Load More — only shown when not in filtered mode and more pages exist */}
-          {!hasQueried && dtcHasMore && (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: '12px', padding: '16px 0',
-            }}>
-              {dtcPageMeta?.resultCount != null && (
-                <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  {globalAuditData.length.toLocaleString()} records loaded
-                </span>
-              )}
-              <button
-                onClick={loadMoreDtcData}
-                disabled={dtcLoadingMore}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '8px 20px', background: dtcLoadingMore ? '#e2e8f0' : '#667eea',
-                  color: dtcLoadingMore ? '#94a3b8' : 'white',
-                  border: 'none', borderRadius: '8px', cursor: dtcLoadingMore ? 'not-allowed' : 'pointer',
-                  fontSize: '13px', fontWeight: 600, transition: 'background 0.2s',
-                }}
-              >
-                {dtcLoadingMore ? (
-                  <>
-                    <div style={{
-                      width: '14px', height: '14px', border: '2px solid #cbd5e1',
-                      borderTopColor: '#667eea', borderRadius: '50%',
-                      animation: 'spin 0.7s linear infinite',
-                    }} />
-                    Loading...
-                  </>
-                ) : (
-                  'Load More'
-                )}
-              </button>
-            </div>
-          )}
         </>
       )}
     </motion.div>

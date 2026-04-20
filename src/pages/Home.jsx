@@ -24,6 +24,7 @@ const Home = () => {
     fetchError,
     nonDtcFetchError,
     fetchAllData,
+    fileStatusSummary,
   } = useApp();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = React.useState(false);
@@ -114,13 +115,21 @@ const Home = () => {
     }).length;
   }, [nonDtcAuditData]);
 
-  const fileStats = React.useMemo(() => ({
-    filesReceived: auditData.length + nonDtcAuditData.length,
-    totalToBeDelivered: auditData.length + nonDtcAuditData.length,
-    totalDelivered: dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length,
-    pendingDelivery: Math.max((auditData.length + nonDtcAuditData.length) - (dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length), 0),
-    duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
-  }), [auditData, nonDtcAuditData, dtcDeliveredFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount]);
+  const fileStats = React.useMemo(() => {
+    const computedDelivered = dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length;
+    const computedTotal     = auditData.length + nonDtcAuditData.length;
+    // Use API summary values when available; fall back to locally computed counts
+    const totalToBeDelivered = fileStatusSummary?.totalFiles   ?? computedTotal;
+    const totalDelivered     = fileStatusSummary?.successFiles ?? computedDelivered;
+    const pendingDelivery    = fileStatusSummary?.pendingFiles ?? Math.max(computedTotal - computedDelivered, 0);
+    return {
+      filesReceived: computedTotal,
+      totalToBeDelivered,
+      totalDelivered,
+      pendingDelivery,
+      duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
+    };
+  }, [auditData, nonDtcAuditData, dtcDeliveredFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount, fileStatusSummary]);
 
   const showDetails = useCallback((type) => {
     // Calculate actual status distribution from combined DTC and Non-DTC audit data
