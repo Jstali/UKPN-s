@@ -229,6 +229,9 @@ const DtcAudit = () => {
             }
             onPageChange={handlePageChange}
             isLoadingMore={!hasQueried && dtcLoadingMore}
+            auditType="DTC"
+            appliedFilters={appliedFilters}
+            enableSelection
           />
         </>
       )}

@@ -334,6 +334,9 @@ const NonDtcAudit = () => {
           }
           navigationState={{ filters, appliedFilters, hasQueried, showBars: showCharts }}
           detailPagePath="/non-dtc-audit-detail"
+          auditType="SAP"
+          appliedFilters={appliedFilters}
+          enableSelection
         />
       )}
     </motion.div>

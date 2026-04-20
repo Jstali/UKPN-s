@@ -83,6 +83,15 @@ export const fetchFileStatusSummary = () =>
     }),
   ).then(r => ({ data: r.data ?? { totalFiles: null, successFiles: null, pendingFiles: null }, error: r.error }));
 
+// POST — sends styled HTML email with Excel attachment for DTC or SAP audit data
+export const sendAuditExportEmail = (payload) =>
+  fetchJson(
+    ENDPOINTS.auditEmailExport,
+    'Audit Email Export',
+    (d) => d,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) },
+  ).then(r => ({ data: r.data, error: r.error }));
+
 // ─── Paginated audit endpoints ───────────────────────────────────────────────
 
 export const fetchDtcAuditData = (continuationToken = null, pageSize = DTC_PAGE_SIZE, options = {}) =>

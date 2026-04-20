@@ -232,6 +232,10 @@ const DataTable = ({
   onPageChange = null,
   // When true shows a small loading indicator in the pagination bar
   isLoadingMore = false,
+  // Email export context (enables "Send to Email" feature)
+  auditType = null,
+  appliedFilters = null,
+  enableSelection = false,
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -296,6 +300,36 @@ const DataTable = ({
   const [exporting, setExporting] = useState(false);
   const previewContentCacheRef = useRef(new Map());
   const resolvedPreviewPathCacheRef = useRef(new Map());
+
+  // Row selection for email export — tracks unique document IDs across pages
+  const [selectedDocIds, setSelectedDocIds] = useState([]);
+  const selectedSet = useMemo(() => new Set(selectedDocIds), [selectedDocIds]);
+  const headerCheckRef = useRef(null);
+
+  const getRowDocId = useCallback((row) => row.id || row.uniqueId || row.fileId || null, []);
+
+  const allSortedDocIds = useMemo(
+    () => [...new Set(sortedData.map(getRowDocId).filter(Boolean))],
+    [sortedData, getRowDocId],
+  );
+  const allSelected  = allSortedDocIds.length > 0 && allSortedDocIds.every(id => selectedSet.has(id));
+  const someSelected = !allSelected && allSortedDocIds.some(id => selectedSet.has(id));
+
+  useEffect(() => {
+    if (headerCheckRef.current) headerCheckRef.current.indeterminate = someSelected;
+  }, [someSelected]);
+
+  const toggleRow = useCallback((row) => {
+    const docId = getRowDocId(row);
+    if (!docId) return;
+    setSelectedDocIds(prev =>
+      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId],
+    );
+  }, [getRowDocId]);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedDocIds(allSelected ? [] : allSortedDocIds);
+  }, [allSelected, allSortedDocIds]);
 
   const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
   const columnsForExport = exportColumns?.length ? exportColumns : columns;
@@ -796,6 +830,14 @@ const DataTable = ({
                   Exporting...
                 </div>
               )}
+              {enableSelection && selectedDocIds.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: '#4c4ebd' }}>
+                  {selectedDocIds.length} selected
+                  <button onClick={() => setSelectedDocIds([])} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', display: 'flex', alignItems: 'center', color: '#94a3b8' }} title="Clear selection">
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
               <ExportDropdown
                 onExportPDF={() => handleExport(() => exportToPDF(
                   sortedData,
@@ -860,7 +902,14 @@ const DataTable = ({
         </div>
       </div>
 
-      {showEmailModal && <EmailModal onClose={() => setShowEmailModal(false)} />}
+      {showEmailModal && (
+        <EmailModal
+          onClose={() => setShowEmailModal(false)}
+          auditType={auditType || 'DTC'}
+          appliedFilters={appliedFilters}
+          selectedDocIds={selectedDocIds}
+        />
+      )}
       
       {fileViewModal.show && (
         <FileViewModal
@@ -890,6 +939,7 @@ const DataTable = ({
         >
           {Object.keys(effectiveColWidths).length > 0 && (
             <colgroup>
+              {enableSelection && <col style={{ width: '36px' }} />}
               {orderedActiveColumns.map((col) => (
                 <col key={col.key} style={{ width: effectiveColWidths[col.key] ? `${effectiveColWidths[col.key]}px` : undefined }} />
               ))}
@@ -898,6 +948,18 @@ const DataTable = ({
           )}
           <thead>
             <tr>
+              {enableSelection && (
+                <th style={{ width: '36px', minWidth: '36px', position: 'sticky', top: 0, zIndex: 20, padding: '5px 8px', textAlign: 'center' }}>
+                  <input
+                    ref={headerCheckRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    title="Select all"
+                    style={{ accentColor: '#4c4ebd', cursor: 'pointer', width: '14px', height: '14px' }}
+                  />
+                </th>
+              )}
               {orderedActiveColumns.map((col) => (
                 <th
                   key={col.key}
@@ -1017,7 +1079,17 @@ const DataTable = ({
                 }
 
                 return (
-                  <tr key={idx} style={{ background: groupBg }}>
+                  <tr key={idx} style={{ background: selectedSet.has(getRowDocId(row)) ? '#f0f4ff' : groupBg }}>
+                    {enableSelection && (
+                      <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedSet.has(getRowDocId(row))}
+                          onChange={() => toggleRow(row)}
+                          style={{ accentColor: '#4c4ebd', cursor: 'pointer', width: '14px', height: '14px' }}
+                        />
+                      </td>
+                    )}
                     {orderedActiveColumns.map((col) => (
                       <td key={col.key} style={{ padding: '6px 10px', fontSize: '12px' }}>
                         {col.key === 'status' || col.key === 'eventType' ? (
