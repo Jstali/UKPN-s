@@ -2,19 +2,19 @@
 // four SEPARATE columns in ALL export types (Excel, PDF, CSV, Email).
 // Do NOT merge them into combined columns like "From Role + From MPID".
 const DTC_COL_WIDTHS = {
-  flow:              65,
-  version:           62,
-  fileId:           130,
-  timestamp:        130,
-  fromRole:          72,
-  fromMPID:          82,
-  toRole:            68,
-  toMPID:            78,
-  sourceApplication: 95,
-  application:      105,
-  status:            88,
-  fileName:         155,
-  eventId:          125,
+  flow:              52,
+  version:           50,
+  fileId:           110,
+  timestamp:        112,
+  fromRole:          58,
+  fromMPID:          65,
+  toRole:            54,
+  toMPID:            62,
+  sourceApplication: 78,
+  application:       85,
+  status:            72,
+  fileName:         130,
+  eventId:          105,
 };
 
 const w = (key, label, extra = {}) => ({ key, label, width: DTC_COL_WIDTHS[key], ...extra });
