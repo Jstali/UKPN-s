@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Clock } from 'lucide-react';
-import { calculateOverallAverage } from '../../utils/performanceUtils';
+import { calculateOverallAverage, formatMsToHMS, parseToMs } from '../../utils/performanceUtils';
 
 const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
@@ -16,6 +16,11 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     const { overallAvgTime } = calculateOverallAverage(performanceItems);
     return overallAvgTime;
   }, [performanceItems]);
+
+  const formatUiTime = React.useCallback((value) => {
+    const ms = parseToMs(value);
+    return ms === null ? '00:00:00' : formatMsToHMS(ms);
+  }, []);
 
   return (
     <motion.div
@@ -72,7 +77,7 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
                 className="performance-table-row"
               >
                 <td style={{ fontWeight: 600, color: '#1e293b' }}>{app.name}</td>
-                <td style={{ fontWeight: 700, color: '#16a34a' }}>{app.avgTime}</td>
+                <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatUiTime(app.avgTime)}</td>
                 <td>{app.files}</td>
               </tr>
             ))}

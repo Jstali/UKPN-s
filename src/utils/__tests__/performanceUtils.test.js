@@ -1,6 +1,7 @@
 import {
   calculateOverallAverage,
   calculateWeightedAverage,
+  formatMsToHMS,
   secondsToTime,
   timeToSeconds,
 } from '../performanceUtils';
@@ -16,6 +17,11 @@ describe('performance weighted-average utils', () => {
     expect(secondsToTime(303.699)).toBe('00:05:03.699');
     expect(secondsToTime(2.064)).toBe('00:00:02.064');
     expect(secondsToTime(-1)).toBe('00:00:00.000');
+  });
+
+  it('formatMsToHMS removes milliseconds and rounds correctly', () => {
+    expect(formatMsToHMS(303699)).toBe('00:05:04');
+    expect(formatMsToHMS(2064)).toBe('00:00:02');
   });
 
   it('calculateWeightedAverage uses files as weights', () => {
@@ -42,12 +48,14 @@ describe('performance weighted-average utils', () => {
     ])).toBe('00:00:00.000');
   });
 
-  it('calculateOverallAverage returns dashboard-compatible shape', () => {
+  it('calculateOverallAverage uses simple average by number of valid times', () => {
     const result = calculateOverallAverage([
-      { system: 'A', avgTime: '00:00:10.000', files: 2 },
-      { system: 'B', avgTime: '00:00:20.000', files: 1 },
+      { system: 'A', avgTime: '00:01:05.000', files: 1 },
+      { system: 'B', avgTime: '00:02:15.000', files: 99 },
+      { system: 'C', avgTime: '00:00:30.000', files: 3 },
+      { system: 'D', avgTime: '00:00:10.000', files: 10 },
     ]);
-    expect(result.totalFiles).toBe(3);
-    expect(result.overallAvgTime).toBe('00:00:13.333');
+    expect(result.totalEntries).toBe(4);
+    expect(result.overallAvgTime).toBe('00:01:00');
   });
 });

@@ -53,6 +53,18 @@ export const formatSeconds = (totalSeconds) => {
   return formatMs(totalSeconds * 1000);
 };
 
+/**
+ * Format milliseconds to "HH:MM:SS" (rounded to nearest second).
+ */
+export const formatMsToHMS = (totalMs) => {
+  if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00';
+  const roundedSeconds = Math.round(totalMs / 1000);
+  const hh = String(Math.floor(roundedSeconds / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((roundedSeconds % 3600) / 60)).padStart(2, '0');
+  const ss = String(roundedSeconds % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+};
+
 // Keep backward-compatible alias used elsewhere in the codebase
 export const formatDurationHMS = formatSeconds;
 
@@ -103,22 +115,33 @@ export const calculateWeightedAverage = (data) => {
 };
 
 /**
- * Backward-compatible wrapper used by dashboard components.
+ * Dashboard overall average:
+ *   sum(all valid avgTime values) / number of valid avgTime values
+ * Ignores files count completely.
+ * Returns HH:MM:SS (UI without milliseconds).
  */
 export const calculateOverallAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) {
-    return { overallAvgTime: '00:00:00.000', totalFiles: 0 };
+    return { overallAvgTime: '00:00:00', totalEntries: 0 };
   }
 
-  let totalFiles = 0;
+  let totalTimeMs = 0;
+  let totalEntries = 0;
+
   data.forEach((entry) => {
-    const files = Number(entry?.files);
-    if (Number.isFinite(files) && files > 0) totalFiles += files;
+    const ms = parseToMs(entry?.avgTime);
+    if (ms === null || !Number.isFinite(ms) || ms < 0) return;
+    totalTimeMs += ms;
+    totalEntries += 1;
   });
 
+  if (totalEntries === 0) {
+    return { overallAvgTime: '00:00:00', totalEntries: 0 };
+  }
+
   return {
-    overallAvgTime: calculateWeightedAverage(data),
-    totalFiles,
+    overallAvgTime: formatMsToHMS(totalTimeMs / totalEntries),
+    totalEntries,
   };
 };
 
