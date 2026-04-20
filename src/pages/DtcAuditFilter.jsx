@@ -21,6 +21,13 @@ const EVENT_TYPE_MAP = {
   'Failed': 'Failed'
 };
 const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+
+const mapStatusDisplay = (status) => {
+  const s = String(status || '').trim().toLowerCase();
+  if (s === 'file delivered') return 'Net App Delivered';
+  if (s === 'file transfer') return 'Delivered';
+  return status;
+};
 const normalizeVersion = (value) => {
   const str = String(value || '').trim();
   if (!str) return '';
@@ -561,7 +568,7 @@ const DtcAuditFilter = () => {
             sourceApp: sourceApplication,
             application: applicationValue,
             eventType: eventTypeValue,
-            status: event.Status || event.status || 'Unknown',
+            status: mapStatusDisplay(event.Status || event.status || 'Unknown'),
             processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
             timestamp: formatDateTime(rawTimestamp),
             rawTimestamp,
