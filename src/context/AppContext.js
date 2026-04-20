@@ -8,13 +8,19 @@ import React, {
   useState,
 } from 'react';
 import api, { fetchDtcSubscriptions, fetchFlows } from '../utils/api';
+import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
 
 const AppContext = createContext(null);
 
-const AUDIT_PAGE_SIZE = 500;
-const AUTO_REFRESH_INTERVAL_MS = 60000;
-const DTC_CACHE_KEY = 'fc_dtc_cache';
+// DTC auto-refresh: only page 1 — avoids re-fetching large datasets every minute
+const AUTO_REFRESH_INTERVAL_MS = 60_000;
+
+const DTC_CACHE_KEY     = 'fc_dtc_cache';
 const NON_DTC_CACHE_KEY = 'fc_nondtc_cache';
+
+// Limit what we persist to localStorage — avoids bloating storage with large datasets.
+// Only the first page (~100 records) is cached; extra pages loaded via "Load More" are memory-only.
+const MAX_CACHE_RECORDS = DTC_PAGE_SIZE;
 
 const readCache = (key) => {
   try {
@@ -25,66 +31,63 @@ const readCache = (key) => {
   }
 };
 
-const writeCache = (key, records) => {
+const writeCache = (key, records, limit = null) => {
   try {
-    localStorage.setItem(key, JSON.stringify(records));
+    const data = limit ? records.slice(0, limit) : records;
+    localStorage.setItem(key, JSON.stringify(data));
   } catch {
-    // Storage quota exceeded — clear and skip
     try { localStorage.removeItem(key); } catch { /* noop */ }
   }
 };
 
-// Fetch one page from a given API endpoint
-const fetchOnePage = async (fetchFn, token, signal) =>
-  fetchFn(token, AUDIT_PAGE_SIZE, { signal });
-
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [user,          setUser]          = useState(null);
+  const [autoRefresh,   setAutoRefresh]   = useState(true);
 
-  // Initialise from cache for instant display — fresh data loads in background
-  const [auditData, setAuditData] = useState(() => readCache(DTC_CACHE_KEY));
-  const [nonDtcAuditData, setNonDtcAuditData] = useState(() => readCache(NON_DTC_CACHE_KEY));
+  // Initialise from cache so the UI renders immediately on load
+  const [auditData,      setAuditData]      = useState(() => readCache(DTC_CACHE_KEY));
+  const [nonDtcAuditData,setNonDtcAuditData]= useState(() => readCache(NON_DTC_CACHE_KEY));
 
-  // Only show loading spinner when there is no cached data to display
+  // Loading spinner only shown when there is no cached data at all
   const [loading, setLoading] = useState(() => {
-    try {
-      return !localStorage.getItem(DTC_CACHE_KEY);
-    } catch {
-      return true;
-    }
+    try { return !localStorage.getItem(DTC_CACHE_KEY); } catch { return true; }
   });
 
-  const [dataComplete, setDataComplete] = useState(false);
-  const [fetchError, setFetchError] = useState(null);
-  const [nonDtcFetchError, setNonDtcFetchError] = useState(null);
-  const [subscriptionData, setSubscriptionData] = useState([]);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
-  const [isLocalSubscription, setIsLocalSubscription] = useState(false);
-  const [subscriptionError, setSubscriptionError] = useState(null);
-  const [flowsData, setFlowsData] = useState([]);
+  const [dataComplete,       setDataComplete]       = useState(false);
+  const [fetchError,         setFetchError]         = useState(null);
+  const [nonDtcFetchError,   setNonDtcFetchError]   = useState(null);
 
-  // Strict in-flight lock. Only one refresh cycle may run at a time.
-  const isFetchingRef = useRef(false);
-  const activeControllerRef = useRef(null);
-  const refreshTimerRef = useRef(null);
-  const mountedRef = useRef(false);
+  // DTC incremental pagination state — exposed to DtcAudit page
+  const [dtcHasMore,         setDtcHasMore]         = useState(false);
+  const [dtcContinuationToken,setDtcContinuationToken] = useState(null);
+  const [dtcLoadingMore,     setDtcLoadingMore]     = useState(false);
+  const [dtcPageMeta,        setDtcPageMeta]        = useState(null);
+
+  const [subscriptionData,   setSubscriptionData]   = useState([]);
+  const [subscriptionLoading,setSubscriptionLoading]= useState(false);
+  const [isLocalSubscription,setIsLocalSubscription]= useState(false);
+  const [subscriptionError,  setSubscriptionError]  = useState(null);
+  const [flowsData,          setFlowsData]          = useState([]);
+
+  // Strict in-flight lock — only one fetch cycle may run at a time
+  const isFetchingRef         = useRef(false);
+  const activeControllerRef   = useRef(null);
+  const refreshTimerRef       = useRef(null);
+  const mountedRef            = useRef(false);
   const queuedFetchOptionsRef = useRef(null);
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem('user');
     if (!savedUser) return;
-    try {
-      setUser(JSON.parse(savedUser));
-    } catch {
-      sessionStorage.removeItem('user');
-    }
+    try { setUser(JSON.parse(savedUser)); }
+    catch { sessionStorage.removeItem('user'); }
   }, []);
 
+  // Cache only the first page of DTC data to keep localStorage small
   const commitAuditData = useCallback((records) => {
     const data = Array.isArray(records) ? records : [];
     setAuditData(data);
-    writeCache(DTC_CACHE_KEY, data);
+    writeCache(DTC_CACHE_KEY, data, MAX_CACHE_RECORDS);
   }, []);
 
   const commitNonDtcData = useCallback((records) => {
@@ -105,14 +108,11 @@ export const AppProvider = ({ children }) => {
   const fetchSubscriptions = useCallback(async () => {
     setSubscriptionLoading(true);
     setSubscriptionError(null);
-
     try {
       const { data, isLocal, error } = await fetchDtcSubscriptions();
       setSubscriptionData(Array.isArray(data) ? data : []);
       setIsLocalSubscription(Boolean(isLocal));
-      if (error) {
-        setSubscriptionError(error);
-      }
+      if (error) setSubscriptionError(error);
     } catch (err) {
       setSubscriptionError(err.message || 'Failed to load subscriptions');
       setSubscriptionData([]);
@@ -121,6 +121,9 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
+  // ── Main fetch ──────────────────────────────────────────────────────────────
+  // DTC:     fetches page 1 ONLY — additional pages are loaded via loadMoreDtcData()
+  // Non-DTC: fetches page 1 then continues paginating in background (unchanged)
   const fetchAllData = useCallback(async (options = {}) => {
     const { restart = false, silent = false } = options;
 
@@ -133,72 +136,50 @@ export const AppProvider = ({ children }) => {
 
     const controller = new AbortController();
     activeControllerRef.current = controller;
-    isFetchingRef.current = true;
+    isFetchingRef.current       = true;
 
     if (!silent) setLoading(true);
 
     try {
-      // ── Step 1: Fetch first page of both APIs in parallel ──────────────────
+      // Fetch page 1 of both APIs in parallel
       const [dtcFirst, nonDtcFirst] = await Promise.all([
-        fetchOnePage(api.fetchDtcAuditData.bind(api), null, controller.signal),
-        fetchOnePage(api.fetchNonDtcAuditData.bind(api), null, controller.signal),
+        api.fetchDtcAuditData(null, DTC_PAGE_SIZE,     { signal: controller.signal }),
+        api.fetchNonDtcAuditData(null, NON_DTC_PAGE_SIZE, { signal: controller.signal }),
       ]);
 
       if (controller.signal.aborted) return false;
 
-      const dtcRecords = Array.isArray(dtcFirst?.data) ? [...dtcFirst.data] : [];
-      const nonDtcRecords = Array.isArray(nonDtcFirst?.data) ? [...nonDtcFirst.data] : [];
+      const dtcRecords    = Array.isArray(dtcFirst?.data)    ? dtcFirst.data    : [];
+      const nonDtcRecords = Array.isArray(nonDtcFirst?.data) ? nonDtcFirst.data : [];
 
       setFetchError(dtcFirst?.error || null);
       setNonDtcFetchError(nonDtcFirst?.error || null);
 
-      // Show first page immediately and cache it — clears the loading spinner
+      // DTC: store page 1 only; expose pagination state for user-triggered load more
       commitAuditData(dtcRecords);
+      setDtcHasMore(dtcFirst?.hasMore ?? !!dtcFirst?.continuationToken);
+      setDtcContinuationToken(dtcFirst?.continuationToken || null);
+      setDtcPageMeta({
+        pageSize:       dtcFirst?.pageSize,
+        pageSizeCapped: dtcFirst?.pageSizeCapped,
+        requestCharge:  dtcFirst?.requestCharge,
+        durationMs:     dtcFirst?.durationMs,
+        resultCount:    dtcRecords.length,
+      });
+
+      // Non-DTC page 1 — show immediately
       commitNonDtcData(nonDtcRecords);
       setLoading(false);
 
-      // ── Step 2: Fetch remaining pages in background (both in parallel) ──────
-      let dtcToken = dtcFirst?.continuationToken || null;
+      // Background: continue paginating Non-DTC only (DTC is user-driven)
       let nonDtcToken = nonDtcFirst?.continuationToken || null;
-
-      while ((dtcToken || nonDtcToken) && !controller.signal.aborted) {
-        const pageFetches = [];
-
-        if (dtcToken) {
-          pageFetches.push(
-            fetchOnePage(api.fetchDtcAuditData.bind(api), dtcToken, controller.signal)
-              .then(r => ({ kind: 'dtc', ...r }))
-          );
-        }
-        if (nonDtcToken) {
-          pageFetches.push(
-            fetchOnePage(api.fetchNonDtcAuditData.bind(api), nonDtcToken, controller.signal)
-              .then(r => ({ kind: 'nonDtc', ...r }))
-          );
-        }
-
-        const pages = await Promise.all(pageFetches);
+      while (nonDtcToken && !controller.signal.aborted) {
+        const page      = await api.fetchNonDtcAuditData(nonDtcToken, NON_DTC_PAGE_SIZE, { signal: controller.signal });
         if (controller.signal.aborted) break;
-
-        let dtcUpdated = false;
-        let nonDtcUpdated = false;
-
-        for (const page of pages) {
-          const newRows = Array.isArray(page.data) ? page.data : [];
-          if (page.kind === 'dtc') {
-            dtcRecords.push(...newRows);
-            dtcToken = page.continuationToken || null;
-            if (newRows.length > 0) dtcUpdated = true;
-          } else {
-            nonDtcRecords.push(...newRows);
-            nonDtcToken = page.continuationToken || null;
-            if (newRows.length > 0) nonDtcUpdated = true;
-          }
-        }
-
-        // Update state and cache as more data arrives
-        if (dtcUpdated) commitAuditData(dtcRecords);
-        if (nonDtcUpdated) commitNonDtcData(nonDtcRecords);
+        const newRows   = Array.isArray(page?.data) ? page.data : [];
+        nonDtcRecords.push(...newRows);
+        nonDtcToken     = page?.continuationToken || null;
+        if (newRows.length > 0) commitNonDtcData([...nonDtcRecords]);
       }
 
       setDataComplete(true);
@@ -214,48 +195,73 @@ export const AppProvider = ({ children }) => {
       if (activeControllerRef.current === controller) activeControllerRef.current = null;
       isFetchingRef.current = false;
       setLoading(false);
-
       if (queuedFetchOptionsRef.current) {
-        const queuedOptions = queuedFetchOptionsRef.current;
+        const queued = queuedFetchOptionsRef.current;
         queuedFetchOptionsRef.current = null;
-        fetchAllData(queuedOptions);
+        fetchAllData(queued);
       }
     }
   }, [commitAuditData, commitNonDtcData]);
 
-  useEffect(() => {
-    if (mountedRef.current) {
-      return undefined;
-    }
+  // ── User-triggered "Load More" for DTC ─────────────────────────────────────
+  // Appends the next DTC page to state.
+  // Does NOT update the localStorage cache — extra pages are memory-only to keep
+  // localStorage small per backend recommendation.
+  const loadMoreDtcData = useCallback(async () => {
+    if (!dtcHasMore || !dtcContinuationToken || dtcLoadingMore) return;
 
+    setDtcLoadingMore(true);
+    try {
+      const result    = await api.fetchDtcAuditData(dtcContinuationToken, DTC_PAGE_SIZE, {});
+      if (!result || result.aborted) return;
+
+      const newRecords = Array.isArray(result.data) ? result.data : [];
+
+      // Append without overwriting cache (page 1 cache remains intact)
+      setAuditData(prev => [...prev, ...newRecords]);
+      setDtcHasMore(result.hasMore ?? !!result.continuationToken);
+      setDtcContinuationToken(result.continuationToken || null);
+      setDtcPageMeta(prev => ({
+        ...prev,
+        pageSize:      result.pageSize,
+        requestCharge: result.requestCharge,
+        durationMs:    result.durationMs,
+        resultCount:   (prev?.resultCount ?? 0) + newRecords.length,
+      }));
+      if (result.error) setFetchError(result.error);
+    } catch (err) {
+      setFetchError(err.message || 'Failed to load more DTC data');
+    } finally {
+      setDtcLoadingMore(false);
+    }
+  }, [dtcHasMore, dtcContinuationToken, dtcLoadingMore]);
+
+  // ── On mount ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (mountedRef.current) return undefined;
     mountedRef.current = true;
 
-    // If cached data exists, load silently — user sees data immediately
     const hasCachedData = readCache(DTC_CACHE_KEY).length > 0;
     fetchAllData({ silent: hasCachedData });
 
-    // Pre-fetch subscriptions and flows so they are available everywhere on load
     fetchSubscriptions();
     fetchFlowsData();
 
     return () => {
-      if (activeControllerRef.current) {
-        activeControllerRef.current.abort();
-      }
+      if (activeControllerRef.current) activeControllerRef.current.abort();
     };
   }, [fetchAllData, fetchSubscriptions, fetchFlowsData]);
 
+  // ── Auto-refresh ────────────────────────────────────────────────────────────
+  // Silently re-fetches DTC page 1 only — resets pagination state so "Load More"
+  // starts fresh. Avoids re-fetching the full (potentially large) dataset.
   useEffect(() => {
     if (refreshTimerRef.current) {
       clearInterval(refreshTimerRef.current);
       refreshTimerRef.current = null;
     }
+    if (!autoRefresh) return undefined;
 
-    if (!autoRefresh) {
-      return undefined;
-    }
-
-    // Single interval. If a request is still in progress, the lock skips the next tick.
     refreshTimerRef.current = setInterval(() => {
       fetchAllData({ silent: true });
     }, AUTO_REFRESH_INTERVAL_MS);
@@ -268,21 +274,20 @@ export const AppProvider = ({ children }) => {
     };
   }, [autoRefresh, fetchAllData]);
 
+  // ── Auth ────────────────────────────────────────────────────────────────────
   const login = useCallback((userData) => {
     setUser(userData);
     sessionStorage.setItem('user', JSON.stringify(userData));
   }, []);
 
   const logout = useCallback(() => {
-    if (activeControllerRef.current) {
-      activeControllerRef.current.abort();
-    }
-
+    if (activeControllerRef.current) activeControllerRef.current.abort();
     setUser(null);
     setAuditData([]);
     setNonDtcAuditData([]);
     setSubscriptionData([]);
-
+    setDtcHasMore(false);
+    setDtcContinuationToken(null);
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
     localStorage.removeItem(DTC_CACHE_KEY);
@@ -295,35 +300,33 @@ export const AppProvider = ({ children }) => {
     logout,
     autoRefresh,
     setAutoRefresh,
+    // DTC audit data
     auditData,
-    nonDtcAuditData,
     loading,
     dataComplete,
     fetchError,
-    nonDtcFetchError,
     fetchAllData,
+    // DTC incremental pagination
+    dtcHasMore,
+    dtcLoadingMore,
+    dtcPageMeta,
+    loadMoreDtcData,
+    // Non-DTC audit data
+    nonDtcAuditData,
+    nonDtcFetchError,
+    // Subscriptions
     subscriptionData,
     subscriptionLoading,
     isLocalSubscription,
     subscriptionError,
     fetchSubscriptions,
   }), [
-    user,
-    login,
-    logout,
+    user, login, logout,
     autoRefresh,
-    auditData,
-    nonDtcAuditData,
-    loading,
-    dataComplete,
-    fetchError,
-    nonDtcFetchError,
-    fetchAllData,
-    subscriptionData,
-    subscriptionLoading,
-    isLocalSubscription,
-    subscriptionError,
-    fetchSubscriptions,
+    auditData, loading, dataComplete, fetchError, fetchAllData,
+    dtcHasMore, dtcLoadingMore, dtcPageMeta, loadMoreDtcData,
+    nonDtcAuditData, nonDtcFetchError,
+    subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions,
   ]);
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
@@ -331,8 +334,6 @@ export const AppProvider = ({ children }) => {
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within AppProvider');
-  }
+  if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
 };

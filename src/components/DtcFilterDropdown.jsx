@@ -4,16 +4,8 @@ import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 import api, { fetchDropdownValues } from '../utils/api';
 
-// Event Type mapping
-const EVENT_TYPE_MAP = {
-  '1': 'Received',
-  '2': 'Subscribed',
-  '3': 'Published',
-  '4': 'Delivered',
-  '21': 'Invalid Flow',
-  '22': 'File Transferred',
-  'Failed': 'Failed'
-};
+// Import from shared constants — single source of truth
+import { DTC_EVENT_TYPE_MAP as EVENT_TYPE_MAP } from '../constants/eventTypes';
 
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -187,31 +179,36 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
               No matches
             </div>
           )}
-          {filteredOptions.map(option => (
-            <div
-              key={option}
-              onClick={() => handleToggle(option)}
-              role="option"
-              aria-selected={selectedValues.includes(option)}
-              style={{
-                padding: '8px 12px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                borderBottom: '1px solid #f1f5f9',
-                background: selectedValues.includes(option) ? '#eef2ff' : '#fff'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#f8fafc'}
-              onMouseLeave={(e) => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#fff'}
-            >
-              <input
-                type="checkbox"
-                checked={selectedValues.includes(option)}
-                readOnly
-                style={{ marginRight: '8px', cursor: 'pointer' }}
-              />
-              {option}
-            </div>
-          ))}
+          {filteredOptions.map(option => {
+            // When "All" is selected every option is considered checked
+            const isAllSelected = value === 'All' || selectedValues.length === 0;
+            const isChecked = isAllSelected || selectedValues.includes(option);
+            return (
+              <div
+                key={option}
+                onClick={() => handleToggle(option)}
+                role="option"
+                aria-selected={isChecked}
+                style={{
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  borderBottom: '1px solid #f1f5f9',
+                  background: isChecked ? '#eef2ff' : '#fff'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = isChecked ? '#eef2ff' : '#f8fafc'}
+                onMouseLeave={(e) => e.currentTarget.style.background = isChecked ? '#eef2ff' : '#fff'}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  readOnly
+                  style={{ marginRight: '8px', cursor: 'pointer' }}
+                />
+                {option}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -314,9 +311,22 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
         if (flow) values.flow.add(flow);
         if (version) values.version.add(version);
       }
-      if (item.id) values.fileId.add(item.id);
+
+      // Use HFile_ID as the File ID dropdown value
+      const hFileId = item.HFile_ID || item.hFile_ID || item.hfile_id;
+      if (hFileId) values.fileId.add(hFileId);
+
+      // Always add the actual sourceApplication from the first event so the
+      // dropdown value exactly matches what the filter compares against (r.sourceApplication)
+      const sourceApp = item.events?.[0]?.applicationName;
+      if (sourceApp && sourceApp !== 'Unknown') values.sourceApplication.add(sourceApp);
 
       item.events?.forEach(event => {
+        // Add destination application from each event so dropdown values match
+        // r.application in dtcFilterUtils (event.applicationName || Destination_Application)
+        const destApp = event.applicationName || event.Destination_Application;
+        if (destApp && destApp !== 'Unknown') values.destinationApplication.add(destApp);
+
         const eventTypeKey = event.Event_Type;
         const eventTypeName = EVENT_TYPE_MAP[eventTypeKey] || eventTypeKey;
         if (event.Status === 'Failed') {

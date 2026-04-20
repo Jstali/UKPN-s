@@ -1011,7 +1011,7 @@ const DataTable = ({
                   <tr key={idx} style={{ background: groupBg }}>
                     {orderedActiveColumns.map((col) => (
                       <td key={col.key} style={{ padding: '6px 10px', fontSize: '12px' }}>
-                        {col.key === 'status' ? (
+                        {col.key === 'status' || col.key === 'eventType' ? (
                           <span className={`status-badge ${getStatusClass(row[col.key])}`} style={{ fontSize: '11px', padding: '2px 8px' }}>
                             {row[col.key]}
                           </span>

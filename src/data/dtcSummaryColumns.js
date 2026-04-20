@@ -12,7 +12,7 @@ const DTC_COL_WIDTHS = {
   toMPID:            68,
   sourceApplication: 86,
   application:       94,
-  status:            80,
+  eventType:         88,
   fileName:         140,
   eventId:          112,
 };
@@ -30,7 +30,7 @@ export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW = [
   w('toMPID', 'To MPID'),           // separate — do not merge
   w('sourceApplication', 'Source'),
   w('application', 'Destination'),
-  w('status', 'Status'),
+  w('eventType', 'Event Type'),
   w('fileName', 'Source File Name'),
 ];
 
@@ -51,6 +51,6 @@ export const DTC_AUDIT_DETAIL_SUMMARY_FIELDS = [
   w('toMPID', 'To MPID'),
   w('sourceApplication', 'Source'),
   w('application', 'Destination'),
-  w('status', 'Status'),
+  w('eventType', 'Event Type'),
   w('fileName', 'Source File Name'),
 ];

@@ -116,7 +116,7 @@ const COL_WIDTHS = {
   toMPID:            68,
   sourceApplication: 86,
   application:       94,
-  status:            80,
+  eventType:         88,
   fileName:         140,
   eventId:          112,
 };
@@ -134,7 +134,7 @@ export const FILTERED_COLUMNS = [
   c('toMPID', 'To MPID'),
   c('sourceApplication', 'Source'),
   c('application', 'Destination'),
-  c('status', 'Status'),
+  c('eventType', 'Event Type'),
   c('fileName', 'Source File Name'),
 ];
 
@@ -149,7 +149,7 @@ export const DEFAULT_COLUMNS_BUSINESS = [
   c('toMPID', 'To MPID'),
   c('sourceApplication', 'Source'),
   c('application', 'Destination'),
-  c('status', 'Status'),
+  c('eventType', 'Event Type'),
   c('fileName', 'Source File Name'),
 ];
 
@@ -164,6 +164,6 @@ export const DEFAULT_COLUMNS_FULL = [
   c('toMPID', 'To MPID'),
   c('sourceApplication', 'Source'),
   c('application', 'Destination'),
-  c('status', 'Status'),
+  c('eventType', 'Event Type'),
   c('fileName', 'Source File Name'),
 ];

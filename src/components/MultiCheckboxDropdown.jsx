@@ -138,29 +138,34 @@ const MultiCheckboxDropdown = ({
             All
           </div>
 
-          {options.map(option => (
-            <div
-              key={option}
-              onClick={() => toggleOption(option)}
-              role="option"
-              aria-selected={selectedValues.includes(option)}
-              style={{
-                padding: '8px 12px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                borderBottom: '1px solid #f1f5f9',
-                background: selectedValues.includes(option) ? '#eef2ff' : '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#f8fafc'}
-              onMouseLeave={e => e.currentTarget.style.background = selectedValues.includes(option) ? '#eef2ff' : '#fff'}
-            >
-              <input type="checkbox" readOnly checked={selectedValues.includes(option)} style={{ cursor: 'pointer' }} />
-              {option}
-            </div>
-          ))}
+          {options.map(option => {
+            // When "All" is selected every option is considered checked
+            const isAllSelected = value === 'All' || selectedValues.length === 0;
+            const isChecked = isAllSelected || selectedValues.includes(option);
+            return (
+              <div
+                key={option}
+                onClick={() => toggleOption(option)}
+                role="option"
+                aria-selected={isChecked}
+                style={{
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  borderBottom: '1px solid #f1f5f9',
+                  background: isChecked ? '#eef2ff' : '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = isChecked ? '#eef2ff' : '#f8fafc'}
+                onMouseLeave={e => e.currentTarget.style.background = isChecked ? '#eef2ff' : '#fff'}
+              >
+                <input type="checkbox" readOnly checked={isChecked} style={{ cursor: 'pointer' }} />
+                {option}
+              </div>
+            );
+          })}
 
           {options.length === 0 && (
             <div style={{ padding: '10px 12px', fontSize: '12px', color: '#94a3b8', textAlign: 'center' }}>
