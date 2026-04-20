@@ -212,16 +212,15 @@ const NonDtcAudit = () => {
 
   const validateDateRange = (f = filters) => {
     const now = new Date();
+
     if (f.eventFrom) {
-      const fromDt = new Date(`${f.eventFrom}T${f.eventFromTime || '00:00:00'}`);
-      if (fromDt > now) {
+      if (new Date(`${f.eventFrom}T${f.eventFromTime || '00:00:00'}`) > now) {
         setDateError('Event From date cannot be a future date. No data will exist for future dates.');
         return false;
       }
     }
     if (f.eventTo) {
-      const toDt = new Date(`${f.eventTo}T${f.eventToTime || '23:59:59'}`);
-      if (toDt > now) {
+      if (new Date(`${f.eventTo}T${f.eventToTime || '23:59:59'}`) > now) {
         setDateError('Event To date cannot be a future date. No data will exist for future dates.');
         return false;
       }
@@ -234,6 +233,19 @@ const NonDtcAudit = () => {
         return false;
       }
     }
+    if (f.fileCreated) {
+      if (new Date(`${f.fileCreated}T${f.fileCreatedTime || '00:00:00'}`) > now) {
+        setDateError('File Creation date cannot be a future date. No data will exist for future dates.');
+        return false;
+      }
+    }
+    if (f.publishDate) {
+      if (new Date(`${f.publishDate}T23:59:59`) > now) {
+        setDateError('Publish date cannot be a future date. No data will exist for future dates.');
+        return false;
+      }
+    }
+
     setDateError('');
     return true;
   };
@@ -487,13 +499,13 @@ const NonDtcAudit = () => {
                       <input
                         type="date"
                         value={filters.fileCreated}
-                        onChange={e => setFilters({ ...filters, fileCreated: e.target.value })}
+                        onChange={e => { const f = { ...filters, fileCreated: e.target.value }; setFilters(f); validateDateRange(f); }}
                         style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
                       />
                       <input
                         type="time"
                         value={filters.fileCreatedTime}
-                        onChange={e => setFilters({ ...filters, fileCreatedTime: e.target.value })}
+                        onChange={e => { const f = { ...filters, fileCreatedTime: e.target.value }; setFilters(f); validateDateRange(f); }}
                         style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
                       />
                     </div>
@@ -503,7 +515,7 @@ const NonDtcAudit = () => {
                     <input
                       type="date"
                       value={filters.publishDate}
-                      onChange={e => setFilters({ ...filters, publishDate: e.target.value })}
+                      onChange={e => { const f = { ...filters, publishDate: e.target.value }; setFilters(f); validateDateRange(f); }}
                       style={{ ...inputStyle, padding: '7px 8px', fontSize: '12px' }}
                     />
                   </div>
