@@ -189,6 +189,7 @@ const NonDtcAudit = () => {
   const [filters, setFilters] = useState(initialFilters);
   const [appliedFilters, setAppliedFilters] = useState(location.state?.appliedFilters || initialFilters);
   const [hasQueried, setHasQueried] = useState(location.state?.hasQueried || false);
+  const [dateError, setDateError] = useState('');
 
   // Restore UI state when coming back
   useEffect(() => {
@@ -209,7 +210,36 @@ const NonDtcAudit = () => {
     return result;
   }, [auditData, appliedFilters]);
 
+  const validateDateRange = (f = filters) => {
+    const now = new Date();
+    if (f.eventFrom) {
+      const fromDt = new Date(`${f.eventFrom}T${f.eventFromTime || '00:00:00'}`);
+      if (fromDt > now) {
+        setDateError('Event From date cannot be a future date. No data will exist for future dates.');
+        return false;
+      }
+    }
+    if (f.eventTo) {
+      const toDt = new Date(`${f.eventTo}T${f.eventToTime || '23:59:59'}`);
+      if (toDt > now) {
+        setDateError('Event To date cannot be a future date. No data will exist for future dates.');
+        return false;
+      }
+    }
+    if (f.eventFrom && f.eventTo) {
+      const fromDt = new Date(`${f.eventFrom}T${f.eventFromTime || '00:00:00'}`);
+      const toDt   = new Date(`${f.eventTo}T${f.eventToTime || '23:59:59'}`);
+      if (fromDt > toDt) {
+        setDateError('Event From date cannot be later than Event To date.');
+        return false;
+      }
+    }
+    setDateError('');
+    return true;
+  };
+
   const applyFilters = () => {
+    if (!validateDateRange()) return;
     setAppliedFilters(filters);
     setHasQueried(true);
     setShowFilters(false);
@@ -224,6 +254,7 @@ const NonDtcAudit = () => {
     setFilters(empty);
     setAppliedFilters(empty);
     setHasQueried(false);
+    setDateError('');
   };
 
   // Selection criteria display config - matches Non-DTC filter fields
@@ -422,13 +453,13 @@ const NonDtcAudit = () => {
                       <input
                         type="date"
                         value={filters.eventFrom}
-                        onChange={e => setFilters({ ...filters, eventFrom: e.target.value })}
+                        onChange={e => { const f = { ...filters, eventFrom: e.target.value }; setFilters(f); validateDateRange(f); }}
                         style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
                       />
                       <input
                         type="time"
                         value={filters.eventFromTime}
-                        onChange={e => setFilters({ ...filters, eventFromTime: e.target.value })}
+                        onChange={e => { const f = { ...filters, eventFromTime: e.target.value }; setFilters(f); validateDateRange(f); }}
                         style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
                       />
                     </div>
@@ -439,13 +470,13 @@ const NonDtcAudit = () => {
                       <input
                         type="date"
                         value={filters.eventTo}
-                        onChange={e => setFilters({ ...filters, eventTo: e.target.value })}
+                        onChange={e => { const f = { ...filters, eventTo: e.target.value }; setFilters(f); validateDateRange(f); }}
                         style={{ ...inputStyle, flex: 1, padding: '7px 8px', fontSize: '12px' }}
                       />
                       <input
                         type="time"
                         value={filters.eventToTime}
-                        onChange={e => setFilters({ ...filters, eventToTime: e.target.value })}
+                        onChange={e => { const f = { ...filters, eventToTime: e.target.value }; setFilters(f); validateDateRange(f); }}
                         style={{ ...inputStyle, width: '95px', padding: '7px 8px', fontSize: '12px' }}
                       />
                     </div>
@@ -486,30 +517,41 @@ const NonDtcAudit = () => {
                   </div>
                 </div>
               </div>
-              <div style={{
-                display: 'flex', gap: '8px', justifyContent: 'flex-end',
-                paddingTop: '12px', borderTop: '1px solid #f1f5f9',
-              }}>
-                <button
-                  onClick={resetFilters}
-                  style={{
-                    padding: '8px 16px', background: '#f1f5f9', color: '#475569',
-                    border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-                  }}
-                >
-                  <RotateCcw size={14} /> Reset
-                </button>
-                <button
-                  onClick={applyFilters}
-                  style={{
-                    padding: '8px 16px', background: '#667eea', color: 'white',
-                    border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Apply Filters
-                </button>
+              <div style={{ paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                {dateError && (
+                  <div style={{
+                    marginBottom: '10px', padding: '8px 12px',
+                    background: '#fef2f2', border: '1px solid #fca5a5',
+                    borderRadius: '6px', color: '#991b1b',
+                    fontSize: '12px', fontWeight: 500,
+                  }}>
+                    ⚠️ {dateError}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={resetFilters}
+                    style={{
+                      padding: '8px 16px', background: '#f1f5f9', color: '#475569',
+                      border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                    }}
+                  >
+                    <RotateCcw size={14} /> Reset
+                  </button>
+                  <button
+                    onClick={applyFilters}
+                    disabled={!!dateError}
+                    style={{
+                      padding: '8px 16px', background: '#667eea', color: 'white',
+                      border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                      cursor: dateError ? 'not-allowed' : 'pointer',
+                      opacity: dateError ? 0.5 : 1,
+                    }}
+                  >
+                    Apply Filters
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
