@@ -99,9 +99,9 @@ const flattenAuditEvents = (data) => {
         
         const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
         const eventTypeRaw = String(event.Event_Type ?? '');
-        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '4')
-          ? (event.applicationName || event.Destination_Application || '')
-          : '';
+        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '3')
+          ? ''
+          : (event.applicationName || event.Destination_Application || '');
 
         flatData.push({
           ...item,
@@ -155,9 +155,9 @@ const buildFilteredResults = (data, filtersToUse) => {
         
         const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
         const eventTypeRaw = String(event.Event_Type ?? '');
-        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '4')
-          ? (event.applicationName || event.Destination_Application || '')
-          : '';
+        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '3')
+          ? ''
+          : (event.applicationName || event.Destination_Application || '');
 
         results.push({
           ...item, // Include all original fields

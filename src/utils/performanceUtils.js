@@ -1,36 +1,56 @@
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
+ * Parse "HH:MM:SS" or "HH:MM:SS.mmm" → total milliseconds (integer).
+ * The fractional part is treated as milliseconds, right-padded to 3 digits.
+ *   "00:00:00.507" → 507 ms
+ *   "00:00:00.5"   → 500 ms
+ *   "00:01:05"     → 65000 ms
+ * Returns null for null, undefined, or malformed strings.
+ */
+export const parseToMs = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  const match = timeStr.trim().match(/^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/);
+  if (!match) return null;
+  const [, h, m, s, frac] = match;
+  const wholeMs =
+    (parseInt(h, 10) * 3600 + parseInt(m, 10) * 60 + parseInt(s, 10)) * 1000;
+  // Right-pad fractional part to 3 digits so ".5" → 500 ms, ".507" → 507 ms
+  const fracMs = frac ? parseInt(frac.padEnd(3, '0').slice(0, 3), 10) : 0;
+  return wholeMs + fracMs;
+};
+
+/**
  * Parse "HH:MM:SS" or "HH:MM:SS.mmm" → total seconds (float).
  * Returns null for null, undefined, or malformed strings.
  */
 export const parseHHMMSS = (timeStr) => {
-  if (!timeStr || typeof timeStr !== 'string') return null;
-  const match = timeStr.trim().match(/^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/);
-  if (!match) return null;
-  const [, h, m, s, ms] = match;
-  const whole = parseInt(h, 10) * 3600 + parseInt(m, 10) * 60 + parseInt(s, 10);
-  const frac = ms ? parseFloat(`0.${ms}`) : 0;
-  return whole + frac;
+  const ms = parseToMs(timeStr);
+  return ms === null ? null : ms / 1000;
 };
 
 /**
- * Format total seconds (float) → "HH:MM:SS".
- * If 0 < seconds < 1, shows milliseconds: "00:00:00.mmm".
+ * Format total milliseconds → "HH:MM:SS.mmm".
+ * Always pads to ensure consistent output (e.g., 04:05:09.007).
+ */
+export const formatMs = (totalMs) => {
+  if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00.000';
+  const rounded = Math.round(totalMs);
+  const ms = rounded % 1000;
+  const totalSec = Math.floor(rounded / 1000);
+  const hh = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}.${String(ms).padStart(3, '0')}`;
+};
+
+/**
+ * Format total seconds → "HH:MM:SS.mmm".
+ * Delegates to formatMs for consistent millisecond output.
  */
 export const formatSeconds = (totalSeconds) => {
-  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '00:00:00';
-
-  if (totalSeconds > 0 && totalSeconds < 1) {
-    const ms = Math.round(totalSeconds * 1000);
-    return `00:00:00.${String(ms).padStart(3, '0')}`;
-  }
-
-  const s = Math.floor(totalSeconds);
-  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
-  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-  const ss = String(s % 60).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '00:00:00.000';
+  return formatMs(totalSeconds * 1000);
 };
 
 // Keep backward-compatible alias used elsewhere in the codebase
@@ -40,44 +60,54 @@ export const formatDurationHMS = formatSeconds;
 
 /**
  * Calculate weighted overall average from an array of
- * { avgTime: "HH:MM:SS", files: number } (or { actual: number, files }).
+ * { avgTime: "HH:MM:SS[.mmm]", files: number } (or { actual: number, files }).
  *
- * Formula:
- *   totalTimeSeconds = Σ (avgSeconds_i × files_i)
- *   overallAvg       = totalTimeSeconds / Σ files_i
+ * Formula (all arithmetic in milliseconds):
+ *   totalTimeMs = Σ (avgMs_i × files_i)
+ *   overallAvg  = totalTimeMs / Σ files_i
  *
- * Skips entries where files ≤ 0 or avgTime is null/invalid.
- * Returns { overallAvgTime, totalFiles, totalTimeSeconds }.
+ * Rules:
+ *   - avgTime string is the primary source (parsed to ms for precision)
+ *   - Falls back to actual (seconds) × 1000 if avgTime is absent/invalid
+ *   - Skips entries where files ≤ 0 or time value is invalid
+ *   - Returns "00:00:00.000" if total_files = 0
+ *
+ * Returns { overallAvgTime, totalFiles, totalTimeMs }.
  */
 export const calculateOverallAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) {
-    return { overallAvgTime: '00:00:00', totalFiles: 0, totalTimeSeconds: 0 };
+    return { overallAvgTime: '00:00:00.000', totalFiles: 0, totalTimeMs: 0 };
   }
 
-  let totalTimeSeconds = 0;
+  let totalTimeMs = 0;
   let totalFiles = 0;
 
   data.forEach((entry) => {
     const files = Number(entry?.files);
     if (!Number.isFinite(files) || files <= 0) return;
 
-    // Prefer `actual` (already seconds) if present, else parse the string
-    let avgSec = Number.isFinite(entry?.actual) ? entry.actual : parseHHMMSS(entry?.avgTime);
-    if (avgSec === null || !Number.isFinite(avgSec) || avgSec < 0) return;
+    // Primary: parse avgTime string to ms
+    let avgMs = parseToMs(entry?.avgTime);
 
-    totalTimeSeconds += avgSec * files;
+    // Fallback: derive from actual (seconds float)
+    if (avgMs === null && Number.isFinite(entry?.actual) && entry.actual >= 0) {
+      avgMs = Math.round(entry.actual * 1000);
+    }
+
+    if (avgMs === null || !Number.isFinite(avgMs) || avgMs < 0) return;
+
+    totalTimeMs += avgMs * files;
     totalFiles += files;
   });
 
   if (totalFiles === 0) {
-    return { overallAvgTime: '00:00:00', totalFiles: 0, totalTimeSeconds };
+    return { overallAvgTime: '00:00:00.000', totalFiles: 0, totalTimeMs: 0 };
   }
 
-  const overallAvgSec = totalTimeSeconds / totalFiles;
   return {
-    overallAvgTime: formatSeconds(overallAvgSec),
+    overallAvgTime: formatMs(totalTimeMs / totalFiles),
     totalFiles,
-    totalTimeSeconds,
+    totalTimeMs,
   };
 };
 
@@ -134,16 +164,11 @@ const addDurationToStats = (appStats, appName, durationSec) => {
 
 export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   const appStats = new Map();
-  let dtcSkipped = 0;
-  let nonDtcSkipped = 0;
 
   auditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
     const boundaries = getBoundaryEvents(events);
-    if (!boundaries || boundaries.endMs < boundaries.startMs) {
-      dtcSkipped++;
-      return;
-    }
+    if (!boundaries || boundaries.endMs < boundaries.startMs) return;
 
     const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
@@ -159,10 +184,7 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   nonDtcAuditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
     const boundaries = getBoundaryEvents(events);
-    if (!boundaries || boundaries.endMs < boundaries.startMs) {
-      nonDtcSkipped++;
-      return;
-    }
+    if (!boundaries || boundaries.endMs < boundaries.startMs) return;
 
     const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
@@ -179,23 +201,13 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
       return {
         name,
-        avgTime: formatSeconds(actual),
+        avgTime: formatMs(actual * 1000),
         actual,
         files: stats.files,
         totalDuration: stats.totalDuration,
       };
     })
     .sort((a, b) => b.actual - a.actual);
-
-  const totalFiles = systemStats.reduce((s, e) => s + e.files, 0);
-  const totalSecs = systemStats.reduce((s, e) => s + e.totalDuration, 0);
-  console.group('[Performance] buildPerformanceStats');
-  console.log(`DTC input: ${auditData.length}, skipped (no valid timestamps): ${dtcSkipped}, counted: ${auditData.length - dtcSkipped}`);
-  console.log(`Non-DTC input: ${nonDtcAuditData.length}, skipped: ${nonDtcSkipped}, counted: ${nonDtcAuditData.length - nonDtcSkipped}`);
-  console.log(`Total files counted: ${totalFiles}, total duration: ${formatSeconds(totalSecs)}`);
-  console.log('Per-app stats:', systemStats.map(s => `${s.name}: avg=${s.avgTime}, files=${s.files}, total=${formatSeconds(s.totalDuration)}`).join(' | '));
-  console.log(`Expected overall avg: ${formatSeconds(totalFiles > 0 ? totalSecs / totalFiles : 0)}`);
-  console.groupEnd();
 
   return { systemStats };
 };
