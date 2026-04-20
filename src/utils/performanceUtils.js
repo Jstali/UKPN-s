@@ -56,55 +56,69 @@ export const formatSeconds = (totalSeconds) => {
 // Keep backward-compatible alias used elsewhere in the codebase
 export const formatDurationHMS = formatSeconds;
 
-// ─── Overall average (entry-based) ───────────────────────────────────────────
+// ─── Weighted average ────────────────────────────────────────────────────────
 
 /**
- * Parse "HH:MM:SS" / "HH:MM:SS.mmm" into milliseconds.
+ * Convert "HH:MM:SS.mmm" (or "HH:MM:SS") to seconds (float).
+ * Returns null for malformed values.
  */
-const parseDurationToMs = (value) => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return parseToMs(trimmed);
+export const timeToSeconds = (timeStr) => {
+  const ms = parseToMs(timeStr);
+  return ms === null ? null : ms / 1000;
 };
 
 /**
- * Calculate overall average from avgTime entries only.
- *
- * Formula: Σ(all avgTime values) ÷ number of valid entries
- *   e.g. (00:01:05 + 00:02:15 + 00:00:30 + 00:00:10) ÷ 4
- *
- * Ignores files field completely.
- * Skips invalid avgTime values.
- * Includes milliseconds in calculation, but output is rounded to "HH:MM:SS".
+ * Convert seconds (float) to "HH:MM:SS.mmm".
+ * Rounds to nearest millisecond.
+ */
+export const secondsToTime = (seconds) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '00:00:00.000';
+  return formatSeconds(seconds);
+};
+
+/**
+ * Weighted average:
+ *   sum(avgTime_in_seconds * files) / sum(files)
+ * Returns "HH:MM:SS.mmm".
+ */
+export const calculateWeightedAverage = (data) => {
+  if (!Array.isArray(data) || data.length === 0) return '00:00:00.000';
+
+  let weightedSecondsSum = 0;
+  let totalFiles = 0;
+
+  data.forEach((entry) => {
+    const seconds = timeToSeconds(entry?.avgTime);
+    const files = Number(entry?.files);
+
+    if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return;
+    if (!Number.isFinite(files) || files <= 0) return;
+
+    weightedSecondsSum += seconds * files;
+    totalFiles += files;
+  });
+
+  if (totalFiles === 0) return '00:00:00.000';
+  return secondsToTime(weightedSecondsSum / totalFiles);
+};
+
+/**
+ * Backward-compatible wrapper used by dashboard components.
  */
 export const calculateOverallAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) {
-    return { overallAvgTime: '00:00:00', totalEntries: 0 };
+    return { overallAvgTime: '00:00:00.000', totalFiles: 0 };
   }
 
-  let totalTimeMs = 0;
-  let totalEntries = 0;
-
+  let totalFiles = 0;
   data.forEach((entry) => {
-    const avgMs = parseDurationToMs(entry?.avgTime);
-    if (avgMs === null || !Number.isFinite(avgMs) || avgMs < 0) return;
-    totalTimeMs += avgMs;
-    totalEntries += 1;
+    const files = Number(entry?.files);
+    if (Number.isFinite(files) && files > 0) totalFiles += files;
   });
 
-  if (totalEntries === 0) {
-    return { overallAvgTime: '00:00:00', totalEntries: 0 };
-  }
-
-  const roundedAvgSeconds = Math.round((totalTimeMs / totalEntries) / 1000);
-  const hh = String(Math.floor(roundedAvgSeconds / 3600)).padStart(2, '0');
-  const mm = String(Math.floor((roundedAvgSeconds % 3600) / 60)).padStart(2, '0');
-  const ss = String(roundedAvgSeconds % 60).padStart(2, '0');
-
   return {
-    overallAvgTime: `${hh}:${mm}:${ss}`,
-    totalEntries,
+    overallAvgTime: calculateWeightedAverage(data),
+    totalFiles,
   };
 };
 
