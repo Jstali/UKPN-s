@@ -11,13 +11,10 @@ import api, { fetchDtcSubscriptions, fetchFlows } from '../utils/api';
 
 const AppContext = createContext(null);
 
-const MAX_AUDIT_RECORDS = 1000;
 const AUDIT_PAGE_SIZE = 500;
 const AUTO_REFRESH_INTERVAL_MS = 60000;
 const DTC_CACHE_KEY = 'fc_dtc_cache';
 const NON_DTC_CACHE_KEY = 'fc_nondtc_cache';
-
-const trimRecords = (records) => (Array.isArray(records) ? records.slice(0, MAX_AUDIT_RECORDS) : []);
 
 const readCache = (key) => {
   try {
@@ -85,15 +82,15 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const commitAuditData = useCallback((records) => {
-    const trimmed = trimRecords(records);
-    setAuditData(trimmed);
-    writeCache(DTC_CACHE_KEY, trimmed);
+    const data = Array.isArray(records) ? records : [];
+    setAuditData(data);
+    writeCache(DTC_CACHE_KEY, data);
   }, []);
 
   const commitNonDtcData = useCallback((records) => {
-    const trimmed = trimRecords(records);
-    setNonDtcAuditData(trimmed);
-    writeCache(NON_DTC_CACHE_KEY, trimmed);
+    const data = Array.isArray(records) ? records : [];
+    setNonDtcAuditData(data);
+    writeCache(NON_DTC_CACHE_KEY, data);
   }, []);
 
   const fetchFlowsData = useCallback(async () => {
@@ -161,8 +158,8 @@ export const AppProvider = ({ children }) => {
       setLoading(false);
 
       // ── Step 2: Fetch remaining pages in background (both in parallel) ──────
-      let dtcToken = dtcRecords.length < MAX_AUDIT_RECORDS ? (dtcFirst?.continuationToken || null) : null;
-      let nonDtcToken = nonDtcRecords.length < MAX_AUDIT_RECORDS ? (nonDtcFirst?.continuationToken || null) : null;
+      let dtcToken = dtcFirst?.continuationToken || null;
+      let nonDtcToken = nonDtcFirst?.continuationToken || null;
 
       while ((dtcToken || nonDtcToken) && !controller.signal.aborted) {
         const pageFetches = [];
@@ -190,13 +187,11 @@ export const AppProvider = ({ children }) => {
           const newRows = Array.isArray(page.data) ? page.data : [];
           if (page.kind === 'dtc') {
             dtcRecords.push(...newRows);
-            if (dtcRecords.length >= MAX_AUDIT_RECORDS) dtcRecords.length = MAX_AUDIT_RECORDS;
-            dtcToken = dtcRecords.length < MAX_AUDIT_RECORDS ? (page.continuationToken || null) : null;
+            dtcToken = page.continuationToken || null;
             if (newRows.length > 0) dtcUpdated = true;
           } else {
             nonDtcRecords.push(...newRows);
-            if (nonDtcRecords.length >= MAX_AUDIT_RECORDS) nonDtcRecords.length = MAX_AUDIT_RECORDS;
-            nonDtcToken = nonDtcRecords.length < MAX_AUDIT_RECORDS ? (page.continuationToken || null) : null;
+            nonDtcToken = page.continuationToken || null;
             if (newRows.length > 0) nonDtcUpdated = true;
           }
         }
