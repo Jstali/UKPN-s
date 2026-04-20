@@ -26,7 +26,7 @@ export const parseToMs = (timeStr) => {
  */
 export const parseHHMMSS = (timeStr) => {
   const ms = parseToMs(timeStr);
-  return ms === null ? null : ms * 1000;
+  return ms === null ? null : ms / 1000;
 };
 
 /**
@@ -34,7 +34,7 @@ export const parseHHMMSS = (timeStr) => {
  * Always pads to ensure consistent output (e.g., 04:05:09.007).
  */
 export const formatMs = (totalMs) => {
-  if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00';
+  if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00.000';
   const rounded = Math.round(totalMs);
   const ms = rounded % 1000;
   const totalSec = Math.floor(rounded / 1000);
@@ -135,33 +135,36 @@ export const calculateWeightedAverage = (data) => {
 };
 
 /**
- * Dashboard age:
- *   sum(all valid avgTime values) / number of valid avgTime values
- * Ignores files count completely.
+ * Dashboard overall average (weighted):
+ *   sum(avgTime_in_ms * files) / sum(files)
  * Returns HH:MM:SS (UI without milliseconds).
  */
 export const calculateOverallAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) {
-    return { overallAvgTime: '00:00:00', totalEntries: 0 };
+    return { overallAvgTime: '00:00:00', totalFiles: 0 };
   }
 
-  let totalTimeMs = 0;
-  let totalEntries = 0;
+  let weightedMsSum = 0;
+  let totalFiles = 0;
 
   data.forEach((entry) => {
     const ms = resolveSystemAvgMs(entry);
+    const files = Number(entry?.files);
+
     if (ms === null || !Number.isFinite(ms) || ms < 0) return;
-    totalTimeMs += ms;
-    totalEntries += 1;
+    if (!Number.isFinite(files) || files <= 0) return;
+
+    weightedMsSum += ms * files;
+    totalFiles += files;
   });
 
-  if (totalEntries === 0) {
-    return { overallAvgTime: '00:00:00', totalEntries: 0 };
+  if (totalFiles === 0) {
+    return { overallAvgTime: '00:00:00', totalFiles: 0 };
   }
 
   return {
-    overallAvgTime: formatMsToHMS(totalTimeMs / totalEntries),
-    totalEntries,
+    overallAvgTime: formatMsToHMS(weightedMsSum / totalFiles),
+    totalFiles,
   };
 };
 

@@ -48,14 +48,15 @@ describe('performance weighted-average utils', () => {
     ])).toBe('00:00:00.000');
   });
 
-  it('calculateOverallAverage uses simple average by number of valid times', () => {
+  it('calculateOverallAverage uses weighted average by files', () => {
     const result = calculateOverallAverage([
       { system: 'A', avgTime: '00:01:05.000', files: 1 },
       { system: 'B', avgTime: '00:02:15.000', files: 99 },
       { system: 'C', avgTime: '00:00:30.000', files: 3 },
       { system: 'D', avgTime: '00:00:10.000', files: 10 },
     ]);
-    expect(result.totalEntries).toBe(4);
-    expect(result.overallAvgTime).toBe('00:01:00');
+    // (65*1 + 135*99 + 30*3 + 10*10) / (1+99+3+10) = 120.5309.. sec => 00:02:01
+    expect(result.totalFiles).toBe(113);
+    expect(result.overallAvgTime).toBe('00:02:01');
   });
 });
