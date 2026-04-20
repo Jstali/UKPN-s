@@ -12,11 +12,26 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     setHasAnimated(true);
   }, []);
 
+  const getAvgMs = React.useCallback((app) => {
+    const files = Number(app?.files);
+    if (Number.isFinite(app?.totalDuration) && app.totalDuration >= 0 && Number.isFinite(files) && files > 0) {
+      return (app.totalDuration / files) ;
+    }
+
+    if (Number.isFinite(app?.actual) && app.actual >= 0) {
+      return app.actual ;
+    }
+
+    const parsed = parseToMs(app?.avgTime);
+    return parsed === null ? null : parsed;
+  }, []);
+
   const visiblePerformanceItems = React.useMemo(() => {
     return [...performanceItems]
-      .sort((a, b) => b.actual - a.actual)
+      .map((app) => ({ ...app, _avgMs: getAvgMs(app) }))
+      .sort((a, b) => (b._avgMs ?? -1) - (a._avgMs ?? -1))
       .slice(0, 5);
-  }, [performanceItems]);
+  }, [performanceItems, getAvgMs]);
 
   const overallAverage = React.useMemo(() => {
     const { overallAvgTime } = calculateOverallAverage(visiblePerformanceItems);
@@ -24,20 +39,9 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   }, [visiblePerformanceItems]);
 
   const formatUiTime = React.useCallback((app) => {
-    // Prefer file-based average when raw totals are present.
-    const files = Number(app?.files);
-    if (Number.isFinite(app?.totalDuration) && app.totalDuration >= 0 && Number.isFinite(files) && files > 0) {
-      return formatMsToHMS((app.totalDuration / files) * 1000);
-    }
-
-    // Fallback: numeric "actual" in seconds.
-    if (Number.isFinite(app?.actual) && app.actual >= 0) {
-      return formatMsToHMS(app.actual * 1000);
-    }
-
-    const ms = parseToMs(app?.avgTime);
+    const ms = Number.isFinite(app?._avgMs) ? app._avgMs : getAvgMs(app);
     return ms === null ? '00:00:00' : formatMsToHMS(ms);
-  }, []);
+  }, [getAvgMs]);
 
   return (
     <motion.div
