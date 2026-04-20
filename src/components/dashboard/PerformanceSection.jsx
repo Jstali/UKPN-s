@@ -23,8 +23,19 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     return overallAvgTime;
   }, [visiblePerformanceItems]);
 
-  const formatUiTime = React.useCallback((value) => {
-    const ms = parseToMs(value);
+  const formatUiTime = React.useCallback((app) => {
+    // Prefer file-based average when raw totals are present.
+    const files = Number(app?.files);
+    if (Number.isFinite(app?.totalDuration) && app.totalDuration >= 0 && Number.isFinite(files) && files > 0) {
+      return formatMsToHMS((app.totalDuration / files) * 1000);
+    }
+
+    // Fallback: numeric "actual" in seconds.
+    if (Number.isFinite(app?.actual) && app.actual >= 0) {
+      return formatMsToHMS(app.actual * 1000);
+    }
+
+    const ms = parseToMs(app?.avgTime);
     return ms === null ? '00:00:00' : formatMsToHMS(ms);
   }, []);
 
@@ -83,7 +94,7 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
                 className="performance-table-row"
               >
                 <td style={{ fontWeight: 600, color: '#1e293b' }}>{app.name}</td>
-                <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatUiTime(app.avgTime)}</td>
+                <td style={{ fontWeight: 700, color: '#16a34a' }}>{formatUiTime(app)}</td>
                 <td>{app.files}</td>
               </tr>
             ))}
