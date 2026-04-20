@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Filter, X, CheckSquare, Square, Activity, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { buildPerformanceStats, formatDurationHMS } from '../utils/performanceUtils';
+import { buildPerformanceStats, calculateOverallAverage, formatMsToHMS, resolveSystemAvgMs } from '../utils/performanceUtils';
 
 // Generate mini sparkline data for each app
 const generateSparkData = (appName, actualTime) => {
@@ -81,11 +81,8 @@ const PerformanceDetail = () => {
   const filteredItems = performanceData.filter(app => activeApps.includes(app.name));
 
   const overallAvg = useMemo(() => {
-    const totalDuration = filteredItems.reduce((sum, app) => sum + (app.actual * app.files), 0);
-    const totalFiles = filteredItems.reduce((sum, app) => sum + app.files, 0);
-    if (totalFiles === 0) return '00:00:00';
-    const avg = totalDuration / totalFiles;
-    return formatDurationHMS(avg);
+    const { overallAvgTime } = calculateOverallAverage(filteredItems);
+    return overallAvgTime;
   }, [filteredItems]);
 
   // Always show green for successful operations
@@ -296,7 +293,9 @@ const PerformanceDetail = () => {
 
                 {/* Avg Time */}
                 <div style={{ textAlign: 'center' }}>
-                  <span style={{ fontSize: '15px', fontWeight: 800, color }}>{app.avgTime}</span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color }}>
+                    {formatMsToHMS(resolveSystemAvgMs(app))}
+                  </span>
                 </div>
 
                 {/* Files */}

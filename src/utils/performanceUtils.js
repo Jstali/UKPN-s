@@ -26,7 +26,7 @@ export const parseToMs = (timeStr) => {
  */
 export const parseHHMMSS = (timeStr) => {
   const ms = parseToMs(timeStr);
-  return ms === null ? null : ms / 1000;
+  return ms === null ? null : ms * 1000;
 };
 
 /**
@@ -34,7 +34,7 @@ export const parseHHMMSS = (timeStr) => {
  * Always pads to ensure consistent output (e.g., 04:05:09.007).
  */
 export const formatMs = (totalMs) => {
-  if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00.000';
+  if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00';
   const rounded = Math.round(totalMs);
   const ms = rounded % 1000;
   const totalSec = Math.floor(rounded / 1000);
@@ -135,7 +135,7 @@ export const calculateWeightedAverage = (data) => {
 };
 
 /**
- * Dashboard overall average:
+ * Dashboard age:
  *   sum(all valid avgTime values) / number of valid avgTime values
  * Ignores files count completely.
  * Returns HH:MM:SS (UI without milliseconds).
