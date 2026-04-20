@@ -2,34 +2,20 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Clock } from 'lucide-react';
+import { calculateOverallAverage } from '../../utils/performanceUtils';
 
-const formatDurationHMS = (seconds) => {
-  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
-  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
-  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
-  const secs = String(safeSeconds % 60).padStart(2, '0');
-  return `${hours}:${minutes}:${secs}`;
-};
-
-const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [], allFileDurations = [] }) => {
+const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
   const [hasAnimated, setHasAnimated] = React.useState(false);
 
   React.useEffect(() => {
     setHasAnimated(true);
   }, []);
-  
-  // Calculate overall average from individual file durations (DTC + Non-DTC combined)
+
   const overallAverage = React.useMemo(() => {
-    if (allFileDurations.length === 0) return '00:00:00';
-    
-    const totalDuration = allFileDurations.reduce((sum, duration) => sum + duration, 0);
-    const totalFiles = allFileDurations.length;
-    
-    if (totalFiles === 0) return '00:00:00';
-    const avg = totalDuration / totalFiles;
-    return formatDurationHMS(avg);
-  }, [allFileDurations]);
+    const { overallAvgTime } = calculateOverallAverage(performanceItems);
+    return overallAvgTime;
+  }, [performanceItems]);
 
   return (
     <motion.div

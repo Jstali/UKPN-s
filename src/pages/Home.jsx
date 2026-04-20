@@ -452,11 +452,10 @@ const Home = () => {
             />
           </div>
           <div className="dashboard-col-right">
-            <PerformanceSection 
-              dashboardUpdatedAt={dashboardUpdatedAt} 
-              performanceItems={performanceItems.systemStats} 
-              allFileDurations={performanceItems.allFileDurations}
-              loading={loading} 
+            <PerformanceSection
+              dashboardUpdatedAt={dashboardUpdatedAt}
+              performanceItems={performanceItems.systemStats}
+              loading={loading}
             />
           </div>
         </div>

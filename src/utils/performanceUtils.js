@@ -1,10 +1,87 @@
-export const formatDurationHMS = (seconds) => {
-  const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
-  const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
-  const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
-  const secs = String(safeSeconds % 60).padStart(2, '0');
-  return `${hours}:${minutes}:${secs}`;
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Parse "HH:MM:SS" or "HH:MM:SS.mmm" → total seconds (float).
+ * Returns null for null, undefined, or malformed strings.
+ */
+export const parseHHMMSS = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  const match = timeStr.trim().match(/^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/);
+  if (!match) return null;
+  const [, h, m, s, ms] = match;
+  const whole = parseInt(h, 10) * 3600 + parseInt(m, 10) * 60 + parseInt(s, 10);
+  const frac = ms ? parseFloat(`0.${ms}`) : 0;
+  return whole + frac;
 };
+
+/**
+ * Format total seconds (float) → "HH:MM:SS".
+ * If 0 < seconds < 1, shows milliseconds: "00:00:00.mmm".
+ */
+export const formatSeconds = (totalSeconds) => {
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '00:00:00';
+
+  if (totalSeconds > 0 && totalSeconds < 1) {
+    const ms = Math.round(totalSeconds * 1000);
+    return `00:00:00.${String(ms).padStart(3, '0')}`;
+  }
+
+  const s = Math.floor(totalSeconds);
+  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+};
+
+// Keep backward-compatible alias used elsewhere in the codebase
+export const formatDurationHMS = formatSeconds;
+
+// ─── Weighted average ────────────────────────────────────────────────────────
+
+/**
+ * Calculate weighted overall average from an array of
+ * { avgTime: "HH:MM:SS", files: number } (or { actual: number, files }).
+ *
+ * Formula:
+ *   totalTimeSeconds = Σ (avgSeconds_i × files_i)
+ *   overallAvg       = totalTimeSeconds / Σ files_i
+ *
+ * Skips entries where files ≤ 0 or avgTime is null/invalid.
+ * Returns { overallAvgTime, totalFiles, totalTimeSeconds }.
+ */
+export const calculateOverallAverage = (data) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return { overallAvgTime: '00:00:00', totalFiles: 0, totalTimeSeconds: 0 };
+  }
+
+  let totalTimeSeconds = 0;
+  let totalFiles = 0;
+
+  data.forEach((entry) => {
+    const files = Number(entry?.files);
+    if (!Number.isFinite(files) || files <= 0) return;
+
+    // Prefer `actual` (already seconds) if present, else parse the string
+    let avgSec = Number.isFinite(entry?.actual) ? entry.actual : parseHHMMSS(entry?.avgTime);
+    if (avgSec === null || !Number.isFinite(avgSec) || avgSec < 0) return;
+
+    totalTimeSeconds += avgSec * files;
+    totalFiles += files;
+  });
+
+  if (totalFiles === 0) {
+    return { overallAvgTime: '00:00:00', totalFiles: 0, totalTimeSeconds };
+  }
+
+  const overallAvgSec = totalTimeSeconds / totalFiles;
+  return {
+    overallAvgTime: formatSeconds(overallAvgSec),
+    totalFiles,
+    totalTimeSeconds,
+  };
+};
+
+// ─── Build stats from raw audit data ────────────────────────────────────────
 
 const MAX_DURATION_SECONDS = 3600;
 
@@ -15,10 +92,9 @@ const getEventTimestamp = (event) =>
   event?.timestamp || event?.Timestamp || event?.created || event?.Created || '';
 
 const getEventTimeMs = (event) => {
-  const rawTimestamp = getEventTimestamp(event);
-  if (!rawTimestamp) return null;
-
-  const parsed = new Date(rawTimestamp).getTime();
+  const raw = getEventTimestamp(event);
+  if (!raw) return null;
+  const parsed = new Date(raw).getTime();
   return Number.isFinite(parsed) ? parsed : null;
 };
 
@@ -39,36 +115,26 @@ const getBoundaryEvents = (events = []) => {
 
   if (allTimes.length === 0) return null;
 
-  // Use Event Type 1 as start if present, otherwise earliest event
   const startMs = event1Times.length > 0 ? Math.min(...event1Times) : Math.min(...allTimes);
-  // Use Event Type 4 as end if present, otherwise latest event
-  const endMs = event4Times.length > 0 ? Math.max(...event4Times) : Math.max(...allTimes);
+  const endMs   = event4Times.length > 0 ? Math.max(...event4Times) : Math.max(...allTimes);
 
   return { startMs, endMs };
 };
 
-const addDurationToStats = (appStats, allFileDurations, appName, durationSec) => {
-  if (!Number.isFinite(durationSec) || durationSec < 0 || durationSec > MAX_DURATION_SECONDS) {
-    return;
-  }
-
-  allFileDurations.push(durationSec);
+const addDurationToStats = (appStats, appName, durationSec) => {
+  if (!Number.isFinite(durationSec) || durationSec < 0 || durationSec > MAX_DURATION_SECONDS) return;
 
   if (!appStats.has(appName)) {
     appStats.set(appName, { totalDuration: 0, files: 0 });
   }
-
-  const current = appStats.get(appName);
-  current.totalDuration += durationSec;
-  current.files += 1;
+  const s = appStats.get(appName);
+  s.totalDuration += durationSec;
+  s.files += 1;
 };
 
 export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   const appStats = new Map();
-  const allFileDurations = [];
 
-  console.log('[Performance] Processing DTC audit data:', auditData.length, 'files');
-  
   auditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
     const boundaries = getBoundaryEvents(events);
@@ -76,16 +142,14 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
 
     const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
-      events.find((event) => getEventType(event) === '1')?.applicationName ||
+      events.find((e) => getEventType(e) === '1')?.applicationName ||
       item?.Application_Name ||
       item?.Source_Application ||
       item?.source_application ||
       'Unknown';
 
-    addDurationToStats(appStats, allFileDurations, appName, durationSec);
+    addDurationToStats(appStats, appName, durationSec);
   });
-
-  console.log('[Performance] Processing Non-DTC audit data:', nonDtcAuditData.length, 'files');
 
   nonDtcAuditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
@@ -96,10 +160,10 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
     const appName =
       item?.sourceAppName ||
       item?.subscription ||
-      events.find((event) => getEventType(event) === '1')?.applicationName ||
+      events.find((e) => getEventType(e) === '1')?.applicationName ||
       'Unknown';
 
-    addDurationToStats(appStats, allFileDurations, appName, durationSec);
+    addDurationToStats(appStats, appName, durationSec);
   });
 
   const systemStats = Array.from(appStats.entries())
@@ -107,7 +171,7 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
       return {
         name,
-        avgTime: formatDurationHMS(actual),
+        avgTime: formatSeconds(actual),
         actual,
         files: stats.files,
         totalDuration: stats.totalDuration,
@@ -115,8 +179,5 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
     })
     .sort((a, b) => b.actual - a.actual);
 
-  console.log('[Performance] Final stats:', systemStats.length, 'applications');
-  console.log('[Performance] Applications:', systemStats.map(s => `${s.name} (${s.files} files)`).join(', '));
-
-  return { systemStats, allFileDurations };
+  return { systemStats };
 };
