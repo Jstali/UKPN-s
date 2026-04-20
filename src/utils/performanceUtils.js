@@ -134,11 +134,16 @@ const addDurationToStats = (appStats, appName, durationSec) => {
 
 export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   const appStats = new Map();
+  let dtcSkipped = 0;
+  let nonDtcSkipped = 0;
 
   auditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
     const boundaries = getBoundaryEvents(events);
-    if (!boundaries || boundaries.endMs < boundaries.startMs) return;
+    if (!boundaries || boundaries.endMs < boundaries.startMs) {
+      dtcSkipped++;
+      return;
+    }
 
     const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
@@ -154,7 +159,10 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   nonDtcAuditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
     const boundaries = getBoundaryEvents(events);
-    if (!boundaries || boundaries.endMs < boundaries.startMs) return;
+    if (!boundaries || boundaries.endMs < boundaries.startMs) {
+      nonDtcSkipped++;
+      return;
+    }
 
     const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
@@ -178,6 +186,16 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
       };
     })
     .sort((a, b) => b.actual - a.actual);
+
+  const totalFiles = systemStats.reduce((s, e) => s + e.files, 0);
+  const totalSecs = systemStats.reduce((s, e) => s + e.totalDuration, 0);
+  console.group('[Performance] buildPerformanceStats');
+  console.log(`DTC input: ${auditData.length}, skipped (no valid timestamps): ${dtcSkipped}, counted: ${auditData.length - dtcSkipped}`);
+  console.log(`Non-DTC input: ${nonDtcAuditData.length}, skipped: ${nonDtcSkipped}, counted: ${nonDtcAuditData.length - nonDtcSkipped}`);
+  console.log(`Total files counted: ${totalFiles}, total duration: ${formatSeconds(totalSecs)}`);
+  console.log('Per-app stats:', systemStats.map(s => `${s.name}: avg=${s.avgTime}, files=${s.files}, total=${formatSeconds(s.totalDuration)}`).join(' | '));
+  console.log(`Expected overall avg: ${formatSeconds(totalFiles > 0 ? totalSecs / totalFiles : 0)}`);
+  console.groupEnd();
 
   return { systemStats };
 };
