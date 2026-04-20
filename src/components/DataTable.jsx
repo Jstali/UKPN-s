@@ -900,7 +900,7 @@ const DataTable = ({
                   style={{
                     position: 'sticky', top: 0, zIndex: 20, userSelect: 'none',
                     width: effectiveColWidths[col.key] ? `${effectiveColWidths[col.key]}px` : undefined,
-                    minWidth: '50px',
+                    minWidth: '40px',
                     padding: '6px 8px',
                     fontSize: '10px',
                     background: sortConfig.key === col.key ? '#5b4fc7' : undefined,

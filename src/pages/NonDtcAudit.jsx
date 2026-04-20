@@ -630,7 +630,7 @@ const NonDtcAudit = () => {
           data={filteredData}
           columns={NON_DTC_COLUMNS}
           compactColumns={[
-            { key: 'flow',              label: 'Flow',              width: 55  },
+            { key: 'flow',              label: 'Flow',              width: 45  },
             { key: 'fileId',            label: 'File ID',           width: 130 },
             { key: 'timestamp',         label: 'Timestamp',         width: 130 },
             { key: 'sourceApplication', label: 'Source',            width: 95  },
