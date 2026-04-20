@@ -59,20 +59,16 @@ export const formatDurationHMS = formatSeconds;
 // ─── Weighted average ────────────────────────────────────────────────────────
 
 /**
- * Calculate weighted overall average from an array of
- * { avgTime: "HH:MM:SS[.mmm]", files: number } (or { actual: number, files }).
+ * Calculate overall average from an array of per-app stats.
  *
- * Formula (all arithmetic in milliseconds):
- *   totalTimeMs = Σ (avgMs_i × files_i)
- *   overallAvg  = totalTimeMs / Σ files_i
+ * Formula: Σ(all individual file durations) ÷ total files
+ *   e.g. (00:01:05 + 00:02:15 + 00:00:30 + 00:00:10) ÷ 4
  *
- * Rules:
- *   - avgTime string is the primary source (parsed to ms for precision)
- *   - Falls back to actual (seconds) × 1000 if avgTime is absent/invalid
- *   - Skips entries where files ≤ 0 or time value is invalid
- *   - Returns "00:00:00.000" if total_files = 0
- *
- * Returns { overallAvgTime, totalFiles, totalTimeMs }.
+ * Uses totalDuration (sum of raw individual durations per app) directly —
+ * avoids the avgTime×files roundtrip and preserves full precision.
+ * Falls back to parsing avgTime string or actual×1000 if totalDuration absent.
+ * Skips entries where files ≤ 0 or time value is invalid.
+ * Returns "00:00:00.000" if total_files = 0.
  */
 export const calculateOverallAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) {
@@ -86,12 +82,19 @@ export const calculateOverallAverage = (data) => {
     const files = Number(entry?.files);
     if (!Number.isFinite(files) || files <= 0) return;
 
-    // Primary: parse avgTime string to ms
+    // Primary: use totalDuration (seconds) — exact sum of all individual file durations
+    if (Number.isFinite(entry?.totalDuration) && entry.totalDuration >= 0) {
+      totalTimeMs += entry.totalDuration * 1000;
+      totalFiles += files;
+      return;
+    }
+
+    // Fallback 1: parse avgTime string to ms then reconstruct total
     let avgMs = parseToMs(entry?.avgTime);
 
-    // Fallback: derive from actual (seconds float)
+    // Fallback 2: derive from actual (seconds float)
     if (avgMs === null && Number.isFinite(entry?.actual) && entry.actual >= 0) {
-      avgMs = Math.round(entry.actual * 1000);
+      avgMs = entry.actual * 1000;
     }
 
     if (avgMs === null || !Number.isFinite(avgMs) || avgMs < 0) return;
