@@ -124,7 +124,7 @@ const flattenNonDtcEvents = (data) => {
         toRole: item.toRole || '-',
         toMPID: item.toMPID || '-',
         sourceApplication: item.sourceAppName || '-',
-        application: event.destinationApplication || event.applicationName || 'NA event',
+        application: event.destinationApplication || event.applicationName || '',
         status: event.status || event.Status || item.status || '',
         fileType: fileType,
         fileName: fileName || '-',
