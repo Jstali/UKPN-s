@@ -12,10 +12,16 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     setHasAnimated(true);
   }, []);
 
-  const overallAverage = React.useMemo(() => {
-    const { overallAvgTime } = calculateOverallAverage(performanceItems);
-    return overallAvgTime;
+  const visiblePerformanceItems = React.useMemo(() => {
+    return [...performanceItems]
+      .sort((a, b) => b.actual - a.actual)
+      .slice(0, 5);
   }, [performanceItems]);
+
+  const overallAverage = React.useMemo(() => {
+    const { overallAvgTime } = calculateOverallAverage(visiblePerformanceItems);
+    return overallAvgTime;
+  }, [visiblePerformanceItems]);
 
   const formatUiTime = React.useCallback((value) => {
     const ms = parseToMs(value);
@@ -70,7 +76,7 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
             </tr>
           </thead>
           <tbody>
-            {[...performanceItems].sort((a, b) => b.actual - a.actual).slice(0, 5).map((app) => (
+            {visiblePerformanceItems.map((app) => (
               <tr
                 key={app.name}
                 onClick={() => navigate('/performance-graph', { state: { app } })}
