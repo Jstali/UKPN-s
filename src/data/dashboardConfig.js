@@ -106,19 +106,19 @@ export const DEFAULT_FILTERS = {
 };
 
 const COL_WIDTHS = {
-  flow:              52,
-  version:           50,
-  fileId:           110,
-  timestamp:        112,
-  fromRole:          58,
-  fromMPID:          65,
-  toRole:            54,
-  toMPID:            62,
-  sourceApplication: 78,
-  application:       85,
-  status:            72,
-  fileName:         130,
-  eventId:          105,
+  flow:              58,
+  version:           55,
+  fileId:           120,
+  timestamp:        120,
+  fromRole:          65,
+  fromMPID:          72,
+  toRole:            60,
+  toMPID:            68,
+  sourceApplication: 86,
+  application:       94,
+  status:            80,
+  fileName:         140,
+  eventId:          112,
 };
 
 const c = (key, label) => ({ key, label, width: COL_WIDTHS[key] });

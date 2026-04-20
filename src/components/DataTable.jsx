@@ -900,9 +900,9 @@ const DataTable = ({
                   style={{
                     position: 'sticky', top: 0, zIndex: 20, userSelect: 'none',
                     width: effectiveColWidths[col.key] ? `${effectiveColWidths[col.key]}px` : undefined,
-                    minWidth: '36px',
-                    padding: '4px 6px',
-                    fontSize: '9px',
+                    minWidth: '38px',
+                    padding: '5px 7px',
+                    fontSize: '10px',
                     background: sortConfig.key === col.key ? '#5b4fc7' : undefined,
                     borderLeft: dragOverKey === col.key ? '2px solid #4c4ebd' : undefined,
                     cursor: tableId ? 'grab' : undefined,

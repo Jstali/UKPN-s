@@ -157,10 +157,10 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
 
 const NON_DTC_COLUMNS = [
   ...NON_DTC_DEFAULT_COLUMNS.slice(0, -1), // All columns except fileName
-  { key: 'fileType', label: 'File Type', width: 65 },
+  { key: 'fileType', label: 'File Type', width: 72 },
   NON_DTC_DEFAULT_COLUMNS[NON_DTC_DEFAULT_COLUMNS.length - 1], // fileName
-  { key: 'sourcePath', label: 'Source Path', width: 120 },
-  { key: 'destinationPath', label: 'Destination Path', width: 120 },
+  { key: 'sourcePath', label: 'Source Path', width: 130 },
+  { key: 'destinationPath', label: 'Destination Path', width: 130 },
 ];
 
 const NonDtcAudit = () => {
@@ -684,15 +684,15 @@ const NonDtcAudit = () => {
           data={filteredData}
           columns={NON_DTC_COLUMNS}
           compactColumns={[
-            { key: 'flow',              label: 'Flow',              width: 52  },
-            { key: 'fileId',            label: 'File ID',           width: 110 },
-            { key: 'timestamp',         label: 'Timestamp',         width: 112 },
-            { key: 'sourceApplication', label: 'Source',            width: 78  },
-            { key: 'application',       label: 'Destination',       width: 85  },
-            { key: 'sourcePath',        label: 'Source Path',       width: 120 },
-            { key: 'destinationPath',   label: 'Destination Path',  width: 120 },
-            { key: 'status',            label: 'Status',            width: 72  },
-            { key: 'fileName',          label: 'Source File Name',  width: 130 },
+            { key: 'flow',              label: 'Flow',              width: 58  },
+            { key: 'fileId',            label: 'File ID',           width: 120 },
+            { key: 'timestamp',         label: 'Timestamp',         width: 120 },
+            { key: 'sourceApplication', label: 'Source',            width: 86  },
+            { key: 'application',       label: 'Destination',       width: 94  },
+            { key: 'sourcePath',        label: 'Source Path',       width: 130 },
+            { key: 'destinationPath',   label: 'Destination Path',  width: 130 },
+            { key: 'status',            label: 'Status',            width: 80  },
+            { key: 'fileName',          label: 'Source File Name',  width: 140 },
           ]}
           exportColumns={NON_DTC_COLUMNS}
           defaultSort={{ key: 'startDate', direction: 'desc' }}
