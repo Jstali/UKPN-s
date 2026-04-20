@@ -103,6 +103,8 @@ const flattenAuditEvents = (data) => {
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
         const eventStatus = event.Status || event.status || 'Unknown';
+        if (eventStatus.toLowerCase().trim() === 'valid subscription') return;
+
         const eventTypeValue = eventStatus === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
         const applicationValue = shouldHideDestinationForStatus(eventStatus)
           ? ''
@@ -159,6 +161,8 @@ const buildFilteredResults = (data, filtersToUse) => {
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
         const eventStatus = event.Status || event.status || 'Unknown';
+        if (eventStatus.toLowerCase().trim() === 'valid subscription') return;
+
         const eventTypeValue = eventStatus === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
         const applicationValue = shouldHideDestinationForStatus(eventStatus)
           ? ''
