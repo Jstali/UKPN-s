@@ -121,15 +121,13 @@ const EmailModal = ({
     setSending(false);
 
     if (error) {
-      const is404 = error.includes('404');
-      const is405 = error.includes('405');
-      setApiError(
-        is404 || is405
-          ? 'The email export API endpoint is not available (server returned ' +
-            (is404 ? '404 Not Found' : '405 Method Not Allowed') +
-            '). Please ask the backend team to verify the endpoint URL and ensure it accepts POST requests.'
-          : error,
-      );
+      const msg =
+        error.includes('404') ? 'API endpoint not found (404). The backend route may not be deployed yet in this environment.' :
+        error.includes('401') || error.includes('403') ? 'Authentication failed (401/403). Check the API function key.' :
+        error.includes('400') ? `Bad request — ${error}` :
+        error.includes('500') ? 'Backend error (500). Please try again or contact the backend team.' :
+        error;
+      setApiError(msg);
     } else {
       setSuccess(data);
     }

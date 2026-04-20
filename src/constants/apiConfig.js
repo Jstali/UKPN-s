@@ -22,6 +22,7 @@ export const API_CODES = {
   dtcDownload:      code('REACT_APP_DTC_DOWNLOAD_API_CODE'),
   dtcPreview:       code('REACT_APP_DTC_PREVIEW_API_CODE') || code('REACT_APP_DTC_DOWNLOAD_API_CODE'),
   fileStatusSummary: code('REACT_APP_FILE_STATUS_SUMMARY_CODE') || 'REDACTED_FILE_STATUS_SUMMARY_CODE=',
+  auditEmailExport:  code('REACT_APP_AUDIT_EMAIL_EXPORT_CODE')  || 'REDACTED_AUDIT_EMAIL_EXPORT_CODE=',
 };
 
 // Build a full endpoint URL including its function code
@@ -40,7 +41,7 @@ export const ENDPOINTS = {
   dropdownValues:    endpoint('/api/getDropdownValuesAPI',             'dropdown'),
   fileStatusSummary: endpoint('/api/fileconnectFileStatusSummary',     'fileStatusSummary'),
   // POST — custom-routed as audit-export/send-email (function: fileconnectAuditExportEmail)
-  auditEmailExport:  endpoint('/api/audit-export/send-email',          'fileStatusSummary'),
+  auditEmailExport:  endpoint('/api/audit-export/send-email',          'auditEmailExport'),
   downloadFile:      `${HOST}/api/fileConnectDownloadFileByID`,
   viewFile:          `${HOST}/api/fileConnectViewBlobFile`,
 };
