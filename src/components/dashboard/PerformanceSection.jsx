@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Gauge, Clock } from 'lucide-react';
-import { calculateOverallAverage, formatMsToHMS, parseToMs } from '../../utils/performanceUtils';
+import { calculateOverallAverage, formatMsToHMS, resolveSystemAvgMs } from '../../utils/performanceUtils';
 
 const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   const navigate = useNavigate();
@@ -12,26 +12,12 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
     setHasAnimated(true);
   }, []);
 
-  const getAvgMs = React.useCallback((app) => {
-    const files = Number(app?.files);
-    if (Number.isFinite(app?.totalDuration) && app.totalDuration >= 0 && Number.isFinite(files) && files > 0) {
-      return (app.totalDuration / files) ;
-    }
-
-    if (Number.isFinite(app?.actual) && app.actual >= 0) {
-      return app.actual ;
-    }
-
-    const parsed = parseToMs(app?.avgTime);
-    return parsed === null ? null : parsed;
-  }, []);
-
   const visiblePerformanceItems = React.useMemo(() => {
     return [...performanceItems]
-      .map((app) => ({ ...app, _avgMs: getAvgMs(app) }))
+      .map((app) => ({ ...app, _avgMs: resolveSystemAvgMs(app) }))
       .sort((a, b) => (b._avgMs ?? -1) - (a._avgMs ?? -1))
       .slice(0, 5);
-  }, [performanceItems, getAvgMs]);
+  }, [performanceItems]);
 
   const overallAverage = React.useMemo(() => {
     const { overallAvgTime } = calculateOverallAverage(visiblePerformanceItems);
@@ -39,9 +25,9 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
   }, [visiblePerformanceItems]);
 
   const formatUiTime = React.useCallback((app) => {
-    const ms = Number.isFinite(app?._avgMs) ? app._avgMs : getAvgMs(app);
+    const ms = Number.isFinite(app?._avgMs) ? app._avgMs : resolveSystemAvgMs(app);
     return ms === null ? '00:00:00' : formatMsToHMS(ms);
-  }, [getAvgMs]);
+  }, []);
 
   return (
     <motion.div

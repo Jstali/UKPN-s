@@ -71,6 +71,26 @@ export const formatDurationHMS = formatSeconds;
 // ─── Weighted average ────────────────────────────────────────────────────────
 
 /**
+ * Resolve a system's average processing time in milliseconds using a consistent priority:
+ * 1) totalDuration/files
+ * 2) actual (seconds)
+ * 3) avgTime string (HH:MM:SS.mmm)
+ */
+export const resolveSystemAvgMs = (entry) => {
+  const files = Number(entry?.files);
+  if (Number.isFinite(entry?.totalDuration) && entry.totalDuration >= 0 && Number.isFinite(files) && files > 0) {
+    return (entry.totalDuration / files) * 1000;
+  }
+
+  if (Number.isFinite(entry?.actual) && entry.actual >= 0) {
+    return entry.actual * 1000;
+  }
+
+  const parsed = parseToMs(entry?.avgTime);
+  return parsed === null ? null : parsed;
+};
+
+/**
  * Convert "HH:MM:SS.mmm" (or "HH:MM:SS") to seconds (float).
  * Returns null for malformed values.
  */
@@ -96,22 +116,22 @@ export const secondsToTime = (seconds) => {
 export const calculateWeightedAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) return '00:00:00.000';
 
-  let weightedSecondsSum = 0;
+  let weightedMsSum = 0;
   let totalFiles = 0;
 
   data.forEach((entry) => {
-    const seconds = timeToSeconds(entry?.avgTime);
+    const avgMs = resolveSystemAvgMs(entry);
     const files = Number(entry?.files);
 
-    if (seconds === null || !Number.isFinite(seconds) || seconds < 0) return;
+    if (avgMs === null || !Number.isFinite(avgMs) || avgMs < 0) return;
     if (!Number.isFinite(files) || files <= 0) return;
 
-    weightedSecondsSum += seconds * files;
+    weightedMsSum += avgMs * files;
     totalFiles += files;
   });
 
   if (totalFiles === 0) return '00:00:00.000';
-  return secondsToTime(weightedSecondsSum / totalFiles);
+  return formatMs(weightedMsSum / totalFiles);
 };
 
 /**
@@ -129,7 +149,7 @@ export const calculateOverallAverage = (data) => {
   let totalEntries = 0;
 
   data.forEach((entry) => {
-    const ms = parseToMs(entry?.avgTime);
+    const ms = resolveSystemAvgMs(entry);
     if (ms === null || !Number.isFinite(ms) || ms < 0) return;
     totalTimeMs += ms;
     totalEntries += 1;
