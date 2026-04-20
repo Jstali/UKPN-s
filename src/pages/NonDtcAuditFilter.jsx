@@ -42,14 +42,33 @@ const NonDtcAuditFilter = () => {
     const f = updatedFilters || filters;
     const fromDate = f.eventFrom;
     const toDate = f.eventTo;
+    const now = new Date();
+
+    if (fromDate) {
+      const fromDateTime = new Date(`${fromDate}T${f.eventFromTime || '00:00:00'}`);
+      if (fromDateTime > now) {
+        setDateError('Event From date cannot be a future date. No data will exist for future dates.');
+        return false;
+      }
+    }
+
+    if (toDate) {
+      const toDateTime = new Date(`${toDate}T${f.eventToTime || '23:59:59'}`);
+      if (toDateTime > now) {
+        setDateError('Event To date cannot be a future date. No data will exist for future dates.');
+        return false;
+      }
+    }
+
     if (fromDate && toDate) {
       const fromDateTime = new Date(`${fromDate}T${f.eventFromTime || '00:00:00'}`);
       const toDateTime = new Date(`${toDate}T${f.eventToTime || '23:59:59'}`);
       if (fromDateTime > toDateTime) {
-        setDateError('Event From date cannot be later than Event To date');
+        setDateError('Event From date cannot be later than Event To date.');
         return false;
       }
     }
+
     setDateError('');
     return true;
   };
