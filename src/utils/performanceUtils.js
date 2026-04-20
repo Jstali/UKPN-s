@@ -59,6 +59,30 @@ export const formatDurationHMS = formatSeconds;
 // ─── Weighted average ────────────────────────────────────────────────────────
 
 /**
+ * Parse flexible duration strings into milliseconds.
+ * Supports:
+ * - "HH:MM:SS" / "HH:MM:SS.mmm"
+ * - "1.8s" / "15s"
+ * - "250ms"
+ */
+const parseDurationToMs = (value) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const hmsMs = parseToMs(trimmed);
+  if (hmsMs !== null) return hmsMs;
+
+  const secMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*s$/i);
+  if (secMatch) return Number.parseFloat(secMatch[1]) * 1000;
+
+  const msMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*ms$/i);
+  if (msMatch) return Number.parseFloat(msMatch[1]);
+
+  return null;
+};
+
+/**
  * Calculate overall average from an array of per-app stats.
  *
  * Formula: Σ(all individual file durations) ÷ total files
@@ -79,7 +103,7 @@ export const calculateOverallAverage = (data) => {
   let totalFiles = 0;
 
   data.forEach((entry) => {
-    const files = Number(entry?.files);
+    const files = Number.parseInt(entry?.files, 10);
     if (!Number.isFinite(files) || files <= 0) return;
 
     // Primary: use totalDuration (seconds) — exact sum of all individual file durations
@@ -90,7 +114,7 @@ export const calculateOverallAverage = (data) => {
     }
 
     // Fallback 1: parse avgTime string to ms then reconstruct total
-    let avgMs = parseToMs(entry?.avgTime);
+    let avgMs = parseDurationToMs(entry?.avgTime);
 
     // Fallback 2: derive from actual (seconds float)
     if (avgMs === null && Number.isFinite(entry?.actual) && entry.actual >= 0) {
