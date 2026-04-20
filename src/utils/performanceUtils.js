@@ -56,85 +56,55 @@ export const formatSeconds = (totalSeconds) => {
 // Keep backward-compatible alias used elsewhere in the codebase
 export const formatDurationHMS = formatSeconds;
 
-// ─── Weighted average ────────────────────────────────────────────────────────
+// ─── Overall average (entry-based) ───────────────────────────────────────────
 
 /**
- * Parse flexible duration strings into milliseconds.
- * Supports:
- * - "HH:MM:SS" / "HH:MM:SS.mmm"
- * - "1.8s" / "15s"
- * - "250ms"
+ * Parse "HH:MM:SS" / "HH:MM:SS.mmm" into milliseconds.
  */
 const parseDurationToMs = (value) => {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
-
-  const hmsMs = parseToMs(trimmed);
-  if (hmsMs !== null) return hmsMs;
-
-  const secMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*s$/i);
-  if (secMatch) return Number.parseFloat(secMatch[1]) * 1000;
-
-  const msMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*ms$/i);
-  if (msMatch) return Number.parseFloat(msMatch[1]);
-
-  return null;
+  return parseToMs(trimmed);
 };
 
 /**
- * Calculate overall average from an array of per-app stats.
+ * Calculate overall average from avgTime entries only.
  *
- * Formula: Σ(all individual file durations) ÷ total files
+ * Formula: Σ(all avgTime values) ÷ number of valid entries
  *   e.g. (00:01:05 + 00:02:15 + 00:00:30 + 00:00:10) ÷ 4
  *
- * Uses totalDuration (sum of raw individual durations per app) directly —
- * avoids the avgTime×files roundtrip and preserves full precision.
- * Falls back to parsing avgTime string or actual×1000 if totalDuration absent.
- * Skips entries where files ≤ 0 or time value is invalid.
- * Returns "00:00:00.000" if total_files = 0.
+ * Ignores files field completely.
+ * Skips invalid avgTime values.
+ * Includes milliseconds in calculation, but output is rounded to "HH:MM:SS".
  */
 export const calculateOverallAverage = (data) => {
   if (!Array.isArray(data) || data.length === 0) {
-    return { overallAvgTime: '00:00:00.000', totalFiles: 0, totalTimeMs: 0 };
+    return { overallAvgTime: '00:00:00', totalEntries: 0 };
   }
 
   let totalTimeMs = 0;
-  let totalFiles = 0;
+  let totalEntries = 0;
 
   data.forEach((entry) => {
-    const files = Number.parseInt(entry?.files, 10);
-    if (!Number.isFinite(files) || files <= 0) return;
-
-    // Primary: use totalDuration (seconds) — exact sum of all individual file durations
-    if (Number.isFinite(entry?.totalDuration) && entry.totalDuration >= 0) {
-      totalTimeMs += entry.totalDuration * 1000;
-      totalFiles += files;
-      return;
-    }
-
-    // Fallback 1: parse avgTime string to ms then reconstruct total
-    let avgMs = parseDurationToMs(entry?.avgTime);
-
-    // Fallback 2: derive from actual (seconds float)
-    if (avgMs === null && Number.isFinite(entry?.actual) && entry.actual >= 0) {
-      avgMs = entry.actual * 1000;
-    }
-
+    const avgMs = parseDurationToMs(entry?.avgTime);
     if (avgMs === null || !Number.isFinite(avgMs) || avgMs < 0) return;
-
-    totalTimeMs += avgMs * files;
-    totalFiles += files;
+    totalTimeMs += avgMs;
+    totalEntries += 1;
   });
 
-  if (totalFiles === 0) {
-    return { overallAvgTime: '00:00:00.000', totalFiles: 0, totalTimeMs: 0 };
+  if (totalEntries === 0) {
+    return { overallAvgTime: '00:00:00', totalEntries: 0 };
   }
 
+  const roundedAvgSeconds = Math.round((totalTimeMs / totalEntries) / 1000);
+  const hh = String(Math.floor(roundedAvgSeconds / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((roundedAvgSeconds % 3600) / 60)).padStart(2, '0');
+  const ss = String(roundedAvgSeconds % 60).padStart(2, '0');
+
   return {
-    overallAvgTime: formatMs(totalTimeMs / totalFiles),
-    totalFiles,
-    totalTimeMs,
+    overallAvgTime: `${hh}:${mm}:${ss}`,
+    totalEntries,
   };
 };
 
