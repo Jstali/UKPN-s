@@ -76,6 +76,11 @@ const resolveProcessedValue = (...candidates) => {
   return '';
 };
 
+const shouldHideDestinationForStatus = (status) => {
+  const normalized = String(status || '').trim().toLowerCase();
+  return normalized === 'publish' || normalized === 'published' || normalized === 'valid subscription';
+};
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -97,9 +102,10 @@ const flattenAuditEvents = (data) => {
         const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
-        const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
+        const eventStatus = event.Status || event.status || 'Unknown';
+        const eventTypeValue = eventStatus === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
         const eventTypeRaw = String(event.Event_Type ?? '');
-        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '3')
+        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '3' || shouldHideDestinationForStatus(eventStatus))
           ? ''
           : (event.applicationName || event.Destination_Application || '');
 
@@ -119,7 +125,7 @@ const flattenAuditEvents = (data) => {
           sourceApplication: sourceApplication,
           application: applicationValue,
           eventType: eventTypeValue,
-          status: event.Status || 'Unknown',
+          status: eventStatus,
           processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           timestamp: event.timestamp || '',
           eventId: event.id || '',
@@ -153,9 +159,10 @@ const buildFilteredResults = (data, filtersToUse) => {
         const resolvedToRole = parsed.toRole || item.To_Role || item.to_role || item.toRole || event.toRole || event.To_Role || '';
         const resolvedToMPID = parsed.toMPID || item.To_MPID || item.to_mpid || item.toMPID || event.toMPID || event.To_MPID || '';
         
-        const eventTypeValue = event.Status === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
+        const eventStatus = event.Status || event.status || 'Unknown';
+        const eventTypeValue = eventStatus === 'Failed' ? 'Failed' : (EVENT_TYPE_MAP[event.Event_Type] || event.Event_Type || 'Unknown');
         const eventTypeRaw = String(event.Event_Type ?? '');
-        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '3')
+        const applicationValue = (eventTypeRaw === '2' || eventTypeRaw === '3' || shouldHideDestinationForStatus(eventStatus))
           ? ''
           : (event.applicationName || event.Destination_Application || '');
 
@@ -177,7 +184,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           eventType: eventTypeValue,
           application: applicationValue,
           timestamp: event.timestamp || '',
-          status: event.Status || 'Unknown',
+          status: eventStatus,
           processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           eventId: event.id || '',
           destinationPath: event.Destination_Path || '',
