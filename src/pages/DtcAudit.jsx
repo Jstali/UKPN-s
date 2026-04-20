@@ -82,7 +82,9 @@ const shouldHideDestinationForStatus = (status) => {
 };
 
 const mapStatusDisplay = (status) => {
-  if (String(status || '').trim().toLowerCase() === 'file delivered') return 'Net App Delivered';
+  const s = String(status || '').trim().toLowerCase();
+  if (s === 'file delivered') return 'Net App Delivered';
+  if (s === 'file transfer') return 'Delivered';
   return status;
 };
 
