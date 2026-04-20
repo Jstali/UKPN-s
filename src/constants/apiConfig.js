@@ -39,8 +39,8 @@ export const ENDPOINTS = {
   appStatus:         endpoint('/api/fileconnectApplicationStatus',     'appStatus'),
   dropdownValues:    endpoint('/api/getDropdownValuesAPI',             'dropdown'),
   fileStatusSummary: endpoint('/api/fileconnectFileStatusSummary',     'fileStatusSummary'),
-  // POST to same function — sends styled HTML email with Excel attachment
-  auditEmailExport:  endpoint('/api/fileconnectFileStatusSummary',     'fileStatusSummary'),
+  // POST — custom-routed as audit-export/send-email (function: fileconnectAuditExportEmail)
+  auditEmailExport:  endpoint('/api/audit-export/send-email',          'fileStatusSummary'),
   downloadFile:      `${HOST}/api/fileConnectDownloadFileByID`,
   viewFile:          `${HOST}/api/fileConnectViewBlobFile`,
 };
