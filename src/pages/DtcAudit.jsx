@@ -81,6 +81,11 @@ const shouldHideDestinationForStatus = (status) => {
   return normalized === 'publish' || normalized === 'published' || normalized === 'valid subscription';
 };
 
+const mapStatusDisplay = (status) => {
+  if (String(status || '').trim().toLowerCase() === 'file delivered') return 'Net App Delivered';
+  return status;
+};
+
 // Flatten audit data to create one row per event
 const flattenAuditEvents = (data) => {
   const flatData = [];
@@ -126,7 +131,7 @@ const flattenAuditEvents = (data) => {
           sourceApplication: sourceApplication,
           application: applicationValue,
           eventType: eventTypeValue,
-          status: eventStatus,
+          status: mapStatusDisplay(eventStatus),
           processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           timestamp: event.timestamp || '',
           eventId: event.id || '',
@@ -186,7 +191,7 @@ const buildFilteredResults = (data, filtersToUse) => {
           eventType: eventTypeValue,
           application: applicationValue,
           timestamp: event.timestamp || '',
-          status: eventStatus,
+          status: mapStatusDisplay(eventStatus),
           processed: resolveProcessedValue(event.processed, event.Processed, item.processed, item.Processed),
           eventId: event.id || '',
           destinationPath: event.Destination_Path || '',
