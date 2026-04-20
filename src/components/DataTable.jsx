@@ -301,35 +301,11 @@ const DataTable = ({
   const previewContentCacheRef = useRef(new Map());
   const resolvedPreviewPathCacheRef = useRef(new Map());
 
-  // Row selection for email export — tracks unique document IDs across pages
+  // Row selection state — the derived allSortedDocIds useMemo is placed after sortedData
   const [selectedDocIds, setSelectedDocIds] = useState([]);
   const selectedSet = useMemo(() => new Set(selectedDocIds), [selectedDocIds]);
   const headerCheckRef = useRef(null);
-
   const getRowDocId = useCallback((row) => row.id || row.uniqueId || row.fileId || null, []);
-
-  const allSortedDocIds = useMemo(
-    () => [...new Set(sortedData.map(getRowDocId).filter(Boolean))],
-    [sortedData, getRowDocId],
-  );
-  const allSelected  = allSortedDocIds.length > 0 && allSortedDocIds.every(id => selectedSet.has(id));
-  const someSelected = !allSelected && allSortedDocIds.some(id => selectedSet.has(id));
-
-  useEffect(() => {
-    if (headerCheckRef.current) headerCheckRef.current.indeterminate = someSelected;
-  }, [someSelected]);
-
-  const toggleRow = useCallback((row) => {
-    const docId = getRowDocId(row);
-    if (!docId) return;
-    setSelectedDocIds(prev =>
-      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId],
-    );
-  }, [getRowDocId]);
-
-  const toggleSelectAll = useCallback(() => {
-    setSelectedDocIds(allSelected ? [] : allSortedDocIds);
-  }, [allSelected, allSortedDocIds]);
 
   const activeColumns = compactColumns && !viewAll ? compactColumns : columns;
   const columnsForExport = exportColumns?.length ? exportColumns : columns;
@@ -476,6 +452,30 @@ const DataTable = ({
   }, [filteredData, sortConfig]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
+
+  // Row selection — derived from sortedData (must come after sortedData is defined)
+  const allSortedDocIds = useMemo(
+    () => [...new Set(sortedData.map(getRowDocId).filter(Boolean))],
+    [sortedData, getRowDocId],
+  );
+  const allSelected  = allSortedDocIds.length > 0 && allSortedDocIds.every(id => selectedSet.has(id));
+  const someSelected = !allSelected && allSortedDocIds.some(id => selectedSet.has(id));
+
+  useEffect(() => {
+    if (headerCheckRef.current) headerCheckRef.current.indeterminate = someSelected;
+  }, [someSelected]);
+
+  const toggleRow = useCallback((row) => {
+    const docId = getRowDocId(row);
+    if (!docId) return;
+    setSelectedDocIds(prev =>
+      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId],
+    );
+  }, [getRowDocId]);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedDocIds(allSelected ? [] : allSortedDocIds);
+  }, [allSelected, allSortedDocIds]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
