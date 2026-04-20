@@ -630,15 +630,15 @@ const NonDtcAudit = () => {
           data={filteredData}
           columns={NON_DTC_COLUMNS}
           compactColumns={[
-            { key: 'flow', label: 'Flow' },
-            { key: 'fileId', label: 'File ID' },
-            { key: 'timestamp', label: 'Timestamp' },
-            { key: 'sourceApplication', label: 'Source' },
-            { key: 'application', label: 'Destination' },
-            { key: 'sourcePath', label: 'Source Path' },
-            { key: 'destinationPath', label: 'Destination Path' },
-            { key: 'status', label: 'Status' },
-            { key: 'fileName', label: 'Source File Name' },
+            { key: 'flow',              label: 'Flow',              width: 75  },
+            { key: 'fileId',            label: 'File ID',           width: 130 },
+            { key: 'timestamp',         label: 'Timestamp',         width: 130 },
+            { key: 'sourceApplication', label: 'Source',            width: 95  },
+            { key: 'application',       label: 'Destination',       width: 105 },
+            { key: 'sourcePath',        label: 'Source Path',       width: 150 },
+            { key: 'destinationPath',   label: 'Destination Path',  width: 150 },
+            { key: 'status',            label: 'Status',            width: 88  },
+            { key: 'fileName',          label: 'Source File Name',  width: 155 },
           ]}
           exportColumns={NON_DTC_COLUMNS}
           defaultSort={{ key: 'startDate', direction: 'desc' }}
