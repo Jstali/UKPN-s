@@ -182,27 +182,33 @@ const getEventTimeMs = (event) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const getBoundaryEvents = (events = []) => {
-  const allTimes = [];
-  const event1Times = [];
-  const event4Times = [];
+// Returns duration in seconds for one file: Event 22 timestamp - Event 1 timestamp.
+// Falls back to Event 4 if Event 22 is absent (e.g. Non-DTC files).
+const getFileDurationSec = (events = []) => {
+  let event1Ms = null;
+  let event22Ms = null;
+  let event4Ms = null;
 
   events.forEach((event) => {
     const eventType = getEventType(event);
     const timeMs = getEventTimeMs(event);
     if (!Number.isFinite(timeMs)) return;
 
-    allTimes.push(timeMs);
-    if (eventType === '1') event1Times.push(timeMs);
-    if (eventType === '4') event4Times.push(timeMs);
+    if (eventType === '1') {
+      if (event1Ms === null || timeMs < event1Ms) event1Ms = timeMs;
+    }
+    if (eventType === '22') {
+      if (event22Ms === null || timeMs > event22Ms) event22Ms = timeMs;
+    }
+    if (eventType === '4') {
+      if (event4Ms === null || timeMs > event4Ms) event4Ms = timeMs;
+    }
   });
 
-  if (allTimes.length === 0) return null;
-
-  const startMs = event1Times.length > 0 ? Math.min(...event1Times) : Math.min(...allTimes);
-  const endMs   = event4Times.length > 0 ? Math.max(...event4Times) : Math.max(...allTimes);
-
-  return { startMs, endMs };
+  if (event1Ms === null) return null;
+  const endMs = event22Ms ?? event4Ms;
+  if (endMs === null || endMs < event1Ms) return null;
+  return (endMs - event1Ms) / 1000;
 };
 
 const addDurationToStats = (appStats, appName, durationSec) => {
@@ -221,10 +227,9 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
 
   auditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
-    const boundaries = getBoundaryEvents(events);
-    if (!boundaries || boundaries.endMs < boundaries.startMs) return;
+    const durationSec = getFileDurationSec(events);
+    if (durationSec === null) return;
 
-    const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
       events.find((e) => getEventType(e) === '1')?.applicationName ||
       item?.Application_Name ||
@@ -237,10 +242,9 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
 
   nonDtcAuditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
-    const boundaries = getBoundaryEvents(events);
-    if (!boundaries || boundaries.endMs < boundaries.startMs) return;
+    const durationSec = getFileDurationSec(events);
+    if (durationSec === null) return;
 
-    const durationSec = (boundaries.endMs - boundaries.startMs) / 1000;
     const appName =
       item?.sourceAppName ||
       item?.subscription ||
