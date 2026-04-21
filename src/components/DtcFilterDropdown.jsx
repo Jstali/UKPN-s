@@ -231,7 +231,8 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
         api.fetchDestinationApplications(),
         fetchDropdownValues(),
       ]);
-      setFlowsFromApi(flows);
+      // fetchFlows returns { data, error } — extract the array
+      setFlowsFromApi(Array.isArray(flows) ? flows : (flows?.data || []));
       setSourceAppsFromApi(sourceApps);
       setDestAppsFromApi(destApps);
       setDropdownValues(ddValues);
