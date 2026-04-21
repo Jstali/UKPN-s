@@ -345,6 +345,8 @@ export const AppProvider = ({ children }) => {
     // Non-DTC audit data
     nonDtcAuditData,
     nonDtcFetchError,
+    // Flows (pre-fetched on mount — used by DtcFilterDropdown to avoid timing race)
+    flowsData,
     // Subscriptions
     subscriptionData,
     subscriptionLoading,
@@ -360,6 +362,7 @@ export const AppProvider = ({ children }) => {
     auditData, loading, dataComplete, fetchError, fetchAllData,
     dtcHasMore, dtcLoadingMore, dtcPageMeta, loadMoreDtcData,
     nonDtcAuditData, nonDtcFetchError,
+    flowsData,
     subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions,
     fileStatusSummary, fileStatusSummaryError,
   ]);

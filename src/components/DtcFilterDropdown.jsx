@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 import api, { fetchDropdownValues } from '../utils/api';
+import { useApp } from '../context/AppContext';
 
 // Import from shared constants — single source of truth
 import { DTC_EVENT_TYPE_MAP as EVENT_TYPE_MAP } from '../constants/eventTypes';
@@ -216,23 +217,21 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 };
 
 const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply, disableAnimation = false }) => {
+  const { flowsData } = useApp();
   const [dateError, setDateError] = React.useState('');
-  const [flowsFromApi, setFlowsFromApi] = React.useState([]);
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
   const [destAppsFromApi, setDestAppsFromApi] = React.useState([]);
   const [dropdownValues, setDropdownValues] = React.useState({ fromRole: [], fromMPID: [], toRole: [], toMPID: [] });
 
-  // Fetch all filter options from APIs on mount
+  // Fetch source apps, destination apps and dropdown values on mount.
+  // Flows come from AppContext (already fetched on app load) — no timing race.
   React.useEffect(() => {
     const loadData = async () => {
-      const [flows, sourceApps, destApps, ddValues] = await Promise.all([
-        api.fetchFlows(),
+      const [sourceApps, destApps, ddValues] = await Promise.all([
         api.fetchSourceApplications(),
         api.fetchDestinationApplications(),
         fetchDropdownValues(),
       ]);
-      // fetchFlows returns { data, error } — extract the array
-      setFlowsFromApi(Array.isArray(flows) ? flows : (flows?.data || []));
       setSourceAppsFromApi(sourceApps);
       setDestAppsFromApi(destApps);
       setDropdownValues(ddValues);
@@ -271,7 +270,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
 
   // Extract unique values dynamically from audit data
   const uniqueValues = useMemo(() => {
-    const apiFlows = flowsFromApi.length > 0 ? flowsFromApi : [];
+    const apiFlows = Array.isArray(flowsData) && flowsData.length > 0 ? flowsData : [];
     const apiSourceApps = sourceAppsFromApi.length > 0 ? sourceAppsFromApi : [];
     const apiDestApps = destAppsFromApi.length > 0 ? destAppsFromApi : [];
     const apiFromRole = [...dropdownValues.fromRole].sort();
@@ -347,7 +346,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
       toRole: apiToRole,
       toMPID: apiToMPID,
     };
-  }, [auditData, subscriptionAppNames, flowsFromApi, sourceAppsFromApi, destAppsFromApi, dropdownValues]);
+  }, [auditData, subscriptionAppNames, flowsData, sourceAppsFromApi, destAppsFromApi, dropdownValues]);
 
   // Reordered fields based on priority
   const orderedFields = [
