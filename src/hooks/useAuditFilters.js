@@ -1,7 +1,7 @@
 // Generic filter-state hook shared by DTC and Non-DTC audit pages.
 // Handles: state, apply, reset, sessionStorage persistence, and scroll restoration.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { sessionGet, sessionSet, sessionDel } from '../utils/storageUtils';
 
 /**
@@ -15,6 +15,10 @@ export const useAuditFilters = (defaultFilters, storageKey, applyFn, dataDeps = 
   const [appliedFilters,  setAppliedFilters]  = useState(null);
   const [filteredResults, setFilteredResults] = useState([]);
   const [hasQueried,      setHasQueried]      = useState(false);
+
+  // Always keep a live reference to applyFn so useCallback closures never go stale
+  const applyFnRef = useRef(applyFn);
+  applyFnRef.current = applyFn;
 
   // Restore persisted filter state when data loads (e.g. returning from a detail page)
   useEffect(() => {
@@ -49,7 +53,7 @@ export const useAuditFilters = (defaultFilters, storageKey, applyFn, dataDeps = 
 
   const apply = useCallback((overrideFilters) => {
     const f = overrideFilters || filters;
-    const results = applyFn(f);
+    const results = applyFnRef.current(f);
     setFilteredResults(results);
     setAppliedFilters({ ...f });
     setHasQueried(true);

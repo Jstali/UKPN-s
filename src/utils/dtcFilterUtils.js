@@ -1,4 +1,4 @@
-const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
+const normalizeFilterValue = (value) => String(value ?? '').trim().toLowerCase();
 
 const getTimestamp = (row) => row.rawTimestamp || row.timestamp || '';
 

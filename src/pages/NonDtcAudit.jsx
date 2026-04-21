@@ -61,10 +61,11 @@ const DEFAULT_FILTERS = {
   fileCreated: '', fileCreatedTime: '', publishDate: '', fileId: 'All',
 };
 
-// Returns true when selectedValue is 'All'/empty or matches actualValue.
+// Returns true when selectedValue is 'All'/empty or matches actualValue (case-insensitive, trimmed).
 const matchesMultiSelect = (selectedValue, actualValue) => {
   if (!selectedValue || selectedValue === 'All') return true;
-  return selectedValue.split(',').map(v => v.trim()).filter(Boolean).includes(actualValue);
+  const selected = selectedValue.split(',').map(v => v.trim().toLowerCase()).filter(Boolean);
+  return selected.includes(String(actualValue ?? '').trim().toLowerCase());
 };
 
 const inputStyle = {
