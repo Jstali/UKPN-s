@@ -224,14 +224,21 @@ const addDurationToStats = (appStats, appName, durationSec) => {
 
 export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
   const appStats = new Map();
+  const cutoffMs = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
 
   auditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
+
+    // Use Event 1 timestamp as the file's inbound time for the 24h filter
+    const event1 = events.find((e) => getEventType(e) === '1');
+    const event1Ms = event1 ? getEventTimeMs(event1) : null;
+    if (!Number.isFinite(event1Ms) || event1Ms < cutoffMs) return;
+
     const durationSec = getFileDurationSec(events);
     if (durationSec === null) return;
 
     const appName =
-      events.find((e) => getEventType(e) === '1')?.applicationName ||
+      event1?.applicationName ||
       item?.Application_Name ||
       item?.Source_Application ||
       item?.source_application ||
@@ -242,13 +249,22 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
 
   nonDtcAuditData.forEach((item) => {
     const events = Array.isArray(item?.events) ? item.events : [];
+
+    // Use Event 1 timestamp, fall back to item-level timestamp
+    const event1 = events.find((e) => getEventType(e) === '1');
+    const rawTs = event1
+      ? getEventTimestamp(event1)
+      : (item?.timestamp || item?.Timestamp || item?.created || '');
+    const fileMs = rawTs ? new Date(rawTs).getTime() : NaN;
+    if (!Number.isFinite(fileMs) || fileMs < cutoffMs) return;
+
     const durationSec = getFileDurationSec(events);
     if (durationSec === null) return;
 
     const appName =
       item?.sourceAppName ||
       item?.subscription ||
-      events.find((e) => getEventType(e) === '1')?.applicationName ||
+      event1?.applicationName ||
       'Unknown';
 
     addDurationToStats(appStats, appName, durationSec);

@@ -44,7 +44,7 @@ const PerformanceSection = ({ dashboardUpdatedAt, performanceItems = [] }) => {
           <h3 className="dashboard-section-title">Performance</h3>
         </div>
         <span className="dashboard-section-meta">
-          Updated: {dashboardUpdatedAt} &middot; <span style={{ color: '#8b5cf6', fontWeight: 600 }}>All Available Data</span>
+          Updated: {dashboardUpdatedAt} &middot; <span style={{ color: '#8b5cf6', fontWeight: 600 }}>Last 24 Hours</span>
           &nbsp;&middot;&nbsp;
           <span
             onClick={() => navigate('/performance-detail')}
