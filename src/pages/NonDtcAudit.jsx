@@ -93,11 +93,35 @@ const NonDtcAudit = () => {
   // Apply currently set filters to the flat audit data
   const filteredData = useMemo(() => {
     let result = [...auditData];
+
+    // Dropdown filters
     result = result.filter(r => matchesMultiSelect(appliedFilters.flow,           r.flow));
     result = result.filter(r => matchesMultiSelect(appliedFilters.sourceApp,      r.sourceApp));
     result = result.filter(r => matchesMultiSelect(appliedFilters.destinationApp, r.application));
     result = result.filter(r => matchesMultiSelect(appliedFilters.eventType,      r.eventType));
     result = result.filter(r => matchesMultiSelect(appliedFilters.fileId,         r.fileId));
+
+    // Date/time filters
+    const fromDt = combineDateTime(appliedFilters.eventFrom, appliedFilters.eventFromTime);
+    const toDt   = combineDateTime(appliedFilters.eventTo,   appliedFilters.eventToTime, '23:59:59');
+    if (fromDt) result = result.filter(r => r.rawTimestamp && new Date(r.rawTimestamp) >= new Date(fromDt));
+    if (toDt)   result = result.filter(r => r.rawTimestamp && new Date(r.rawTimestamp) <= new Date(toDt));
+
+    if (appliedFilters.fileCreated) {
+      result = result.filter(r => {
+        if (!r.rawTimestamp) return false;
+        return new Date(r.rawTimestamp).toISOString().split('T')[0] === appliedFilters.fileCreated;
+      });
+    }
+
+    if (appliedFilters.publishDate) {
+      result = result.filter(r => {
+        if (r.eventType !== 'Published') return false;
+        if (!r.rawTimestamp) return false;
+        return new Date(r.rawTimestamp).toISOString().split('T')[0] === appliedFilters.publishDate;
+      });
+    }
+
     return result;
   }, [auditData, appliedFilters]);
 

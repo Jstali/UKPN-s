@@ -153,6 +153,7 @@ export const flattenNonDtcAuditData = (data = []) => {
         flow:        flowValue,
         version:     item.version || item.subscription || '-',
         fileId:      item.id || '-',
+        rawTimestamp: event.timestamp || item.timestamp || '',
         timestamp:   formatDateTime(event.timestamp || item.timestamp || ''),
         fromRole:    item.fromRole || '-',
         fromMPID:    item.fromMPID || '-',
