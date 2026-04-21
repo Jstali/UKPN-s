@@ -79,7 +79,6 @@ const flattenDtcItem = (item) => {
       flowVersion:         formattedFV,
       flow:                flow || '-',
       version:             version || '-',
-      // HFile_ID is the canonical File ID for DTC records
       fileId:              item.id || '',
       hFileId:             pick(item.HFile_ID, item.hFile_ID, item.hfile_id, item.File_ID, item.fileId, item.file_id, item.correlationId) || item.id,
       fromRole,
