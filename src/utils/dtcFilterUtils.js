@@ -37,7 +37,7 @@ export const applyDtcFilters = (results, filters) => {
 
   if (filters.fileId && filters.fileId !== 'All') {
     const selected = filters.fileId.split(',').map(normalizeFilterValue).filter(Boolean);
-    filtered = filtered.filter(r => r.fileId && selected.includes(normalizeFilterValue(r.fileId)));
+    filtered = filtered.filter(r => r.hFileId && selected.includes(normalizeFilterValue(r.hFileId)));
   }
 
   if (filters.msgId) {

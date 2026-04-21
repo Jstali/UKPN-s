@@ -101,7 +101,7 @@ const DtcAudit = () => {
   // File ID and Version options derived from already-flattened rows so they use
   // the same robust resolution logic as the table (deriveFlowVersion, HFile_ID, etc.)
   const fileIdOptions = useMemo(
-    () => [...new Set(flattenedAuditData.map(r => r.fileId).filter(Boolean))].sort(),
+    () => [...new Set(flattenedAuditData.map(r => r.hFileId).filter(Boolean))].sort(),
     [flattenedAuditData]
   );
 
