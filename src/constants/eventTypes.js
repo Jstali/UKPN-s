@@ -17,10 +17,10 @@ export const DTC_EVENT_TYPE_MAP = {
 };
 
 export const NON_DTC_EVENT_TYPE_MAP = {
-  '1': 'File Pickup from Source',
-  '2': 'File Stored To Blob',
-  '3': 'File Subscribe',
-  '4': 'File Delivered',
+  '1': 'Received',
+  '2': null,  // File Stored To Blob — hidden
+  '3': 'Published',
+  '4': 'NetApp Delivered',
 };
 
 // Statuses that should suppress the destination application column
@@ -49,12 +49,16 @@ export const resolveDtcEventType = (event) => {
   return key || 'Unknown';
 };
 
-// Resolve Non-DTC event type label, preferring description field
+// Resolve Non-DTC event type label.
+// Returns null for event types that should be hidden (e.g. File Stored To Blob).
 export const resolveNonDtcEventType = (event) => {
   const raw = String(
     event?.eventType || event?.event_type || event?.Event_Type || event?.EventType || ''
   );
-  return event?.description || event?.Description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
+  if (raw in NON_DTC_EVENT_TYPE_MAP) {
+    return NON_DTC_EVENT_TYPE_MAP[raw]; // may be null (hidden)
+  }
+  return event?.description || event?.Description || raw;
 };
 
 // Map a raw status string to its display label

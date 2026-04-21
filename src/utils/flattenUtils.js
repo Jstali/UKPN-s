@@ -145,6 +145,9 @@ export const flattenNonDtcAuditData = (data = []) => {
     const flowValue = subscriptionEvent?.subscription || item.subscription || item.description || '-';
 
     events.forEach(event => {
+      const resolvedEventType = resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType });
+      if (resolvedEventType === null) return;
+
       rows.push({
         uniqueId:    item.id || '',
         flow:        flowValue,
@@ -170,7 +173,7 @@ export const flattenNonDtcAuditData = (data = []) => {
         Blob_Location:              itemBlobLocation || evtBlobLocation,
         Blob_File_Name:             itemBlobFileName || evtBlobFileName,
         Source_FileName:            fileName,
-        eventType: resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }),
+        eventType: resolvedEventType,
         startDate: item.events?.[0]?.timestamp
           ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
         endDate: item.events?.[item.events.length - 1]?.timestamp
