@@ -215,7 +215,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
+const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
   const { flowsData } = useApp();
   const [dateError, setDateError] = React.useState('');
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
@@ -288,7 +288,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
         fromMPID: apiFromMPID,
         toRole: apiToRole,
         toMPID: apiToMPID,
-        fileId: [],
+        fileId: fileIdOptions,
       };
     }
 
@@ -298,7 +298,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
       eventType: new Set(),
       flow: new Set(apiFlows),
       version: new Set(),
-      fileId: new Set(),
     };
 
     auditData.forEach(item => {
@@ -311,18 +310,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
         if (version) values.version.add(version);
       }
 
-      // Use HFile_ID as the File ID dropdown value
-      const hFileId = item.HFile_ID || item.hFile_ID || item.hfile_id;
-      if (hFileId) values.fileId.add(hFileId);
-
-      // Always add the actual sourceApplication from the first event so the
-      // dropdown value exactly matches what the filter compares against (r.sourceApplication)
       const sourceApp = item.events?.[0]?.applicationName;
       if (sourceApp && sourceApp !== 'Unknown') values.sourceApplication.add(sourceApp);
 
       item.events?.forEach(event => {
-        // Add destination application from each event so dropdown values match
-        // r.application in dtcFilterUtils (event.applicationName || Destination_Application)
         const destApp = event.applicationName || event.Destination_Application;
         if (destApp && destApp !== 'Unknown') values.destinationApplication.add(destApp);
 
@@ -344,8 +335,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
       fromMPID: apiFromMPID,
       toRole: apiToRole,
       toMPID: apiToMPID,
+      // fileId comes from pre-flattened data (HFile_ID resolved correctly)
+      fileId: fileIdOptions,
     };
-  }, [auditData, subscriptionAppNames, flowsData, sourceAppsFromApi, destAppsFromApi, dropdownValues]);
+  }, [auditData, subscriptionAppNames, flowsData, sourceAppsFromApi, destAppsFromApi, dropdownValues, fileIdOptions]);
 
   // Reordered fields based on priority
   const orderedFields = [

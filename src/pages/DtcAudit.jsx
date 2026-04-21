@@ -98,6 +98,13 @@ const DtcAudit = () => {
     [globalAuditData]
   );
 
+  // File ID options for the filter dropdown — derived from already-flattened rows
+  // where fileId is resolved correctly (HFile_ID with fallbacks)
+  const fileIdOptions = useMemo(
+    () => [...new Set(flattenedAuditData.map(r => r.fileId).filter(Boolean))].sort(),
+    [flattenedAuditData]
+  );
+
   // Auto-fetch next DTC page when the user navigates to a table page that needs more rows
   useEffect(() => {
     if (hasQueried) return;
@@ -186,6 +193,7 @@ const DtcAudit = () => {
         <DtcFilterDropdown
           filters={filters}
           auditData={globalAuditData}
+          fileIdOptions={fileIdOptions}
           subscriptionAppNames={subscriptionAppNames}
           onFilterChange={updateFilter}
           onReset={reset}
