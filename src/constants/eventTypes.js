@@ -49,8 +49,10 @@ export const resolveDtcEventType = (event) => {
   return key || 'Unknown';
 };
 
+const NON_DTC_HIDDEN_PATTERN = /not found|source_config_not_found/i;
+
 // Resolve Non-DTC event type label.
-// Returns null for event types that should be hidden (e.g. File Stored To Blob).
+// Returns null for event types that should be hidden (e.g. File Stored To Blob, config errors).
 export const resolveNonDtcEventType = (event) => {
   const raw = String(
     event?.eventType || event?.event_type || event?.Event_Type || event?.EventType || ''
@@ -58,7 +60,9 @@ export const resolveNonDtcEventType = (event) => {
   if (raw in NON_DTC_EVENT_TYPE_MAP) {
     return NON_DTC_EVENT_TYPE_MAP[raw]; // may be null (hidden)
   }
-  return event?.description || event?.Description || raw;
+  const label = event?.description || event?.Description || raw;
+  if (NON_DTC_HIDDEN_PATTERN.test(label)) return null;
+  return label;
 };
 
 // Map a raw status string to its display label
