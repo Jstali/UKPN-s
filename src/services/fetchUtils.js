@@ -1,7 +1,14 @@
 // Generic HTTP helpers shared by all service modules.
-// Eliminates the repeated try/catch/status-check pattern that appeared 6+ times in api.js.
 
 import { AUDIT_TIMEOUT_MS } from '../constants/apiConfig';
+
+// Reads the session token and returns an Authorization header if present.
+const getAuthHeaders = () => {
+  try {
+    const token = sessionStorage.getItem('authToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch { return {}; }
+};
 
 // Creates an AbortController that times out after `timeoutMs` and optionally
 // chains an external abort signal. Returns { signal, cleanup }.
@@ -32,11 +39,14 @@ export const withTimeoutSignal = (externalSignal, timeoutMs = AUDIT_TIMEOUT_MS) 
 
 // Simple JSON fetch with unified error handling.
 // Returns { data, error } — never throws.
-// `label`      → used in console logs ("Flows", "Subscriptions", …)
-// `transform`  → optional fn(rawData) → normalised value
 export const fetchJson = async (url, label, transform = (d) => d, options = {}) => {
   try {
-    const res = await fetch(url, { method: 'GET', ...options });
+    const { headers: extraHeaders, ...restOptions } = options;
+    const res = await fetch(url, {
+      method: 'GET',
+      ...restOptions,
+      headers: { ...getAuthHeaders(), ...(extraHeaders || {}) },
+    });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       console.error(`❌ ${label} API Error ${res.status}:`, text.substring(0, 200));
@@ -52,12 +62,13 @@ export const fetchJson = async (url, label, transform = (d) => d, options = {}) 
   }
 };
 
-// Paginated Azure audit fetch with timeout + abort support.
+// Paginated proxy fetch with timeout + abort support.
 // Returns the standard { data, continuationToken, totalCount, resultCount, error, aborted } shape.
 export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize, options = {}) => {
   let cleanup = () => {};
   try {
-    let url = `${baseUrl}&pageSize=${pageSize}`;
+    // Use ? separator — proxy endpoints have no query string yet
+    let url = `${baseUrl}?pageSize=${pageSize}`;
     if (continuationToken) url += `&continuationToken=${encodeURIComponent(continuationToken)}`;
 
     const tc   = withTimeoutSignal(options.signal, options.timeoutMs);
@@ -66,7 +77,11 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
     const res  = await fetch(url, {
       method:  'GET',
       signal:  tc.signal,
-      headers: { 'Accept-Encoding': 'gzip, deflate, br', ...options.headers },
+      headers: {
+        'Accept-Encoding': 'gzip, deflate, br',
+        ...getAuthHeaders(),
+        ...options.headers,
+      },
     });
 
     if (!res.ok) {
@@ -74,7 +89,7 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
       console.error(`❌ ${label} API Error ${res.status}:`, text.substring(0, 200));
 
       if (res.status === 401) {
-        throw new Error(`Authentication failed for ${label}. Check the API key in your .env file.`);
+        throw new Error(`Session expired. Please log in again.`);
       }
       throw new Error(`${label} request failed: ${res.status}`);
     }
@@ -82,10 +97,8 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
     const json    = await res.json();
     const records = Array.isArray(json.data) ? json.data : [];
 
-    // Backend may cap the requested page size — always read from response
     const actualPageSize = json.pageSize || pageSize;
-    // hasMore is the authoritative flag; fall back to presence of continuationToken
-    const hasMore = json.hasMore ?? !!json.continuationToken;
+    const hasMore        = json.hasMore ?? !!json.continuationToken;
 
     console.log(`✅ ${label}: ${records.length} records, hasMore: ${hasMore}, pageSize: ${actualPageSize}${json.pageSizeCapped ? ' (capped)' : ''}`);
 
@@ -93,15 +106,12 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
       data:              records,
       continuationToken: json.continuationToken  || null,
       hasMore,
-      // Actual page size applied by the server (may differ from requested)
       pageSize:          actualPageSize,
       requestedPageSize: json.requestedPageSize  || pageSize,
       resultCount:       json.resultCount        ?? records.length,
       pageSizeCapped:    json.pageSizeCapped      || false,
-      // Performance metadata — useful for diagnostics
       requestCharge:     json.requestCharge       ?? null,
       durationMs:        json.durationMs          ?? null,
-      // totalCount is unreliable on DTC — use the separate count API instead
       totalCount:        json.totalCount          ?? null,
       error:             null,
       aborted:           false,
