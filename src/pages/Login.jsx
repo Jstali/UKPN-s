@@ -2,31 +2,39 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Lock, ShieldCheck, User } from 'lucide-react';
+import { ENDPOINTS } from '../constants/apiConfig';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  // Credentials are loaded from the REACT_APP_USERS environment variable.
-  // Set it in .env — never commit .env to version control.
-  // Format: [{"username":"user1","password":"pass1","role":"Role Name"}]
-  const users = JSON.parse(process.env.REACT_APP_USERS || '[]');
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const normalizedUsername = username.trim();
-    const user = users.find(
-      (u) => u.username === normalizedUsername && u.password === password
-    );
-
-    if (user) {
-      onLogin(user);
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(ENDPOINTS.login, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ username: username.trim(), password }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error || 'Invalid username or password');
+        return;
+      }
+      const { token, username: u, role } = await res.json();
+      sessionStorage.setItem('authToken', token);
+      onLogin({ username: u, role });
       navigate('/');
-    } else {
-      setError('Invalid username or password');
+    } catch (err) {
+      setError('Unable to reach the server. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -125,8 +133,8 @@ const Login = ({ onLogin }) => {
                 </motion.div>
               )}
 
-              <button type="submit" className="ukpn-login-submit">
-                <span>Sign in to dashboard</span>
+              <button type="submit" className="ukpn-login-submit" disabled={submitting}>
+                <span>{submitting ? 'Signing in\u2026' : 'Sign in to dashboard'}</span>
                 <ArrowRight size={18} />
               </button>
             </form>

@@ -144,12 +144,6 @@ const FlowMultiSelectDropdown = ({ value, options, onChange }) => {
 
 const flattenAuditEvents = (data) => {
   const flatData = [];
-  // Log first UNKNOWN-flow item so we can see what fields the API returns
-  const firstUnknown = data.find(item =>
-    !parseHeader(item.Header_String).flowVersion &&
-    !item.Flow_Version && !item.flow_version && !item.flow && !item.Flow
-  );
-  if (firstUnknown) console.log('[DtcFailedFiles] Sample UNKNOWN-flow record:', firstUnknown);
 
   data.forEach(item => {
     const parsed = parseHeader(item.Header_String);
@@ -226,19 +220,10 @@ const DtcFailedFiles = () => {
     }
 
     if (fileNameFilter) {
-      console.log('[DtcFailedFiles] Filtering by fileName:', fileNameFilter, 'Filter length:', fileNameFilter.length);
-      console.log('[DtcFailedFiles] Sample row.fileName:', failedRecords[0]?.fileName, 'Type:', typeof failedRecords[0]?.fileName);
-      
-      const beforeFilter = filtered.length;
       filtered = filtered.filter(row => {
         const fileName = row.fileName;
-        const matches = fileName && fileName.toLowerCase().includes(fileNameFilter.toLowerCase());
-        if (!matches && fileName) {
-          console.log('[DtcFailedFiles] No match - fileName:', fileName, 'Filter:', fileNameFilter);
-        }
-        return matches;
+        return fileName && fileName.toLowerCase().includes(fileNameFilter.toLowerCase());
       });
-      console.log('[DtcFailedFiles] Before filter:', beforeFilter, 'After filter:', filtered.length);
     }
 
     return filtered;

@@ -19,7 +19,10 @@ const DTC_COL_WIDTHS = {
 
 const w = (key, label, extra = {}) => ({ key, label, width: DTC_COL_WIDTHS[key], ...extra });
 
-export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW = [
+// Single source of truth for DTC summary columns. The four historical export
+// names (COMBINED_FLOW, COMBINED_FLOW_VERSION, SPLIT_FLOW, SPLIT_FLOW_VERSION)
+// all map to this same list; they're kept as aliases so existing callers work.
+export const DTC_SUMMARY_COLUMNS = [
   w('flow', 'Flow'),
   w('version', 'Version'),
   w('fileId', 'File ID'),
@@ -34,11 +37,10 @@ export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW = [
   w('fileName', 'Source File Name'),
 ];
 
-export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION = [...DTC_SUMMARY_COLUMNS_COMBINED_FLOW];
-
-export const DTC_SUMMARY_COLUMNS_SPLIT_FLOW = [...DTC_SUMMARY_COLUMNS_COMBINED_FLOW];
-
-export const DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION = [...DTC_SUMMARY_COLUMNS_COMBINED_FLOW];
+export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW         = DTC_SUMMARY_COLUMNS;
+export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION = DTC_SUMMARY_COLUMNS;
+export const DTC_SUMMARY_COLUMNS_SPLIT_FLOW            = DTC_SUMMARY_COLUMNS;
+export const DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION    = DTC_SUMMARY_COLUMNS;
 
 export const DTC_AUDIT_DETAIL_SUMMARY_FIELDS = [
   w('flow', 'Flow'),

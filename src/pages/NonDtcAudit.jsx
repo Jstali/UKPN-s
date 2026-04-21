@@ -80,7 +80,15 @@ const labelStyle = {
 const NonDtcAudit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { nonDtcAuditData, loading, dataComplete, nonDtcFetchError } = useApp();
+  const {
+    nonDtcAuditData,
+    loading,
+    dataComplete,
+    nonDtcFetchError,
+    nonDtcHasMore,
+    nonDtcLoadingMore,
+    loadMoreNonDtcData,
+  } = useApp();
 
   const [filters,        setFilters]        = useState(location.state?.filters        || DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(location.state?.appliedFilters || DEFAULT_FILTERS);
@@ -88,8 +96,27 @@ const NonDtcAudit = () => {
   const [showCharts,     setShowCharts]     = useState(location.state?.showBars       || false);
   const [showFilters,    setShowFilters]    = useState(false);
   const [dateError,      setDateError]      = useState('');
+  const [currentTablePage, setCurrentTablePage] = useState(0);
+  const [tablePageSize,    setTablePageSize]    = useState(50);
 
   const auditData = useMemo(() => flattenNonDtcAuditData(nonDtcAuditData || []), [nonDtcAuditData]);
+
+  // Auto-fetch the next Non-DTC page when the user navigates into a table page
+  // that doesn't yet have enough rows. Mirrors the DtcAudit behaviour.
+  useEffect(() => {
+    if (hasQueried) return;
+    if (!nonDtcHasMore || nonDtcLoadingMore) return;
+    const requiredRows = (currentTablePage + 1) * tablePageSize;
+    if (auditData.length < requiredRows) {
+      loadMoreNonDtcData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTablePage, tablePageSize, auditData.length, nonDtcHasMore, nonDtcLoadingMore, hasQueried]);
+
+  const handlePageChange = useCallback((page, size) => {
+    setCurrentTablePage(page);
+    setTablePageSize(size);
+  }, []);
 
   // Apply currently set filters to the flat audit data
   const filteredData = useMemo(() => {
@@ -361,6 +388,8 @@ const NonDtcAudit = () => {
           detailPagePath="/non-dtc-audit-detail"
           auditType="SAP"
           appliedFilters={appliedFilters}
+          onPageChange={handlePageChange}
+          isLoadingMore={!hasQueried && nonDtcLoadingMore}
           enableSelection
         />
       )}

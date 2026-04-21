@@ -89,8 +89,25 @@ function requireAuth(req, res, next) {
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors());
+// CORS: lock to the configured frontend origin when set; otherwise allow any
+// origin in dev. Production deployments MUST set FRONTEND_ORIGIN.
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || '';
+app.use(cors({
+  origin: FRONTEND_ORIGIN || true,
+  credentials: true,
+}));
 app.use(express.json());
+
+// Rejects path values that could enable directory traversal on the upstream
+// blob store. Azure does its own ACL checks, but we refuse the obvious cases
+// at the edge so they never reach the network.
+const isUnsafePath = (p) => {
+  if (typeof p !== 'string' || !p) return true;
+  if (p.includes('\0')) return true;
+  if (p.includes('..')) return true;
+  if (p.startsWith('/') || p.startsWith('\\')) return true;
+  return false;
+};
 
 // ─── Auth routes ──────────────────────────────────────────────────────────────
 
@@ -238,6 +255,7 @@ app.post('/api/proxy/auditEmailExport', requireAuth, async (req, res) => {
 app.get('/api/proxy/downloadFile', requireAuth, async (req, res) => {
   const { path, type } = req.query;
   if (!path) return res.status(400).json({ error: 'Missing path parameter' });
+  if (isUnsafePath(path)) return res.status(400).json({ error: 'Invalid path' });
   const codeKey = type === 'nonDtc' ? 'nonDtc' : 'dtcDownload';
   const url = `${API_HOST}/api/fileConnectDownloadFileByID?path=${encodeURIComponent(path)}&code=${CODES[codeKey]}`;
   try {
@@ -257,6 +275,7 @@ app.get('/api/proxy/downloadFile', requireAuth, async (req, res) => {
 app.get('/api/proxy/viewFile', requireAuth, async (req, res) => {
   const { path, type } = req.query;
   if (!path) return res.status(400).json({ error: 'Missing path parameter' });
+  if (isUnsafePath(path)) return res.status(400).json({ error: 'Invalid path' });
   const codeKey = type === 'nonDtc' ? 'nonDtc' : 'dtcPreview';
   const url = `${API_HOST}/api/fileConnectViewBlobFile?path=${encodeURIComponent(path)}&code=${CODES[codeKey]}`;
   try {

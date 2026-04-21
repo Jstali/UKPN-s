@@ -9,7 +9,7 @@ import React, {
 } from 'react';
 import api, { fetchDtcSubscriptions, fetchFlows } from '../utils/api';
 import { fetchFileStatusSummary } from '../services/apiService';
-import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
+import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE, ENDPOINTS } from '../constants/apiConfig';
 
 const AppContext = createContext(null);
 
@@ -64,6 +64,11 @@ export const AppProvider = ({ children }) => {
   const [dtcLoadingMore,     setDtcLoadingMore]     = useState(false);
   const [dtcPageMeta,        setDtcPageMeta]        = useState(null);
 
+  // Non-DTC incremental pagination state — user-driven, mirrors the DTC pattern
+  const [nonDtcHasMore,           setNonDtcHasMore]           = useState(false);
+  const [nonDtcContinuationToken, setNonDtcContinuationToken] = useState(null);
+  const [nonDtcLoadingMore,       setNonDtcLoadingMore]       = useState(false);
+
   const [subscriptionData,   setSubscriptionData]   = useState([]);
   const [subscriptionLoading,setSubscriptionLoading]= useState(false);
   const [isLocalSubscription,setIsLocalSubscription]= useState(false);
@@ -83,11 +88,34 @@ export const AppProvider = ({ children }) => {
   // Tracks current auditData length so auto-refresh can decide whether to preserve loaded pages
   const auditDataRef          = useRef([]);
 
+  // Rehydrate session on mount: if a token exists, verify it with the server.
+  // On success, restore the user; on failure, clear the stale token.
   useEffect(() => {
-    const savedUser = sessionStorage.getItem('user');
-    if (!savedUser) return;
-    try { setUser(JSON.parse(savedUser)); }
-    catch { sessionStorage.removeItem('user'); }
+    const token = sessionStorage.getItem('authToken');
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(ENDPOINTS.me, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('user');
+          return;
+        }
+        const profile = await res.json();
+        setUser(profile);
+        sessionStorage.setItem('user', JSON.stringify(profile));
+      } catch {
+        if (!cancelled) {
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('user');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Cache only the first page of DTC data to keep localStorage small
@@ -190,20 +218,12 @@ export const AppProvider = ({ children }) => {
         resultCount:    dtcRecords.length,
       });
 
-      // Non-DTC page 1 — show immediately
+      // Non-DTC: store page 1 only and expose pagination state.
+      // Extra pages are loaded on demand via loadMoreNonDtcData().
       commitNonDtcData(nonDtcRecords);
+      setNonDtcHasMore(nonDtcFirst?.hasMore ?? !!nonDtcFirst?.continuationToken);
+      setNonDtcContinuationToken(nonDtcFirst?.continuationToken || null);
       setLoading(false);
-
-      // Background: continue paginating Non-DTC only (DTC is user-driven)
-      let nonDtcToken = nonDtcFirst?.continuationToken || null;
-      while (nonDtcToken && !controller.signal.aborted) {
-        const page      = await api.fetchNonDtcAuditData(nonDtcToken, NON_DTC_PAGE_SIZE, { signal: controller.signal });
-        if (controller.signal.aborted) break;
-        const newRows   = Array.isArray(page?.data) ? page.data : [];
-        nonDtcRecords.push(...newRows);
-        nonDtcToken     = page?.continuationToken || null;
-        if (newRows.length > 0) commitNonDtcData([...nonDtcRecords]);
-      }
 
       setDataComplete(true);
       return true;
@@ -265,6 +285,35 @@ export const AppProvider = ({ children }) => {
     }
   }, [dtcHasMore, dtcContinuationToken, dtcLoadingMore]);
 
+  // ── User-triggered "Load More" for Non-DTC ─────────────────────────────────
+  // Mirrors the DTC pattern: appends the next page, dedupes by id, and writes
+  // the merged list back to cache so reloads still see the extended dataset.
+  const loadMoreNonDtcData = useCallback(async () => {
+    if (!nonDtcHasMore || !nonDtcContinuationToken || nonDtcLoadingMore) return;
+
+    setNonDtcLoadingMore(true);
+    try {
+      const result = await api.fetchNonDtcAuditData(nonDtcContinuationToken, NON_DTC_PAGE_SIZE, {});
+      if (!result || result.aborted) return;
+
+      const newRecords = Array.isArray(result.data) ? result.data : [];
+      setNonDtcAuditData(prev => {
+        const existingIds = new Set(prev.map(r => r.id).filter(Boolean));
+        const deduped = newRecords.filter(r => !r.id || !existingIds.has(r.id));
+        const merged = [...prev, ...deduped];
+        writeCache(NON_DTC_CACHE_KEY, merged);
+        return merged;
+      });
+      setNonDtcHasMore(result.hasMore ?? !!result.continuationToken);
+      setNonDtcContinuationToken(result.continuationToken || null);
+      if (result.error) setNonDtcFetchError(result.error);
+    } catch (err) {
+      setNonDtcFetchError(err.message || 'Failed to load more Non-DTC data');
+    } finally {
+      setNonDtcLoadingMore(false);
+    }
+  }, [nonDtcHasMore, nonDtcContinuationToken, nonDtcLoadingMore]);
+
   // ── On mount ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (mountedRef.current) return undefined;
@@ -313,12 +362,22 @@ export const AppProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     if (activeControllerRef.current) activeControllerRef.current.abort();
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
+      // Fire-and-forget — we don't block the UI on the server response
+      fetch(ENDPOINTS.logout, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     setUser(null);
     setAuditData([]);
     setNonDtcAuditData([]);
     setSubscriptionData([]);
     setDtcHasMore(false);
     setDtcContinuationToken(null);
+    setNonDtcHasMore(false);
+    setNonDtcContinuationToken(null);
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
     localStorage.removeItem(DTC_CACHE_KEY);
@@ -342,9 +401,12 @@ export const AppProvider = ({ children }) => {
     dtcLoadingMore,
     dtcPageMeta,
     loadMoreDtcData,
-    // Non-DTC audit data
+    // Non-DTC audit data + user-gated pagination
     nonDtcAuditData,
     nonDtcFetchError,
+    nonDtcHasMore,
+    nonDtcLoadingMore,
+    loadMoreNonDtcData,
     // Flows (pre-fetched on mount — used by DtcFilterDropdown to avoid timing race)
     flowsData,
     // Subscriptions
@@ -362,6 +424,7 @@ export const AppProvider = ({ children }) => {
     auditData, loading, dataComplete, fetchError, fetchAllData,
     dtcHasMore, dtcLoadingMore, dtcPageMeta, loadMoreDtcData,
     nonDtcAuditData, nonDtcFetchError,
+    nonDtcHasMore, nonDtcLoadingMore, loadMoreNonDtcData,
     flowsData,
     subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions,
     fileStatusSummary, fileStatusSummaryError,
