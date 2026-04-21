@@ -185,7 +185,7 @@ const NonDtcAudit = () => {
       </CollapsibleSection>
 
       {/* Filter panel */}
-      <CollapsibleSection isOpen={showFilters} style={{ marginBottom: '8px' }}>
+      <CollapsibleSection isOpen={showFilters} style={{ marginBottom: '8px' }} keepMounted>
         <div style={{ background: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
           <div style={{ marginBottom: '16px' }}>
             {/* Row 1: multi-select dropdowns */}

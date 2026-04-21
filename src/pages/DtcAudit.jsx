@@ -182,7 +182,7 @@ const DtcAudit = () => {
       </CollapsibleSection>
 
       {/* Filter panel */}
-      <CollapsibleSection isOpen={showFilters} style={{ marginBottom: '8px' }}>
+      <CollapsibleSection isOpen={showFilters} style={{ marginBottom: '8px' }} keepMounted>
         <DtcFilterDropdown
           filters={filters}
           auditData={globalAuditData}
