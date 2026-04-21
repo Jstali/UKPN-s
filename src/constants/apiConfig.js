@@ -17,7 +17,7 @@ export const API_CODES = {
   flows:            code('REACT_APP_FLOWS_API_CODE'),
   sourceApp:        code('REACT_APP_SOURCE_APP_API_CODE'),
   destApp:          code('REACT_APP_DEST_APP_API_CODE'),
-  appStatus:        code('REACT_APP_APP_STATUS_API_CODE'),
+  appStatus:        code('REACT_APP_APP_STATUS_API_CODE') || 'REDACTED_APP_STATUS_API_CODE=',
   dropdown:         code('REACT_APP_DROPDOWN_VALUES_API_CODE'),
   dtcDownload:      code('REACT_APP_DTC_DOWNLOAD_API_CODE'),
   dtcPreview:       code('REACT_APP_DTC_PREVIEW_API_CODE') || code('REACT_APP_DTC_DOWNLOAD_API_CODE'),
