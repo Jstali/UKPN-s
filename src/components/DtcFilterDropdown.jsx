@@ -318,7 +318,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscr
         if (destApp && destApp !== 'Unknown') values.destinationApplication.add(destApp);
 
         const eventTypeKey = event.Event_Type;
-        const eventTypeName = EVENT_TYPE_MAP[eventTypeKey] || eventTypeKey;
+        // null in the map means the event type is intentionally hidden
+        const eventTypeName = eventTypeKey in EVENT_TYPE_MAP
+          ? EVENT_TYPE_MAP[eventTypeKey]
+          : eventTypeKey;
         if (event.Status === 'Failed') {
           values.eventType.add('Failed');
         } else if (eventTypeName) {

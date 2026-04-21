@@ -4,10 +4,15 @@ export const DTC_EVENT_TYPE_MAP = {
   '1': 'Received',
   '2': 'Subscribed',
   '3': 'Published',
-  '4': 'Delivered',
+  '4': 'NetApp Delivered',
   '21': 'Invalid Flow',
-  '22': 'File Transferred',
+  '22': 'Delivered',
   '32': 'File Processed',
+  // null = hidden: these event types are suppressed from table rows and filter options
+  'File Store to Blob':   null,
+  'File Stored to Blob':  null,
+  'File Stored To Blob':  null,
+  'file store to blob':   null,
   Failed: 'Failed',
 };
 
@@ -32,11 +37,16 @@ export const STATUS_DISPLAY_MAP = {
   'file transferred': 'Delivered',
 };
 
-// Resolve DTC event type label from an event object
+// Resolve DTC event type label from an event object.
+// Returns null for event types that should be hidden (suppressed from table and filter).
 export const resolveDtcEventType = (event) => {
   const status = String(event?.Status || event?.status || '').trim();
   if (status === 'Failed') return 'Failed';
-  return DTC_EVENT_TYPE_MAP[event?.Event_Type] || event?.Event_Type || 'Unknown';
+  const key = event?.Event_Type;
+  if (key in DTC_EVENT_TYPE_MAP) {
+    return DTC_EVENT_TYPE_MAP[key]; // may be null (hidden)
+  }
+  return key || 'Unknown';
 };
 
 // Resolve Non-DTC event type label, preferring description field

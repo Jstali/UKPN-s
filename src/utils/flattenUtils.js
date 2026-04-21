@@ -66,7 +66,9 @@ const flattenDtcItem = (item) => {
     // Skip "valid subscription" noise events
     if (eventStatus.toLowerCase().trim() === 'valid subscription') return rows;
 
-    const eventType   = resolveDtcEventType(event);
+    const eventType = resolveDtcEventType(event);
+    // Skip event types mapped to null (e.g. "File Store to Blob")
+    if (eventType === null) return rows;
     const application = STATUSES_WITHOUT_DESTINATION.has(eventStatus.toLowerCase().trim())
       ? ''
       : (event.applicationName || event.Destination_Application || '');
