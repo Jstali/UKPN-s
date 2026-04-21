@@ -98,10 +98,15 @@ const DtcAudit = () => {
     [globalAuditData]
   );
 
-  // File ID options for the filter dropdown — derived from already-flattened rows
-  // where fileId is resolved correctly (HFile_ID with fallbacks)
+  // File ID and Version options derived from already-flattened rows so they use
+  // the same robust resolution logic as the table (deriveFlowVersion, HFile_ID, etc.)
   const fileIdOptions = useMemo(
     () => [...new Set(flattenedAuditData.map(r => r.fileId).filter(Boolean))].sort(),
+    [flattenedAuditData]
+  );
+
+  const versionOptions = useMemo(
+    () => [...new Set(flattenedAuditData.map(r => r.version).filter(v => v && v !== '-'))].sort(),
     [flattenedAuditData]
   );
 
@@ -194,6 +199,7 @@ const DtcAudit = () => {
           filters={filters}
           auditData={globalAuditData}
           fileIdOptions={fileIdOptions}
+          versionOptions={versionOptions}
           subscriptionAppNames={subscriptionAppNames}
           onFilterChange={updateFilter}
           onReset={reset}

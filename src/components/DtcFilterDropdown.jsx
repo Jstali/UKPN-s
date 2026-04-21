@@ -215,7 +215,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
+const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versionOptions = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
   const { flowsData } = useApp();
   const [dateError, setDateError] = React.useState('');
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
@@ -283,7 +283,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscr
         destinationApplication: apiDestApps.length > 0 ? apiDestApps.sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
         eventType: [],
         flow: apiFlows.sort(),
-        version: [],
+        version: versionOptions,
         fromRole: apiFromRole,
         fromMPID: apiFromMPID,
         toRole: apiToRole,
@@ -297,7 +297,6 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscr
       destinationApplication: new Set(apiDestApps.length > 0 ? apiDestApps : subscriptionAppNames),
       eventType: new Set(),
       flow: new Set(apiFlows),
-      version: new Set(),
     };
 
     auditData.forEach(item => {
@@ -305,9 +304,8 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscr
 
       if (parsed.flowVersion) {
         const formatted = formatFlowVersion(parsed.flowVersion);
-        const [flow = '', version = ''] = String(formatted || '').split(' ');
+        const [flow = ''] = String(formatted || '').split(' ');
         if (flow) values.flow.add(flow);
-        if (version) values.version.add(version);
       }
 
       const sourceApp = item.events?.[0]?.applicationName;
@@ -338,10 +336,11 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], subscr
       fromMPID: apiFromMPID,
       toRole: apiToRole,
       toMPID: apiToMPID,
-      // fileId comes from pre-flattened data (HFile_ID resolved correctly)
+      // version and fileId come from pre-flattened data (robust field resolution)
+      version: versionOptions,
       fileId: fileIdOptions,
     };
-  }, [auditData, subscriptionAppNames, flowsData, sourceAppsFromApi, destAppsFromApi, dropdownValues, fileIdOptions]);
+  }, [auditData, subscriptionAppNames, flowsData, sourceAppsFromApi, destAppsFromApi, dropdownValues, versionOptions, fileIdOptions]);
 
   // Reordered fields based on priority
   const orderedFields = [
