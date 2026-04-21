@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 import api, { fetchDropdownValues } from '../utils/api';
@@ -11,7 +10,7 @@ import { DTC_EVENT_TYPE_MAP as EVENT_TYPE_MAP } from '../constants/eventTypes';
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [popupStyle, setPopupStyle] = useState({});
+  const [popupStyle, setPopupStyle] = useState({ position: 'fixed', top: 0, left: 0, visibility: 'hidden' });
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
   const searchRef = useRef(null);
@@ -216,7 +215,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply, disableAnimation = false }) => {
+const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
   const { flowsData } = useApp();
   const [dateError, setDateError] = React.useState('');
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
@@ -377,11 +376,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
   };
 
   return (
-    <motion.div
-      initial={disableAnimation ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
-      animate={disableAnimation ? { opacity: 1, height: 'auto' } : { opacity: 1, height: 'auto' }}
-      exit={disableAnimation ? undefined : { opacity: 0, height: 0 }}
-      transition={disableAnimation ? { duration: 0 } : { duration: 0.2 }}
+    <div
       style={{
         background: 'white', borderRadius: '8px',
         border: '1px solid #e5e7eb', overflow: 'hidden',
@@ -556,7 +551,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], subscriptionAppNames = [],
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
