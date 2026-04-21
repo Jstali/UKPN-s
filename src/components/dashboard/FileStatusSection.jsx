@@ -103,7 +103,7 @@ const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails, loadi
       {/* Cards Grid — responsive 3 cols on large, 2 on medium, 1 on small */}
       <div className="metrics-grid">
         {loading ? (
-          Array.from({ length: 5 }).map((_, index) => (
+          Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
               className="metrics-card"

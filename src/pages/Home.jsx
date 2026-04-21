@@ -100,6 +100,13 @@ const Home = () => {
     return buildPerformanceStats(auditData, nonDtcAuditData);
   }, [auditData, nonDtcAuditData]);
 
+  // DTC files that received event type 1 (file inbound / received by the platform)
+  const inboundFiles = React.useMemo(() => {
+    return auditData.filter(item =>
+      item.events?.some(e => String(e.Event_Type) === '1')
+    );
+  }, [auditData]);
+
   const duplicateChecksumFiles = React.useMemo(() => {
     return auditData.filter(item =>
       item.events?.some(e => (e.Status || e.status || '').toLowerCase() === 'duplicate checksum')
@@ -124,12 +131,13 @@ const Home = () => {
     const pendingDelivery    = fileStatusSummary?.pendingFiles ?? Math.max(computedTotal - computedDelivered, 0);
     return {
       filesReceived: computedTotal,
+      totalInboundFiles: inboundFiles.length,
       totalToBeDelivered,
       totalDelivered,
       pendingDelivery,
       duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
     };
-  }, [auditData, nonDtcAuditData, dtcDeliveredFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount, fileStatusSummary]);
+  }, [auditData, nonDtcAuditData, dtcDeliveredFiles, inboundFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount, fileStatusSummary]);
 
   const showDetails = useCallback((type) => {
     // Calculate actual status distribution from combined DTC and Non-DTC audit data
@@ -174,6 +182,16 @@ const Home = () => {
     };
 
     const detailsMap = {
+      inbound: {
+        title: 'Total Inbound Files',
+        items: inboundFiles.map(item => item.Source_FileName).filter(Boolean).slice(0, 100),
+        value: inboundFiles.length,
+        chartData: {
+          labels: ['Inbound', 'Others'],
+          values: [inboundFiles.length, Math.max(auditData.length - inboundFiles.length, 0)],
+          colors: ['#f59e0b', '#e5e7eb'],
+        },
+      },
       files: {
         title: 'Files Received',
         items: [
@@ -241,7 +259,7 @@ const Home = () => {
     };
     const detail = detailsMap[type];
     if (detail) navigate('/analytics', { state: { ...detail, type } });
-  }, [auditData, nonDtcAuditData, fileStats, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, isFailedStatus, navigate]);
+  }, [auditData, nonDtcAuditData, fileStats, inboundFiles, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, isFailedStatus, navigate]);
 
   return (
     <div className="dashboard-root">

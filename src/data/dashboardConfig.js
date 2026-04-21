@@ -21,10 +21,20 @@ export const NAV_CARDS = [
   },
 ];
 
-export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0, duplicateChecksum = 0 }) => {
+export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0 }) => {
   const hasPending = pendingDelivery > 0;
-  
+
   return [
+    {
+      key: 'inbound',
+      label: 'Total Inbound Files',
+      value: totalInboundFiles,
+      iconSrc: 'Subscription.png',
+      color: '#d97706',
+      bgColor: '#fffbeb',
+      borderColor: '#fcd34d',
+      trend: null,
+    },
     {
       key: 'subscriptions',
       label: 'Total Files to be Delivered',
@@ -54,16 +64,6 @@ export const FILE_STATUS_ITEMS = ({ filesReceived = 0, totalToBeDelivered = 0, t
       bgColor: hasPending ? '#fffbeb' : '#f0fdf4',
       borderColor: hasPending ? '#fcd34d' : '#bbf7d0',
       trend: '-3%',
-    },
-    {
-      key: 'duplicate',
-      label: 'Duplicate Checksum',
-      value: duplicateChecksum,
-      iconSrc: 'DTC Audit.png',
-      color: '#8b5cf6',
-      bgColor: '#faf5ff',
-      borderColor: '#d8b4fe',
-      trend: null,
     },
   ];
 };
