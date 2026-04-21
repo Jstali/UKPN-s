@@ -54,15 +54,24 @@ export const formatSeconds = (totalSeconds) => {
 };
 
 /**
- * Format milliseconds to "HH:MM:SS" (rounded to nearest second).
+ * Format total seconds → "HH:MM:SS" (rounded to nearest second, no milliseconds).
+ * Examples: 65 → "00:01:05", 3723 → "01:02:03"
+ */
+export const formatToHHMMSS = (seconds) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '00:00:00';
+  const total = Math.round(seconds);
+  const h = String(Math.floor(total / 3600)).padStart(2, '0');
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const s = String(total % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+};
+
+/**
+ * Format total milliseconds → "HH:MM:SS" (rounded to nearest second).
  */
 export const formatMsToHMS = (totalMs) => {
   if (!Number.isFinite(totalMs) || totalMs < 0) return '00:00:00';
-  const roundedSeconds = Math.round(totalMs / 1000);
-  const hh = String(Math.floor(roundedSeconds / 3600)).padStart(2, '0');
-  const mm = String(Math.floor((roundedSeconds % 3600) / 60)).padStart(2, '0');
-  const ss = String(roundedSeconds % 60).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
+  return formatToHHMMSS(totalMs / 1000);
 };
 
 // Keep backward-compatible alias used elsewhere in the codebase
@@ -275,7 +284,7 @@ export const buildPerformanceStats = (auditData = [], nonDtcAuditData = []) => {
       const actual = stats.files > 0 ? stats.totalDuration / stats.files : 0;
       return {
         name,
-        avgTime: formatMs(actual * 1000),
+        avgTime: formatToHHMMSS(actual),
         actual,
         files: stats.files,
         totalDuration: stats.totalDuration,
