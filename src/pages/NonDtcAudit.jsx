@@ -35,7 +35,7 @@ const COMPACT_COLUMNS = [
   { key: 'application',       label: 'Destination',      width: 94  },
   { key: 'sourcePath',        label: 'Source Path',      width: 130 },
   { key: 'destinationPath',   label: 'Destination Path', width: 130 },
-  { key: 'status',            label: 'Status',           width: 80  },
+  { key: 'eventType',         label: 'Event Type',       width: 110 },
   { key: 'fileName',          label: 'Source File Name', width: 140 },
 ];
 
