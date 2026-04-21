@@ -4,37 +4,29 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Lock, ShieldCheck, User } from 'lucide-react';
 import './Login.css';
 
-const LOGIN_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/auth/login`;
-
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  // Credentials are loaded from the REACT_APP_USERS environment variable.
+  // Set it in .env — never commit .env to version control.
+  // Format: [{"username":"user1","password":"pass1","role":"Role Name"}]
+  const users = JSON.parse(process.env.REACT_APP_USERS || '[]');
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const res  = await fetch(LOGIN_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ username: username.trim(), password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Invalid username or password');
-        return;
-      }
-      sessionStorage.setItem('authToken', data.token);
-      onLogin({ username: data.username, role: data.role });
+    const normalizedUsername = username.trim();
+    const user = users.find(
+      (u) => u.username === normalizedUsername && u.password === password
+    );
+
+    if (user) {
+      onLogin(user);
       navigate('/');
-    } catch {
-      setError('Unable to reach server. Please try again.');
-    } finally {
-      setLoading(false);
+    } else {
+      setError('Invalid username or password');
     }
   };
 
@@ -75,7 +67,7 @@ const Login = ({ onLogin }) => {
             transition={{ duration: 0.35, delay: 0.1 }}
           >
             <div className="ukpn-login-card-top">
-              <img 
+              <img
                 src={`${process.env.PUBLIC_URL}/ukpn-logo.svg`}
                 alt="UKPN"
                 className="ukpn-login-card-logo"
@@ -88,43 +80,39 @@ const Login = ({ onLogin }) => {
 
             <form onSubmit={handleSubmit} className="ukpn-login-form">
               <div className="ukpn-login-field">
-                <label>
-                Username
-                </label>
+                <label>Username</label>
                 <div className="ukpn-login-input-wrap">
                   <User size={18} />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    if (error) setError('');
-                  }}
-                  placeholder="Enter your username"
-                  autoComplete="username"
-                  required
-                />
-              </div>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (error) setError('');
+                    }}
+                    placeholder="Enter your username"
+                    autoComplete="username"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="ukpn-login-field">
-                <label>
-                Password
-                </label>
+                <label>Password</label>
                 <div className="ukpn-login-input-wrap">
                   <Lock size={18} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError('');
-                  }}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError('');
+                    }}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
               </div>
 
               {error && (
@@ -137,9 +125,9 @@ const Login = ({ onLogin }) => {
                 </motion.div>
               )}
 
-              <button type="submit" className="ukpn-login-submit" disabled={loading}>
-                <span>{loading ? 'Signing in…' : 'Sign in to dashboard'}</span>
-                {!loading && <ArrowRight size={18} />}
+              <button type="submit" className="ukpn-login-submit">
+                <span>Sign in to dashboard</span>
+                <ArrowRight size={18} />
               </button>
             </form>
           </motion.div>

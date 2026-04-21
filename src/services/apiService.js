@@ -1,28 +1,10 @@
 // Unified API service.
-// All Azure calls go through the proxy server (server.js) — API codes never reach the browser.
+// Replaces the bloated api.js — all methods now delegate to shared fetch helpers.
 
-import { ENDPOINTS, API_BASE, AUDIT_PAGE_SIZE, DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
+import { ENDPOINTS, API_CODES, API_BASE, AUDIT_PAGE_SIZE, DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
 import { fetchJson, fetchAuditPage } from './fetchUtils';
 
-// ─── Auth token helpers ───────────────────────────────────────────────────────
-
-const getToken = () => sessionStorage.getItem('authToken');
-
-const authHeaders = () => ({
-  'Content-Type': 'application/json',
-  ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-});
-
-const proxyFetch = async (path, init = {}) => {
-  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders(), ...init });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error || 'Request failed');
-  }
-  return res.json();
-};
-
-// ─── Simple reference-data endpoints ─────────────────────────────────────────
+// ─── Simple reference-data endpoints ────────────────────────────────────────
 
 export const fetchDropdownValues = () =>
   fetchJson(
@@ -71,6 +53,7 @@ export const fetchDtcSubscriptions = () =>
     (d) => (Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []),
   ).then(r => ({ data: r.data ?? [], isLocal: false, error: r.error }));
 
+// File status summary — totalFiles, successFiles, pendingFiles
 export const fetchFileStatusSummary = () =>
   fetchJson(
     ENDPOINTS.fileStatusSummary,
@@ -82,6 +65,7 @@ export const fetchFileStatusSummary = () =>
     }),
   ).then(r => ({ data: r.data ?? { totalFiles: null, successFiles: null, pendingFiles: null }, error: r.error }));
 
+// POST — sends styled HTML email with Excel attachment for DTC or SAP audit data
 export const sendAuditExportEmail = (payload) => {
   console.log('📧 Audit Email Export — POST to:', ENDPOINTS.auditEmailExport, '| payload:', payload);
   return fetchJson(
@@ -92,11 +76,12 @@ export const sendAuditExportEmail = (payload) => {
   ).then(r => ({ data: r.data, error: r.error }));
 };
 
-// ─── Paginated audit endpoints ────────────────────────────────────────────────
+// ─── Paginated audit endpoints ───────────────────────────────────────────────
 
 export const fetchDtcAuditData = (continuationToken = null, pageSize = DTC_PAGE_SIZE, options = {}) =>
   fetchAuditPage(ENDPOINTS.dtcAudit, 'DTC Audit', continuationToken, pageSize, options);
 
+// Separate count API — use this instead of totalCount from the data endpoint
 export const fetchDtcAuditCount = () =>
   fetchJson(ENDPOINTS.dtcAuditCount, 'DTC Audit Count', (d) => d?.count ?? d?.totalCount ?? null)
     .then(r => r.data);
@@ -104,19 +89,16 @@ export const fetchDtcAuditCount = () =>
 export const fetchNonDtcAuditData = (continuationToken = null, pageSize = NON_DTC_PAGE_SIZE, options = {}) =>
   fetchAuditPage(ENDPOINTS.nonDtcAudit, 'Non-DTC Audit', continuationToken, pageSize, options);
 
-// ─── File download / preview (proxied — code stays server-side) ───────────────
+// ─── File download / preview ─────────────────────────────────────────────────
 
-const fetchFileResponse = async (proxyEndpoint, path, isNonDtc) => {
+const fetchFileResponse = async (apiEndpoint, path, codeKey) => {
   const cleanPath = String(path || '').trim();
   if (!cleanPath) throw new Error('Missing file path');
 
-  const type = isNonDtc ? 'nonDtc' : 'dtc';
-  const url  = `${proxyEndpoint}?path=${encodeURIComponent(cleanPath)}&type=${type}`;
+  const code = API_CODES[codeKey] || API_CODES.dtc;
+  const url  = `${apiEndpoint}?path=${encodeURIComponent(cleanPath)}${code ? `&code=${encodeURIComponent(code)}` : ''}`;
 
-  const token   = getToken();
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-  const res = await fetch(url, { method: 'GET', headers });
+  const res = await fetch(url, { method: 'GET' });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(text || `Request failed with status ${res.status}`);
@@ -130,12 +112,16 @@ const fetchFileResponse = async (proxyEndpoint, path, isNonDtc) => {
 };
 
 export const downloadFileByPath = async (path, isNonDtc = false) => {
-  const { res, filename } = await fetchFileResponse(ENDPOINTS.downloadFile, path, isNonDtc);
+  const { res, filename } = await fetchFileResponse(
+    ENDPOINTS.downloadFile, path, isNonDtc ? 'nonDtc' : 'dtcDownload'
+  );
   return { blob: await res.blob(), filename };
 };
 
 export const viewBlobFileByPath = async (path, isNonDtc = false) => {
-  const { res, filename } = await fetchFileResponse(ENDPOINTS.viewFile, path, isNonDtc);
+  const { res, filename } = await fetchFileResponse(
+    ENDPOINTS.viewFile, path, isNonDtc ? 'nonDtc' : 'dtcPreview'
+  );
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     const json    = await res.json();
@@ -145,31 +131,8 @@ export const viewBlobFileByPath = async (path, isNonDtc = false) => {
   return { content: await res.text(), filename };
 };
 
-// ─── Auth / admin proxy methods ───────────────────────────────────────────────
-
-const proxy = {
-  login: (username, password) =>
-    proxyFetch('/api/auth/login', {
-      method: 'POST',
-      body:   JSON.stringify({ username, password }),
-    }).then(data => { sessionStorage.setItem('authToken', data.token); return data; }),
-
-  logout: async () => {
-    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: authHeaders() }).catch(() => {});
-    sessionStorage.removeItem('authToken');
-  },
-
-  validateSession: () => proxyFetch('/api/auth/me'),
-  getInfo:         () => proxyFetch('/api/dashboard/info'),
-  updateInfo: (info) => proxyFetch('/api/dashboard/info', { method: 'PUT', body: JSON.stringify({ info }) }),
-  getPerformance:  () => proxyFetch('/api/performance'),
-  getAppStatus:    () => proxyFetch('/api/status/apps'),
-  clearCache:      () => proxyFetch('/api/cache/clear', { method: 'POST' }),
-  health:          () => proxyFetch('/health'),
-};
-
+// Default export keeps the same surface area as the original `api` object
 const apiService = {
-  ...proxy,
   fetchDtcAuditData,
   fetchNonDtcAuditData,
   fetchDtcSubscriptions,

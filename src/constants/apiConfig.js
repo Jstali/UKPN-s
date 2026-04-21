@@ -1,32 +1,45 @@
-// Centralised API configuration.
-// All endpoints point to the local proxy server (server.js).
-// The proxy server holds all Azure API codes — they never reach the browser.
+// Centralised API configuration — all env vars and endpoint URLs in one place.
+// Import from here; never read process.env inline in service files.
 
-const PROXY = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+const HOST = process.env.REACT_APP_API_HOST || 'https://fadev-im-fileconnect-frontend-uks03.azurewebsites.net';
 
-export const API_BASE = PROXY;
+const code = (envKey) => process.env[envKey] || '';
 
-// All Azure communication goes through the proxy — one place to update for deployments.
-export const ENDPOINTS = {
-  dtcAudit:          `${PROXY}/api/proxy/dtcAudit`,
-  dtcAuditCount:     `${PROXY}/api/proxy/dtcAuditCount`,
-  nonDtcAudit:       `${PROXY}/api/proxy/sapAudit`,
-  subscription:      `${PROXY}/api/proxy/subscriptions`,
-  flows:             `${PROXY}/api/proxy/flows`,
-  sourceApps:        `${PROXY}/api/proxy/sourceApps`,
-  destApps:          `${PROXY}/api/proxy/destApps`,
-  appStatus:         `${PROXY}/api/proxy/appStatus`,
-  dropdownValues:    `${PROXY}/api/proxy/dropdown`,
-  fileStatusSummary: `${PROXY}/api/proxy/fileStatusSummary`,
-  auditEmailExport:  `${PROXY}/api/proxy/auditEmailExport`,
-  downloadFile:      `${PROXY}/api/proxy/downloadFile`,
-  viewFile:          `${PROXY}/api/proxy/viewFile`,
+export const API_CODES = {
+  dtc:               code('REACT_APP_DTC_API_CODE'),
+  nonDtc:            code('REACT_APP_SAP_API_CODE'),
+  subscription:      code('REACT_APP_SUBSCRIPTION_CODE'),
+  flows:             code('REACT_APP_FLOWS_API_CODE'),
+  sourceApp:         code('REACT_APP_SOURCE_APP_API_CODE'),
+  destApp:           code('REACT_APP_DEST_APP_API_CODE'),
+  appStatus:         code('REACT_APP_APP_STATUS_API_CODE'),
+  dropdown:          code('REACT_APP_DROPDOWN_VALUES_API_CODE'),
+  fileStatusSummary: code('REACT_APP_FILE_STATUS_SUMMARY_CODE'),
+  auditEmailExport:  code('REACT_APP_AUDIT_EMAIL_EXPORT_CODE'),
+  dtcDownload:       code('REACT_APP_DTC_DOWNLOAD_API_CODE') || code('REACT_APP_DTC_API_CODE'),
+  dtcPreview:        code('REACT_APP_DTC_PREVIEW_API_CODE')  || code('REACT_APP_DTC_DOWNLOAD_API_CODE') || code('REACT_APP_DTC_API_CODE'),
 };
 
-// Timeouts
-export const AUDIT_TIMEOUT_MS = 60_000;
+const endpoint = (path, codeKey) => `${HOST}${path}?code=${API_CODES[codeKey]}`;
 
-// Page sizes
+export const ENDPOINTS = {
+  dtcAudit:          endpoint('/api/fileconnectDtcAuditData',           'dtc'),
+  dtcAuditCount:     endpoint('/api/fileconnectDtcAuditDocumentCount',  'dtc'),
+  nonDtcAudit:       endpoint('/api/fileconnectNonDtcAuditData',        'nonDtc'),
+  subscription:      endpoint('/api/dtcSubscriptionAPI',                'subscription'),
+  flows:             endpoint('/api/getFlowsAPI',                       'flows'),
+  sourceApps:        endpoint('/api/getSourceAppNamesAPI',              'sourceApp'),
+  destApps:          endpoint('/api/getDestinationApplicationsListAPI', 'destApp'),
+  appStatus:         endpoint('/api/fileconnectApplicationStatus',      'appStatus'),
+  dropdownValues:    endpoint('/api/getDropdownValuesAPI',              'dropdown'),
+  fileStatusSummary: endpoint('/api/fileconnectFileStatusSummary',      'fileStatusSummary'),
+  auditEmailExport:  endpoint('/api/audit-export/send-email',           'auditEmailExport'),
+  downloadFile:      `${HOST}/api/fileConnectDownloadFileByID`,
+  viewFile:          `${HOST}/api/fileConnectViewBlobFile`,
+};
+
+export const API_BASE        = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+export const AUDIT_TIMEOUT_MS = 60_000;
 export const DTC_PAGE_SIZE     = 100;
 export const NON_DTC_PAGE_SIZE = 200;
 export const AUDIT_PAGE_SIZE   = 200;
