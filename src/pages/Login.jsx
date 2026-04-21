@@ -10,17 +10,10 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // In production, replace with API-based authentication
-  // User credentials should be stored in environment variables (REACT_APP_USERS)
-  // Format: [{"username":"user1","password":"pass123","role":"Role Name"}]
-  const defaultUsers = [
-    { username: 'business', password: 'business123', role: 'Business' },
-    { username: 'monitoring', password: 'monitoring123', role: 'Monitoring Team' },
-    { username: 'support', password: 'support123', role: 'Core Support' },
-    { username: 'admin', password: 'admin123', role: 'Admin' },
-    { username: 'testuser', password: 'testuser', role: 'Testing Team' }
-  ];
-  const users = JSON.parse(process.env.REACT_APP_USERS || JSON.stringify(defaultUsers));
+  // Credentials are loaded exclusively from the REACT_APP_USERS environment variable.
+  // Set it in .env (never commit .env to version control).
+  // Format: [{"username":"user1","password":"pass1","role":"Role Name"}]
+  const users = JSON.parse(process.env.REACT_APP_USERS || '[]');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -35,12 +28,6 @@ const Login = ({ onLogin }) => {
     } else {
       setError('Invalid username or password');
     }
-  };
-
-  const fillCredentials = (user) => {
-    setUsername(user.username);
-    setPassword(user.password);
-    setError('');
   };
 
   return (
