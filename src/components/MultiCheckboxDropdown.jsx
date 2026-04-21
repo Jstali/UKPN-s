@@ -52,9 +52,15 @@ const MultiCheckboxDropdown = ({
   }, [isOpen]);
 
   const toggleOption = (option) => {
-    const nextSelected = selectedValues.includes(option)
-      ? selectedValues.filter(v => v !== option)
-      : [...selectedValues, option];
+    let nextSelected;
+    if (value === 'All' || selectedValues.length === 0) {
+      // All are visually checked — deselect only this one, keep all others
+      nextSelected = options.filter(o => o !== option);
+    } else {
+      nextSelected = selectedValues.includes(option)
+        ? selectedValues.filter(v => v !== option)
+        : [...selectedValues, option];
+    }
     onChange(nextSelected.length === 0 ? 'All' : nextSelected.join(','));
   };
 

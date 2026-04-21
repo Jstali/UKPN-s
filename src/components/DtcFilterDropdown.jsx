@@ -81,7 +81,10 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 
   const handleToggle = (option) => {
     let newSelected;
-    if (selectedValues.includes(option)) {
+    if (value === 'All' || selectedValues.length === 0) {
+      // All are visually checked — deselect only this one, keep all others
+      newSelected = options.filter(o => o !== option);
+    } else if (selectedValues.includes(option)) {
       newSelected = selectedValues.filter(v => v !== option);
     } else {
       newSelected = [...selectedValues, option];
