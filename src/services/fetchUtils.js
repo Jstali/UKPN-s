@@ -14,6 +14,25 @@ const authHeaders = () => {
   }
 };
 
+// Called whenever a proxy call returns 401. Wipes the stale token and emits
+// a single window event so AppContext can log out cleanly and the user is
+// sent back to the login screen instead of staring at a red error banner.
+// Debounced via a module flag so parallel 401s only produce one dispatch.
+let _authExpiredNotified = false;
+const notifyAuthExpired = () => {
+  if (_authExpiredNotified) return;
+  _authExpiredNotified = true;
+  // Reset on the next tick so future expirations (e.g. after re-login) still fire.
+  setTimeout(() => { _authExpiredNotified = false; }, 1000);
+  try {
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+  } catch { /* ignore */ }
+  try {
+    window.dispatchEvent(new Event('auth:expired'));
+  } catch { /* non-browser environments */ }
+};
+
 // Appends a query parameter to a URL, picking ? or & based on existing query string.
 const appendParam = (url, key, value) => {
   const sep = url.includes('?') ? '&' : '?';
@@ -59,6 +78,7 @@ export const fetchJson = async (url, label, transform = (d) => d, options = {}) 
       headers: { ...authHeaders(), ...(options.headers || {}) },
     });
     if (!res.ok) {
+      if (res.status === 401 && url.includes('/api/proxy/')) notifyAuthExpired();
       const text = await res.text().catch(() => '');
       console.error(`❌ ${label} API Error ${res.status}:`, text.substring(0, 200));
       throw new Error(`${label} request failed: ${res.status} ${res.statusText}`);
@@ -99,6 +119,7 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
       console.error(`❌ ${label} API Error ${res.status}:`, text.substring(0, 200));
 
       if (res.status === 401) {
+        if (url.includes('/api/proxy/')) notifyAuthExpired();
         throw new Error(`Authentication failed for ${label}. Sign in again.`);
       }
       throw new Error(`${label} request failed: ${res.status}`);

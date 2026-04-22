@@ -384,6 +384,15 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem(NON_DTC_CACHE_KEY);
   }, []);
 
+  // fetchUtils emits 'auth:expired' when any proxy call returns 401
+  // (stale/expired JWT). Clear local state so the app routes back to login
+  // instead of hammering the API with a dead token.
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener('auth:expired', handler);
+    return () => window.removeEventListener('auth:expired', handler);
+  }, [logout]);
+
   const contextValue = useMemo(() => ({
     user,
     login,

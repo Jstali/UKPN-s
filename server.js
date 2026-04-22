@@ -6,7 +6,7 @@ try { require('dotenv').config(); } catch { /* dotenv optional */ }
 
 const express = require('express');
 const cors    = require('cors');
-const crypto  = require('crypto');
+const jwt     = require('jsonwebtoken');
 const fetch   = require('node-fetch');
 const Redis   = require('ioredis');
 
@@ -72,23 +72,62 @@ const CODES = {
 // Build a full Azure URL with its function code
 const az = (path, codeKey) => `${API_HOST}${path}?code=${CODES[codeKey]}`;
 
-// ─── Session store (in-memory) ────────────────────────────────────────────────
-// Sessions are cleared on server restart — users must log in again.
-const sessions = new Map(); // token → { username, role }
+// ─── Env validation ──────────────────────────────────────────────────────────
+// Fail fast when we can't authenticate users at all. Warn (don't fail) when
+// individual Azure function codes are missing — the app still runs, but the
+// operator can see exactly which endpoints will return "Azure returned 401".
+const REQUIRED_CODES = [
+  'dtc','nonDtc','subscription','flows','sourceApp','destApp',
+  'appStatus','dropdown','fileStatusSummary','auditEmailExport',
+];
+const missingCodes = REQUIRED_CODES.filter(k => !CODES[k]);
+
+const missingCore = [];
+if (!process.env.JWT_SECRET) missingCore.push('JWT_SECRET');
+if (!process.env.USERS)      missingCore.push('USERS');
+if (!process.env.API_HOST)   missingCore.push('API_HOST');
+
+if (missingCore.length) {
+  console.error(`❌ Missing critical env vars: ${missingCore.join(', ')} — proxy cannot start`);
+  console.error('   Generate a JWT secret:  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
+  process.exit(1);
+}
+if (missingCodes.length) {
+  console.warn(`⚠️  Missing Azure function codes: ${missingCodes.join(', ')}`);
+  console.warn('   Requests to those endpoints will return "Azure returned 401" until set.');
+}
+
+// ─── Auth (stateless JWT) ────────────────────────────────────────────────────
+// No session store — tokens carry username+role as signed claims. Survives
+// any proxy restart. True server-side logout would need a denylist (omitted;
+// client-side logout deletes the browser token).
+const JWT_SECRET   = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
 function getUsers() {
   try { return JSON.parse(process.env.USERS || '[]'); } catch { return []; }
 }
 
-// ─── Auth middleware ──────────────────────────────────────────────────────────
+function signToken(user) {
+  return jwt.sign(
+    { username: user.username, role: user.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
 function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token || !sessions.has(token)) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = { username: payload.username, role: payload.role };
+    next();
+  } catch (e) {
+    // TokenExpiredError | JsonWebTokenError | NotBeforeError
+    return res.status(401).json({ error: 'Unauthorized', reason: e.name });
   }
-  req.user = sessions.get(token);
-  next();
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -118,22 +157,14 @@ app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body || {};
   const user = getUsers().find(u => u.username === username && u.password === password);
   if (!user) return res.status(401).json({ error: 'Invalid username or password' });
-  const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, { username: user.username, role: user.role });
+  const token = signToken(user);
   console.log(`[auth] login: ${user.username} (${user.role})`);
   return res.json({ token, username: user.username, role: user.role });
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  const header = req.headers.authorization || '';
-  const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (token) {
-    const user = sessions.get(token);
-    sessions.delete(token);
-    if (user) console.log(`[auth] logout: ${user.username}`);
-  }
-  return res.json({ ok: true });
-});
+// Stateless JWT: server-side logout is a no-op. The client deletes the token
+// in AppContext.logout(). Kept as a POST so existing call sites don't break.
+app.post('/api/auth/logout', (_req, res) => res.json({ ok: true }));
 
 app.get('/api/auth/me', requireAuth, (req, res) => res.json(req.user));
 
@@ -313,11 +344,17 @@ app.get('/api/cache/status', requireAuth, (req, res) => {
 });
 
 // ─── Health check (no auth — used by load balancers / Azure health probes) ───
-app.get('/health', (req, res) => res.json({ status: 'ok', redis: redisAvailable }));
+// `missingCodes` is empty when fully configured; otherwise it lists the codes
+// whose Azure calls will return "Azure returned 401 Unauthorized".
+app.get('/health', (_req, res) => res.json({
+  status: 'ok',
+  redis: redisAvailable,
+  missingCodes,
+}));
 
 app.listen(PORT, () => {
   console.log(`\n🚀 Proxy server running on http://localhost:${PORT}`);
   console.log(`   Redis : ${REDIS_URL}`);
   console.log(`   Host  : ${API_HOST}`);
-  console.log(`   Auth  : session tokens stored in memory\n`);
+  console.log(`   Auth  : stateless JWT (expires in ${JWT_EXPIRES_IN})\n`);
 });
