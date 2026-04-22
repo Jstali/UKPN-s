@@ -1,0 +1,21 @@
+{
+  "name": "ukpn-audit-api",
+  "version": "1.0.0",
+  "description": "SWA Managed Function wrapping the Express proxy (api/proxy/app.js).",
+  "main": "proxy/index.js",
+  "private": true,
+  "engines": {
+    "node": ">=18 <21"
+  },
+  "scripts": {
+    "start": "echo 'This folder is deployed to SWA as a Managed Function; nothing to run directly.'"
+  },
+  "dependencies": {
+    "azure-function-express": "^2.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0"
+  }
+}

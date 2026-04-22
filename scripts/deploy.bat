@@ -12,6 +12,13 @@
 ::   - SWA CLI    (`npm install -g @azure/static-web-apps-cli`)
 ::   - PowerShell (ships with Windows)
 ::
+:: This script ships:
+::   - React build (from ./build)
+::   - The Express proxy as a SWA Managed Function (from ./api)
+:: …via a single `swa deploy` command. No separate App Service, no backend
+:: linking. IT still needs to set 13 app settings on the SWA for the
+:: Function to authenticate users and proxy to the Azure Function backend.
+::
 :: First-time setup:
 ::   1. Copy scripts\deploy.config.bat.example  →  scripts\deploy.config.bat
 ::   2. Edit deploy.config.bat with your actual Azure resource names
@@ -82,38 +89,36 @@ if "!SWA_TOKEN!"=="" (
   exit /b 1
 )
 
+:: Install api/ dependencies so they're in the ./api/node_modules folder
+:: SWA CLI zips the api/ folder as-is; it needs node_modules present.
 echo.
-echo === swa deploy (this uploads build\ to %SWA_NAME%) ===
-call swa deploy .\build --deployment-token "!SWA_TOKEN!" --env production || exit /b 1
+echo === npm install in api/ (for the Managed Function) ===
+pushd api
+call npm install --no-audit --no-fund || (popd & exit /b 1)
+popd
 
-:: ── Deploy proxy App Service + link backend ───────────────────────────────
 echo.
-echo === Deploying server.js to App Service + linking as SWA backend ===
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0deploy-proxy.ps1" ^
-  -ResourceGroup %RESOURCE_GROUP% ^
-  -SwaName       %SWA_NAME%       ^
-  -ProxyName     %PROXY_NAME%     ^
-  -PlanName      %PLAN_NAME%      ^
-  -Location      %LOCATION%
-if errorlevel 1 (
-  echo [ERROR] deploy-proxy.ps1 failed.
-  exit /b 1
-)
+echo === swa deploy — ships build/ (React) + api/ (Managed Function) ===
+call swa deploy .\build --api-location .\api --deployment-token "!SWA_TOKEN!" --env production || exit /b 1
 
 :: ── Done ──────────────────────────────────────────────────────────────────
 echo.
 echo ═══════════════════════════════════════════════════════════════════
 echo Deploy complete.
-echo   SWA       https://!SWA_NAME!.azurestaticapps.net
-echo             (exact host: run  az staticwebapp show --name %SWA_NAME% --resource-group %RESOURCE_GROUP% --query defaultHostname -o tsv)
-echo   Proxy     https://%PROXY_NAME%.azurewebsites.net
+echo   SWA   (React + api)   https://!SWA_NAME!.azurestaticapps.net
+echo   Exact host:  az staticwebapp show --name %SWA_NAME% --resource-group %RESOURCE_GROUP% --query defaultHostname -o tsv
 echo.
-echo Smoke test:
-echo   1. Open the SWA URL in your browser, log in.
-echo   2. DevTools Network tab: /api/auth/login should be a relative URL
-echo      (NOT http://localhost:4000).
-echo   3. If login still fails, tail proxy logs:
-echo        az webapp log tail --name %PROXY_NAME% --resource-group %RESOURCE_GROUP%
+echo Remaining IT step (requires Contributor on the resource group):
+echo   Set these app settings on the SWA so the Managed Function can
+echo   authenticate users and call the Azure Function backend:
+echo     JWT_SECRET, USERS, API_HOST,
+echo     DTC_API_CODE, SAP_API_CODE, SUBSCRIPTION_CODE, FLOWS_API_CODE,
+echo     SOURCE_APP_API_CODE, DEST_APP_API_CODE, APP_STATUS_API_CODE,
+echo     DROPDOWN_VALUES_API_CODE, FILE_STATUS_SUMMARY_CODE,
+echo     AUDIT_EMAIL_EXPORT_CODE
+echo   Command shape:
+echo     az staticwebapp appsettings set --name %SWA_NAME% --resource-group %RESOURCE_GROUP% ^
+echo       --setting-names KEY1=value1 KEY2=value2 ...
 echo ═══════════════════════════════════════════════════════════════════
 
 endlocal
