@@ -1,6 +1,9 @@
 // Express proxy + auth server for UKPN Audit App
 // All Azure API codes and user credentials are read from server-side env vars only —
 // they are never sent to the browser.
+// Loads variables from .env so `node server.js` works without a launcher.
+try { require('dotenv').config(); } catch { /* dotenv optional */ }
+
 const express = require('express');
 const cors    = require('cors');
 const crypto  = require('crypto');
