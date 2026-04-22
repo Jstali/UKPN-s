@@ -11,7 +11,9 @@ const fetch   = require('node-fetch');
 const Redis   = require('ioredis');
 
 const app  = express();
-const PORT = process.env.PROXY_PORT || 4000;
+// Azure App Service and most PaaS runtimes inject PORT at runtime.
+// PROXY_PORT is the local-dev knob; 4000 is the last-resort default.
+const PORT = process.env.PORT || process.env.PROXY_PORT || 4000;
 
 // ─── Redis setup ──────────────────────────────────────────────────────────────
 const REDIS_URL        = process.env.REDIS_URL || 'redis://localhost:6379';
