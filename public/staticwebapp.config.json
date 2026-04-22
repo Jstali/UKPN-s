@@ -11,15 +11,21 @@
     }
   },
   "routes": [
-    { "route": "/login",   "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/.auth/*", "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/*",       "allowedRoles": ["authenticated"] }
+    { "route": "/login",       "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/.auth/*",     "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/static/*",    "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/manifest.json","allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/favicon.ico", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*.svg",       "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*.png",       "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*.avif",      "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*",           "allowedRoles": ["authenticated"] }
   ],
   "responseOverrides": {
     "401": { "redirect": "/login", "statusCode": 302 }
   },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/.auth/*", "/static/*", "*.{ico,svg,png,jpg,jpeg,avif,webp,css,js,woff,woff2}"]
+    "exclude": ["/api/*", "/.auth/*", "/static/*"]
   }
 }
