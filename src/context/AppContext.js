@@ -13,8 +13,11 @@ import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE, ENDPOINTS } from '../constants/apiCon
 
 const AppContext = createContext(null);
 
-// DTC auto-refresh: only page 1 — avoids re-fetching large datasets every minute
-const AUTO_REFRESH_INTERVAL_MS = 60_000;
+// DTC auto-refresh: only page 1 — avoids re-fetching large datasets every minute.
+// 5 minutes is a compromise between "see new files promptly" and "don't churn
+// the browser tab every minute". On 10k+ record backends a 60s interval
+// combined with flattening + filter-options recompute was enough to OOM Edge.
+const AUTO_REFRESH_INTERVAL_MS = 300_000;
 
 const DTC_CACHE_KEY     = 'fc_dtc_cache';
 const NON_DTC_CACHE_KEY = 'fc_nondtc_cache';
