@@ -91,13 +91,38 @@ export const AppProvider = ({ children }) => {
   // Tracks current auditData length so auto-refresh can decide whether to preserve loaded pages
   const auditDataRef          = useRef([]);
 
-  // Rehydrate session on mount: if a token exists, verify it with the server.
-  // On success, restore the user; on failure, clear the stale token.
+  // Rehydrate session on mount. Two paths:
+  //   1. SWA AAD: /.auth/me returns a `clientPrincipal` on deployed SWA.
+  //   2. JWT fallback: if no SWA principal, verify our own token via /api/auth/me.
+  // Local dev never hits (1) because /.auth/* 404s; it skips silently and
+  // falls through to the JWT path.
   useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-    if (!token) return;
     let cancelled = false;
     (async () => {
+      // --- Path 1: Azure Static Web Apps AAD ---------------------------------
+      try {
+        const r = await fetch('/.auth/me', { headers: { Accept: 'application/json' } });
+        if (!cancelled && r.ok) {
+          const body = await r.json().catch(() => null);
+          const principal = body?.clientPrincipal;
+          if (principal && principal.userDetails) {
+            const profile = {
+              username: principal.userDetails,
+              // Role mapping from AAD claims is a follow-up; default to Admin.
+              role: 'Admin',
+              authMethod: 'aad',
+            };
+            setUser(profile);
+            sessionStorage.setItem('user', JSON.stringify(profile));
+            sessionStorage.setItem('authMethod', 'aad');
+            return;
+          }
+        }
+      } catch { /* /.auth/me not reachable (local dev) — fall through */ }
+
+      // --- Path 2: JWT issued by our Express proxy --------------------------
+      const token = sessionStorage.getItem('authToken');
+      if (!token) return;
       try {
         const res = await fetch(ENDPOINTS.me, {
           headers: { Authorization: `Bearer ${token}` },
@@ -106,15 +131,18 @@ export const AppProvider = ({ children }) => {
         if (!res.ok) {
           sessionStorage.removeItem('authToken');
           sessionStorage.removeItem('user');
+          sessionStorage.removeItem('authMethod');
           return;
         }
         const profile = await res.json();
-        setUser(profile);
+        setUser({ ...profile, authMethod: 'jwt' });
         sessionStorage.setItem('user', JSON.stringify(profile));
+        sessionStorage.setItem('authMethod', 'jwt');
       } catch {
         if (!cancelled) {
           sessionStorage.removeItem('authToken');
           sessionStorage.removeItem('user');
+          sessionStorage.removeItem('authMethod');
         }
       }
     })();
@@ -363,20 +391,33 @@ export const AppProvider = ({ children }) => {
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const login = useCallback((userData) => {
-    setUser(userData);
-    sessionStorage.setItem('user', JSON.stringify(userData));
+    // Called by Login.jsx after a successful JWT login. AAD sign-ins take
+    // the full /.auth/login/aad round-trip and land back via rehydrate, so
+    // they don't pass through here.
+    const profile = { ...userData, authMethod: userData.authMethod || 'jwt' };
+    setUser(profile);
+    sessionStorage.setItem('user', JSON.stringify(profile));
+    sessionStorage.setItem('authMethod', profile.authMethod);
   }, []);
 
   const logout = useCallback(() => {
+    const authMethod = sessionStorage.getItem('authMethod');
+
     if (activeControllerRef.current) activeControllerRef.current.abort();
-    const token = sessionStorage.getItem('authToken');
-    if (token) {
-      // Fire-and-forget — we don't block the UI on the server response
-      fetch(ENDPOINTS.logout, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
+
+    // JWT sessions: tell the proxy to forget the token (currently a no-op
+    // server-side but keeps the API shape honest).
+    if (authMethod === 'jwt') {
+      const token = sessionStorage.getItem('authToken');
+      if (token) {
+        fetch(ENDPOINTS.logout, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
     }
+
+    // Common cleanup — both paths
     setUser(null);
     setAuditData([]);
     setNonDtcAuditData([]);
@@ -387,10 +428,16 @@ export const AppProvider = ({ children }) => {
     setNonDtcContinuationToken(null);
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('authMethod');
     localStorage.removeItem(DTC_CACHE_KEY);
     localStorage.removeItem(NON_DTC_CACHE_KEY);
-    // Let the mount effect fire again on next login.
     mountedRef.current = false;
+
+    // AAD sessions: bounce to SWA logout endpoint. This drops the session
+    // cookie on the SWA side and lands the user back on /login.
+    if (authMethod === 'aad') {
+      window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
+    }
   }, []);
 
   // fetchUtils emits 'auth:expired' when any proxy call returns 401

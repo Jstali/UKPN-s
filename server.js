@@ -117,12 +117,35 @@ function signToken(user) {
 }
 
 function requireAuth(req, res, next) {
+  // ── Path 1: SWA linked-backend principal ───────────────────────────────
+  // When this proxy is deployed behind an Azure Static Web App with
+  // "Bring your own backend", SWA authenticates the user via AAD and
+  // forwards a base64-encoded JSON principal in `x-ms-client-principal`.
+  // Trust that header instead of requiring our own JWT.
+  const principalHeader = req.headers['x-ms-client-principal'];
+  if (principalHeader) {
+    try {
+      const decoded   = Buffer.from(principalHeader, 'base64').toString('utf-8');
+      const principal = JSON.parse(decoded);
+      if (principal && principal.userDetails) {
+        req.user = {
+          username:   principal.userDetails,
+          // Role mapping from principal.userRoles / claims is a follow-up.
+          role:       'Admin',
+          authMethod: 'aad',
+        };
+        return next();
+      }
+    } catch { /* malformed header — fall through to JWT path */ }
+  }
+
+  // ── Path 2: Our JWT (local dev + credentials-flow prod) ────────────────
   const header = req.headers.authorization || '';
   const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = { username: payload.username, role: payload.role };
+    req.user = { username: payload.username, role: payload.role, authMethod: 'jwt' };
     next();
   } catch (e) {
     // TokenExpiredError | JsonWebTokenError | NotBeforeError

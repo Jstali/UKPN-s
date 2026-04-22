@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Lock, ShieldCheck, User } from 'lucide-react';
 import { ENDPOINTS } from '../constants/apiConfig';
@@ -11,6 +11,16 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // SWA AAD sign-in. Works only when served by Azure Static Web Apps; in
+  // local dev this hits /.auth/login/aad which returns 404 (expected —
+  // users fall back to the credentials form below).
+  const handleAadSignIn = () => {
+    const target = location.state?.from?.pathname || '/';
+    const url = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(target)}`;
+    window.location.href = url;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,8 +93,22 @@ const Login = ({ onLogin }) => {
             </div>
             <h2 className="ukpn-login-card-title">Welcome back</h2>
             <p className="ukpn-login-card-text">
-              Sign in with your assigned credentials to continue.
+              Sign in with your Microsoft account or assigned credentials.
             </p>
+
+            <button
+              type="button"
+              onClick={handleAadSignIn}
+              className="ukpn-login-submit ukpn-login-aad"
+              disabled={submitting}
+            >
+              <ShieldCheck size={18} />
+              <span>Sign in with Microsoft</span>
+            </button>
+
+            <div className="ukpn-login-divider">
+              <span>or sign in with credentials</span>
+            </div>
 
             <form onSubmit={handleSubmit} className="ukpn-login-form">
               <div className="ukpn-login-field">
