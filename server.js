@@ -170,6 +170,12 @@ app.get('/api/auth/me', requireAuth, (req, res) => res.json(req.user));
 
 // ─── Proxy helpers ────────────────────────────────────────────────────────────
 
+// Don't surface upstream 401 as our 401 — that would signal to the browser
+// "your JWT is bad, log the user out" when really it's a backend auth issue
+// (missing/wrong *_API_CODE). 502 Bad Gateway is the correct status for
+// upstream failures: we were fine, the service behind us was not.
+const mapUpstreamStatus = (status) => (status === 401 ? 502 : status);
+
 // Paginated audit endpoint with Redis cache
 async function proxyWithCache(req, res, azureUrl, cacheKeyPrefix, ttl) {
   const pageSize = req.query.pageSize || 100;
@@ -192,7 +198,10 @@ async function proxyWithCache(req, res, azureUrl, cacheKeyPrefix, ttl) {
     const resp = await fetch(url, { signal: ctrl.signal });
     clearTimeout(t);
 
-    if (!resp.ok) return res.status(resp.status).json({ error: `Azure returned ${resp.status} ${resp.statusText}` });
+    if (!resp.ok) return res.status(mapUpstreamStatus(resp.status)).json({
+      error: `Azure returned ${resp.status} ${resp.statusText}`,
+      upstreamStatus: resp.status,
+    });
     const data = await resp.json();
     await setCache(cacheKey, data, ttl);
     return res.json(data);
@@ -218,7 +227,10 @@ async function proxySimple(req, res, azureUrl, cacheKey, ttl) {
     const resp = await fetch(azureUrl, { signal: ctrl.signal });
     clearTimeout(t);
 
-    if (!resp.ok) return res.status(resp.status).json({ error: `Azure returned ${resp.status} ${resp.statusText}` });
+    if (!resp.ok) return res.status(mapUpstreamStatus(resp.status)).json({
+      error: `Azure returned ${resp.status} ${resp.statusText}`,
+      upstreamStatus: resp.status,
+    });
     const data = await resp.json();
     if (cacheKey && ttl) await setCache(cacheKey, data, ttl);
     return res.json(data);
@@ -277,7 +289,7 @@ app.post('/api/proxy/auditEmailExport', requireAuth, async (req, res) => {
       signal:  ctrl.signal,
     });
     clearTimeout(t);
-    if (!resp.ok) return res.status(resp.status).json({ error: `Azure returned ${resp.status}` });
+    if (!resp.ok) return res.status(mapUpstreamStatus(resp.status)).json({ error: `Azure returned ${resp.status}`, upstreamStatus: resp.status });
     return res.json(await resp.json());
   } catch (err) {
     if (err.name === 'AbortError') return res.status(504).json({ error: 'Request timed out' });
@@ -294,7 +306,7 @@ app.get('/api/proxy/downloadFile', requireAuth, async (req, res) => {
   const url = `${API_HOST}/api/fileConnectDownloadFileByID?path=${encodeURIComponent(path)}&code=${CODES[codeKey]}`;
   try {
     const resp = await fetch(url);
-    if (!resp.ok) return res.status(resp.status).json({ error: `Azure returned ${resp.status}` });
+    if (!resp.ok) return res.status(mapUpstreamStatus(resp.status)).json({ error: `Azure returned ${resp.status}`, upstreamStatus: resp.status });
     const ct = resp.headers.get('content-type');
     const cd = resp.headers.get('content-disposition');
     if (ct) res.setHeader('Content-Type', ct);
@@ -314,7 +326,7 @@ app.get('/api/proxy/viewFile', requireAuth, async (req, res) => {
   const url = `${API_HOST}/api/fileConnectViewBlobFile?path=${encodeURIComponent(path)}&code=${CODES[codeKey]}`;
   try {
     const resp = await fetch(url);
-    if (!resp.ok) return res.status(resp.status).json({ error: `Azure returned ${resp.status}` });
+    if (!resp.ok) return res.status(mapUpstreamStatus(resp.status)).json({ error: `Azure returned ${resp.status}`, upstreamStatus: resp.status });
     const ct = resp.headers.get('content-type');
     const cd = resp.headers.get('content-disposition');
     if (ct) res.setHeader('Content-Type', ct);

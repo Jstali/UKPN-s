@@ -314,8 +314,12 @@ export const AppProvider = ({ children }) => {
     }
   }, [nonDtcHasMore, nonDtcContinuationToken, nonDtcLoadingMore]);
 
-  // ── On mount ────────────────────────────────────────────────────────────────
+  // ── On mount (after login only) ────────────────────────────────────────────
+  // Wait for `user` before hitting any /api/proxy/* route — otherwise we fire
+  // unauthenticated requests during the login screen, producing noisy 401s
+  // and (pre-fix) tripping the auth:expired → logout loop.
   useEffect(() => {
+    if (!user) return undefined;
     if (mountedRef.current) return undefined;
     mountedRef.current = true;
 
@@ -329,7 +333,7 @@ export const AppProvider = ({ children }) => {
     return () => {
       if (activeControllerRef.current) activeControllerRef.current.abort();
     };
-  }, [fetchAllData, fetchSubscriptions, fetchFlowsData, fetchFileStatus]);
+  }, [user, fetchAllData, fetchSubscriptions, fetchFlowsData, fetchFileStatus]);
 
   // ── Auto-refresh ────────────────────────────────────────────────────────────
   // Silently re-fetches DTC page 1 only — resets pagination state so "Load More"
@@ -339,7 +343,7 @@ export const AppProvider = ({ children }) => {
       clearInterval(refreshTimerRef.current);
       refreshTimerRef.current = null;
     }
-    if (!autoRefresh) return undefined;
+    if (!autoRefresh || !user) return undefined;
 
     refreshTimerRef.current = setInterval(() => {
       fetchAllData({ silent: true });
@@ -352,7 +356,7 @@ export const AppProvider = ({ children }) => {
         refreshTimerRef.current = null;
       }
     };
-  }, [autoRefresh, fetchAllData, fetchFileStatus]);
+  }, [autoRefresh, user, fetchAllData, fetchFileStatus]);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const login = useCallback((userData) => {
@@ -382,6 +386,8 @@ export const AppProvider = ({ children }) => {
     sessionStorage.removeItem('authToken');
     localStorage.removeItem(DTC_CACHE_KEY);
     localStorage.removeItem(NON_DTC_CACHE_KEY);
+    // Let the mount effect fire again on next login.
+    mountedRef.current = false;
   }, []);
 
   // fetchUtils emits 'auth:expired' when any proxy call returns 401
