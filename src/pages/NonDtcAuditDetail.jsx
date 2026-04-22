@@ -544,6 +544,8 @@ const NonDtcAuditDetail = () => {
           defaultSort={{ key: 'timestamp', direction: 'desc' }}
           defaultPageSize={25}
           onDownload={true}
+          detailPagePath="/non-dtc-audit-detail"
+          auditType="SAP"
           exportConfig={{
             filename: 'Non_DTC_Audit_Detail_Export',
             pdfOptions: {

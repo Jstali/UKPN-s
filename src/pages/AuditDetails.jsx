@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronRight, Eye } from 'lucide-react';
-import { formatDateTime } from '../utils/auditUtils';
+import { formatDateTime, formatFlowVersion, parseHeader, pickField } from '../utils/auditUtils';
 import { DTC_AUDIT_DETAIL_SUMMARY_FIELDS } from '../data/dtcSummaryColumns';
 
 // Summary columns - must match DTC Audit table exactly
@@ -14,12 +14,54 @@ const DETAIL_FIELDS = [
   { key: 'eventType', label: 'Event Type' },
 ];
 
+// Alternate key names per summary field. Records can arrive pre-flattened from
+// the DTC table (camelCase keys) or as raw Cosmos documents (PascalCase /
+// snake_case), so each summary slot is looked up with a candidate list.
+const SUMMARY_KEY_CANDIDATES = {
+  flow:                  ['flow', 'Flow'],
+  version:               ['version', 'Version'],
+  fileId:                ['fileId', 'file_id', 'File_ID', 'HFile_ID', 'hFileId', 'correlationId', 'id'],
+  timestamp:             ['timestamp', 'Timestamp', 'rawTimestamp', 'created'],
+  fromRole:              ['fromRole', 'from_role', 'From_Role'],
+  fromMPID:              ['fromMPID', 'from_mpid', 'From_MPID'],
+  toRole:                ['toRole', 'to_role', 'To_Role'],
+  toMPID:                ['toMPID', 'to_mpid', 'To_MPID'],
+  sourceApplication:     ['sourceApplication', 'source_application', 'Source_Application', 'sourceAppName'],
+  application:           ['application', 'Destination_Application', 'destinationApplication'],
+  eventType:             ['eventType', 'event_type', 'Event_Type'],
+  fileName:              ['fileName', 'Source_FileName', 'sourceFileName', 'file_name'],
+};
+
 const AuditDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const record = location.state?.record;
   const [showPreview, setShowPreview] = useState(false);
   const summaryFields = DTC_AUDIT_DETAIL_SUMMARY_FIELDS;
+
+  // Build a record enriched with values parsed from Header_String as a fallback,
+  // so DTC records that only ship a Header_String still render Flow / From / To
+  // fields. Record is usually already flattened, but this is a safety net.
+  const enrichedRecord = useMemo(() => {
+    if (!record) return record;
+    const parsed = parseHeader(record.Header_String || '');
+    const [flow, version] = (formatFlowVersion(parsed.flowVersion) || '').split(' ');
+    return {
+      ...record,
+      flow:     record.flow     || flow     || '',
+      version:  record.version  || version  || '',
+      fromRole: record.fromRole || parsed.fromRole || '',
+      fromMPID: record.fromMPID || parsed.fromMPID || '',
+      toRole:   record.toRole   || parsed.toRole   || '',
+      toMPID:   record.toMPID   || parsed.toMPID   || '',
+      recApp:   record.recApp   || parsed.recApp   || '',
+    };
+  }, [record]);
+
+  const readSummaryValue = (key) => {
+    const candidates = SUMMARY_KEY_CANDIDATES[key] || [key];
+    return pickField(enrichedRecord, ...candidates);
+  };
 
   useEffect(() => {
     return () => {
@@ -304,13 +346,13 @@ const AuditDetails = () => {
                 }}>
                   {label}:
                 </span>
-                <span style={{ 
-                  color: '#1e293b', 
+                <span style={{
+                  color: '#1e293b',
                   fontSize: '13px',
                   wordBreak: 'break-word',
                   flex: 1,
                 }}>
-                  {formatValue(record[key], format)}
+                  {formatValue(readSummaryValue(key), format)}
                 </span>
               </div>
             ))}
@@ -331,7 +373,7 @@ const AuditDetails = () => {
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
             {DETAIL_FIELDS.map(({ key, label }) => {
-              const value = record[key];
+              const value = enrichedRecord[key];
               const isEmpty = value === null || value === undefined || String(value).trim() === '';
               if (isEmpty) return null;
               return (

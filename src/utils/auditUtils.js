@@ -1,6 +1,8 @@
 // Shared utility functions — extracted from duplicate code across pages
 
-// Parse header string: ZHV|D0132001|X|%|R|EELC|%|TR01
+// Parse header string. Format (8 pipe-separated parts):
+//   ZHV | flowVersion | fromRole | fromMPID | toRole | toMPID | ??? | recApp
+// Example: ZHV|D0132001|X|%|R|EELC|%|TR01
 export const parseHeader = (headerStr) => {
   if (!headerStr || headerStr === 'UNKNOWN') {
     return { flowVersion: '', fileId: '', fromRole: '', fromMPID: '', toRole: '', toMPID: '', recApp: '' };
@@ -8,12 +10,28 @@ export const parseHeader = (headerStr) => {
   const parts = headerStr.split('|');
   return {
     flowVersion: parts[1] || '',
-    fromRole: parts[2] || '',
-    fromMPID: parts[5] || '',
-    toRole: parts[4] || '',
-    toMPID: parts[3] || '',
-    recApp: parts[6] || '',
+    fromRole:    parts[2] || '',
+    fromMPID:    parts[3] || '',
+    toRole:      parts[4] || '',
+    toMPID:      parts[5] || '',
+    recApp:      parts[7] || '',
   };
+};
+
+// Returns the first non-empty, non-"UNKNOWN" value from a list of candidates.
+// Shared with flattenUtils.js which had its own copy.
+export const pick = (...candidates) =>
+  candidates.find(v => v && v !== 'UNKNOWN') || '';
+
+// Returns the first non-empty value from a record across several key names.
+// Use when a record may arrive in snake_case, camelCase, or PascalCase.
+export const pickField = (record, ...keys) => {
+  if (!record) return '';
+  for (const k of keys) {
+    const v = record[k];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+  }
+  return '';
 };
 
 // Format flow version: FDB01002 → FDB01 002 (split at last 3 digits)
