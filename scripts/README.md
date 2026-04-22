@@ -1,11 +1,35 @@
 # Deployment Scripts
 
-One-shot provisioners for deploying the Express proxy (`server.js`) as an Azure App Service and linking it to the existing Azure Static Web App so `/api/*` calls from the browser reach it.
+One-shot provisioners for deploying the UKPN Audit app to Azure: React build to a Static Web App, `server.js` to a linked Express backend App Service.
 
-| Script | Platform |
-|---|---|
-| [`deploy-proxy.ps1`](deploy-proxy.ps1) | Windows / Azure Virtual Desktop (PowerShell 5.1+) |
-| [`deploy-proxy.sh`](deploy-proxy.sh)  | macOS / Linux (bash 4+) |
+| Script | Platform | Does |
+|---|---|---|
+| [`deploy.bat`](deploy.bat)                                 | Windows        | **Full deploy:** React build → SWA upload → proxy App Service → backend link |
+| [`deploy-proxy.ps1`](deploy-proxy.ps1)                     | Windows / AVD  | Backend only (proxy App Service + link) |
+| [`deploy-proxy.sh`](deploy-proxy.sh)                       | macOS / Linux  | Backend only, bash equivalent of the PS1 |
+| [`deploy.config.bat.example`](deploy.config.bat.example)   | Windows        | Template for per-developer config; copy to `deploy.config.bat` |
+
+## One-shot Windows deploy (recommended for day-to-day)
+
+```powershell
+# First time only
+copy scripts\deploy.config.bat.example scripts\deploy.config.bat
+notepad scripts\deploy.config.bat     # fill in RESOURCE_GROUP, SWA_NAME, etc.
+
+# Every deploy after
+scripts\deploy.bat
+```
+
+`deploy.bat` does — in order:
+
+1. Loads Azure resource names from `scripts\deploy.config.bat` (gitignored).
+2. Checks `node`, `npm`, `az`, `swa` are on PATH and `az` is logged in.
+3. `npm install` and `npm run build` — the production bundle uses **relative** API URLs (`/api/…`), not `localhost:4000`, so SWA routes them to the linked backend automatically.
+4. Reads the SWA deployment token via `az staticwebapp secrets list` and uploads `build/` via `swa deploy`.
+5. Invokes [`deploy-proxy.ps1`](deploy-proxy.ps1) to create/update the App Service running `server.js` and link it as the SWA's "bring your own backend".
+6. Prints the final URLs and a smoke-test hint.
+
+Re-running is safe — every step is idempotent.
 
 Both scripts do the same thing, step by step:
 

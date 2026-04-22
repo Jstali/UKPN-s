@@ -27,3 +27,7 @@ yarn-error.log*
 .claude/
 .vscode/
 .idea/
+
+# Per-developer deploy config (contains Azure resource names, never real secrets
+# but still better to keep out of the repo for privacy).
+scripts/deploy.config.bat

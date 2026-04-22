@@ -2,7 +2,14 @@
 // The proxy (server.js) injects Azure function codes server-side, so no
 // REACT_APP_*_API_CODE vars are read here and none are bundled into the browser.
 
-export const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+// Default behaviour:
+//   npm run build (NODE_ENV=production)  → same-origin relative URLs ("/api/…").
+//     SWA routes /api/* to the linked backend App Service automatically.
+//   npm start      (NODE_ENV=development) → http://localhost:4000 (local proxy).
+// Override with REACT_APP_API_URL at build/run time if you need something else.
+const isProd = process.env.NODE_ENV === 'production';
+const DEFAULT_API_BASE = isProd ? '' : 'http://localhost:4000';
+export const API_BASE = process.env.REACT_APP_API_URL || DEFAULT_API_BASE;
 
 const proxy = (path) => `${API_BASE}${path}`;
 
