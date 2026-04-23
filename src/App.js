@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -7,98 +7,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ClickSpark from './components/ClickSpark';
 import './index.css';
 
-// Global API warning banner — shown on every page when API calls fail
-const ApiWarningBanner = () => {
-  const { fetchError, nonDtcFetchError, auditData, nonDtcAuditData, fetchAllData } = useApp();
-  const [dismissed, setDismissed] = useState(false);
-  const [visibleError, setVisibleError] = useState(null);
-
-  const hasData = auditData.length > 0 || nonDtcAuditData.length > 0;
-  const activeError = fetchError || nonDtcFetchError;
-
-  // Show banner whenever a new error arrives; reset dismissed state
-  useEffect(() => {
-    if (activeError) {
-      setVisibleError(activeError);
-      setDismissed(false);
-    } else {
-      setVisibleError(null);
-    }
-  }, [activeError]);
-
-  // Auto-dismiss after 15 seconds
-  useEffect(() => {
-    if (!visibleError || dismissed) return;
-    const timer = setTimeout(() => setDismissed(true), 15000);
-    return () => clearTimeout(timer);
-  }, [visibleError, dismissed]);
-
-  if (!visibleError || dismissed) return null;
-
-  const bothFailed = fetchError && nonDtcFetchError;
-  const label = bothFailed
-    ? 'DTC & Non-DTC APIs failed'
-    : fetchError
-    ? 'DTC API failed'
-    : 'Non-DTC API failed';
-
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      padding: '9px 20px',
-      background: hasData ? '#fffbeb' : '#fef2f2',
-      borderBottom: `1px solid ${hasData ? '#fcd34d' : '#fca5a5'}`,
-      fontSize: '13px',
-      fontWeight: 600,
-      color: hasData ? '#92400e' : '#991b1b',
-      zIndex: 999,
-      flexShrink: 0,
-    }}>
-      <span style={{ fontSize: '15px' }}>{hasData ? '⚠️' : '🔴'}</span>
-      <span style={{ flex: 1 }}>
-        {label} —{' '}
-        {hasData
-          ? 'showing last known data. New records may not appear until the API recovers.'
-          : 'no data available. Check your network or VPN connection.'}
-      </span>
-      <button
-        onClick={() => { setDismissed(true); fetchAllData(true); }}
-        style={{
-          padding: '4px 12px',
-          background: hasData ? '#d97706' : '#dc2626',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontSize: '12px',
-          fontWeight: 700,
-          whiteSpace: 'nowrap',
-        }}
-      >
-        Retry
-      </button>
-      <button
-        onClick={() => setDismissed(true)}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: hasData ? '#92400e' : '#991b1b',
-          fontSize: '16px',
-          lineHeight: 1,
-          padding: '2px 4px',
-        }}
-        title="Dismiss"
-      >
-        ✕
-      </button>
-    </div>
-  );
-};
-
-// Lazy-loaded pages for code splitting
+// Lazy-loaded pages
 const Home = lazy(() => import('./pages/Home'));
 const DtcAudit = lazy(() => import('./pages/DtcAudit'));
 const DtcAuditFilter = lazy(() => import('./pages/DtcAuditFilter'));
@@ -135,21 +44,39 @@ const PageLoader = () => (
 );
 
 function AppRoutes() {
-  const { user, login, logout } = useApp();
+  const { user, login } = useApp();
+  const [loading, setLoading] = React.useState(true);
 
+  // ⭐ Load Azure SSO user on startup
+  useEffect(() => {
+    fetch("/.auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.clientPrincipal) {
+          login(data.clientPrincipal); // store in context
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [login]);
+
+  if (loading) return <PageLoader />;
+
+  // ⭐ If not logged in → show login page
   if (!user) {
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="*" element={<Login onLogin={login} />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Suspense>
     );
   }
 
+  // ⭐ Authenticated → show full app
   return (
     <ClickSpark
-      sparkColor='#667eea'
+      sparkColor="#667eea"
       sparkSize={10}
       sparkRadius={15}
       sparkCount={8}
@@ -157,7 +84,6 @@ function AppRoutes() {
     >
       <div className="app-container">
         <Header />
-        <ApiWarningBanner />
         <main className="app-main" role="main">
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -178,6 +104,9 @@ function AppRoutes() {
               <Route path="/dtc-failed-files-detail" element={<DtcFailedFilesDetail />} />
               <Route path="/non-dtc-failed-files" element={<NonDtcFailedFiles />} />
               <Route path="/filtered-file-status" element={<FilteredFileStatus />} />
+
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </Suspense>
         </main>
