@@ -1,5 +1,5 @@
 
-/*{
+{
   "platform": {
     "apiRuntime": "node:20"
   },
@@ -9,6 +9,7 @@
         "registration": {
           "openIdIssuer": "https://login.microsoftonline.com/887a239c-e092-45fe-92c8-d902c3681567/v2.0",
           "clientIdSettingName": "AAD_CLIENT_ID"
+          "clientSecretSettingName": "AAD_CLIENT_SECRET"
         }
       }
     }
@@ -38,4 +39,4 @@
     "rewrite": "/index.html",
     "exclude": ["/api/*", "/.auth/*", "/static/*"]
   }
-}*/
+}
