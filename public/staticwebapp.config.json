@@ -1,7 +1,10 @@
 {
+  "platform": {
+    "apiRuntime": "node:20"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/static/*", "/*.{png,jpg,jpeg,gif,svg,ico,avif,webp,json,webmanifest,txt,xml,map}"]
+    "exclude": ["/api/*", "/static/*", "/*.{png,jpg,jpeg,gif,svg,ico,avif,webp,json,webmanifest,txt,xml,map}"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
