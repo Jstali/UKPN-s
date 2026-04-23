@@ -1,3 +1,4 @@
+
 {
   "platform": {
     "apiRuntime": "node:20"
@@ -13,18 +14,25 @@
     }
   },
   "routes": [
-    { "route": "/login",       "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/.auth/*",     "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/static/*",    "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/manifest.json","allowedRoles": ["anonymous", "authenticated"] },
+    {
+      "route": "/login",
+      "rewrite": "/.auth/login/aad?post_login_redirect_uri=/",
+      "allowedRoles": ["anonymous"]
+    },
+    { "route": "/.auth/*", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/static/*", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/manifest.json", "allowedRoles": ["anonymous", "authenticated"] },
     { "route": "/favicon.ico", "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/*.svg",       "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/*.png",       "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/*.avif",      "allowedRoles": ["anonymous", "authenticated"] },
-    { "route": "/*",           "allowedRoles": ["authenticated"] }
+    { "route": "/*.svg", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*.png", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*.avif", "allowedRoles": ["anonymous", "authenticated"] },
+    { "route": "/*", "allowedRoles": ["authenticated"] }
   ],
   "responseOverrides": {
-    "401": { "redirect": "/login", "statusCode": 302 }
+    "401": {
+      "statusCode": 302,
+      "redirect": "/.auth/login/aad"
+    }
   },
   "navigationFallback": {
     "rewrite": "/index.html",
