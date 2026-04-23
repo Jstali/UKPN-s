@@ -1,18 +1,15 @@
 {
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/887a239c-e092-45fe-92c8-d902c3681567/v2.0",
-          "clientIdSettingName": "AAD_CLIENT_ID"
-        }
-      }
-    }
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/static/*", "/*.{png,jpg,jpeg,gif,svg,ico,avif,webp,json,webmanifest,txt,xml,map}"]
   },
-  "routes": [
-    {
-      "route": "/*",
-      "allowedRoles": ["authenticated"]
-    }
-  ]
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".avif": "image/avif"
+  }
 }
