@@ -3,6 +3,42 @@
 
 import { AUDIT_TIMEOUT_MS } from '../constants/apiConfig';
 
+// Reads the session token from sessionStorage and returns headers for it.
+// Returns {} when no token is present so the request can still be made (e.g. /api/auth/login).
+const authHeaders = () => {
+  try {
+    const token = sessionStorage.getItem('authToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+};
+
+// Called whenever a proxy call returns 401. Wipes the stale token and emits
+// a single window event so AppContext can log out cleanly and the user is
+// sent back to the login screen instead of staring at a red error banner.
+// Debounced via a module flag so parallel 401s only produce one dispatch.
+let _authExpiredNotified = false;
+const notifyAuthExpired = () => {
+  if (_authExpiredNotified) return;
+  _authExpiredNotified = true;
+  // Reset on the next tick so future expirations (e.g. after re-login) still fire.
+  setTimeout(() => { _authExpiredNotified = false; }, 1000);
+  try {
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+  } catch { /* ignore */ }
+  try {
+    window.dispatchEvent(new Event('auth:expired'));
+  } catch { /* non-browser environments */ }
+};
+
+// Appends a query parameter to a URL, picking ? or & based on existing query string.
+const appendParam = (url, key, value) => {
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}${key}=${encodeURIComponent(value)}`;
+};
+
 // Creates an AbortController that times out after `timeoutMs` and optionally
 // chains an external abort signal. Returns { signal, cleanup }.
 export const withTimeoutSignal = (externalSignal, timeoutMs = AUDIT_TIMEOUT_MS) => {
@@ -36,8 +72,13 @@ export const withTimeoutSignal = (externalSignal, timeoutMs = AUDIT_TIMEOUT_MS) 
 // `transform`  → optional fn(rawData) → normalised value
 export const fetchJson = async (url, label, transform = (d) => d, options = {}) => {
   try {
-    const res = await fetch(url, { method: 'GET', ...options });
+    const res = await fetch(url, {
+      method: 'GET',
+      ...options,
+      headers: { ...authHeaders(), ...(options.headers || {}) },
+    });
     if (!res.ok) {
+      if (res.status === 401 && url.includes('/api/proxy/')) notifyAuthExpired();
       const text = await res.text().catch(() => '');
       console.error(`❌ ${label} API Error ${res.status}:`, text.substring(0, 200));
       throw new Error(`${label} request failed: ${res.status} ${res.statusText}`);
@@ -57,8 +98,8 @@ export const fetchJson = async (url, label, transform = (d) => d, options = {}) 
 export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize, options = {}) => {
   let cleanup = () => {};
   try {
-    let url = `${baseUrl}&pageSize=${pageSize}`;
-    if (continuationToken) url += `&continuationToken=${encodeURIComponent(continuationToken)}`;
+    let url = appendParam(baseUrl, 'pageSize', pageSize);
+    if (continuationToken) url = appendParam(url, 'continuationToken', continuationToken);
 
     const tc   = withTimeoutSignal(options.signal, options.timeoutMs);
     cleanup    = tc.cleanup;
@@ -66,7 +107,11 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
     const res  = await fetch(url, {
       method:  'GET',
       signal:  tc.signal,
-      headers: { 'Accept-Encoding': 'gzip, deflate, br', ...options.headers },
+      headers: {
+        'Accept-Encoding': 'gzip, deflate, br',
+        ...authHeaders(),
+        ...options.headers,
+      },
     });
 
     if (!res.ok) {
@@ -74,7 +119,8 @@ export const fetchAuditPage = async (baseUrl, label, continuationToken, pageSize
       console.error(`❌ ${label} API Error ${res.status}:`, text.substring(0, 200));
 
       if (res.status === 401) {
-        throw new Error(`Authentication failed for ${label}. Check the API key in your .env file.`);
+        if (url.includes('/api/proxy/')) notifyAuthExpired();
+        throw new Error(`Authentication failed for ${label}. Sign in again.`);
       }
       throw new Error(`${label} request failed: ${res.status}`);
     }

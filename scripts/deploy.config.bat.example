@@ -1,0 +1,21 @@
+:: ═══════════════════════════════════════════════════════════════════════════
+:: Copy this file to  scripts\deploy.config.bat  and fill in the real values.
+:: The gitignored copy holds your Azure resource names so they don't leak via
+:: commits. Every value below is required.
+:: ═══════════════════════════════════════════════════════════════════════════
+
+:: Existing resource group that contains the SWA
+set "RESOURCE_GROUP=ukpn-fileconnect-rg"
+
+:: Existing Azure Static Web App name
+set "SWA_NAME=ukpn-fileconnect-swa"
+
+:: App Service name for the Express proxy (must be globally unique).
+:: Will be created if it does not exist.
+set "PROXY_NAME=ukpn-fileconnect-proxy"
+
+:: App Service Plan name. Will be created (Linux, B1) if missing.
+set "PLAN_NAME=ukpn-fileconnect-plan"
+
+:: Azure region — match your SWA's region for best latency.
+set "LOCATION=westeurope"

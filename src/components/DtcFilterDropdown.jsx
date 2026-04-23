@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 import api, { fetchDropdownValues } from '../utils/api';
@@ -10,9 +11,10 @@ import { DTC_EVENT_TYPE_MAP as EVENT_TYPE_MAP } from '../constants/eventTypes';
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [popupStyle, setPopupStyle] = useState({ position: 'fixed', top: 0, left: 0, visibility: 'hidden' });
+  const [popupStyle, setPopupStyle] = useState(null);
   const dropdownRef = useRef(null);
   const triggerRef = useRef(null);
+  const popupRef = useRef(null);
   const searchRef = useRef(null);
 
   const updatePopupPosition = () => {
@@ -30,7 +32,9 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      const inTrigger = dropdownRef.current && dropdownRef.current.contains(e.target);
+      const inPopup   = popupRef.current   && popupRef.current.contains(e.target);
+      if (!inTrigger && !inPopup) {
         setIsOpen(false);
         setSearchQuery('');
       }
@@ -122,8 +126,9 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
         <ChevronDown size={14} style={{ flexShrink: 0, marginLeft: '4px', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
       </div>
 
-      {isOpen && (
+      {isOpen && popupStyle && ReactDOM.createPortal(
         <div
+          ref={popupRef}
           role="listbox"
           aria-multiselectable="true"
           style={{
@@ -212,7 +217,8 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
               </div>
             );
           })}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,0 +1,39 @@
+trigger: none
+# - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: Secrets
+  
+# variables:
+#   azure_static_web_apps_api_token : ''
+
+stages:
+  - stage: nodeTool_installation
+    jobs:
+      - job: installation
+        steps:
+          - checkout: self
+          - task: NodeTool@0
+            inputs: 
+              versionSource: 'spec'
+              versionSpec: '18.x'
+              checkLatest: true
+            displayName: 'Install Node.js'
+          - task: Npm@1
+            inputs:
+              command: 'install'
+          - task: Npm@1
+            inputs:
+              command: 'custom'
+              customCommand: 'run build'
+            displayName: 'Install dependencies & Build React app'
+          - task: AzureStaticWebApp@0
+            inputs:
+              app_location: '/' # React project is at the root(/) or in app location
+              api_location: 'api' # Azure functions path
+              output_location: 'build' # React build files are inside "build" folder
+              azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_QA)'
+            displayName: 'Deploy React App to Azure Static Web Apps'

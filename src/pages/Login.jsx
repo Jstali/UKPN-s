@@ -1,32 +1,50 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Lock, ShieldCheck, User } from 'lucide-react';
+import { ENDPOINTS } from '../constants/apiConfig';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Credentials are loaded from the REACT_APP_USERS environment variable.
-  // Set it in .env — never commit .env to version control.
-  // Format: [{"username":"user1","password":"pass1","role":"Role Name"}]
-  const users = JSON.parse(process.env.REACT_APP_USERS || '[]');
+  // SWA AAD sign-in. Works only when served by Azure Static Web Apps; in
+  // local dev this hits /.auth/login/aad which returns 404 (expected —
+  // users fall back to the credentials form below).
+  const handleAadSignIn = () => {
+    const target = location.state?.from?.pathname || '/';
+    const url = `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(target)}`;
+    window.location.href = url;
+  };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const normalizedUsername = username.trim();
-    const user = users.find(
-      (u) => u.username === normalizedUsername && u.password === password
-    );
-
-    if (user) {
-      onLogin(user);
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(ENDPOINTS.login, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ username: username.trim(), password }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error || 'Invalid username or password');
+        return;
+      }
+      const { token, username: u, role } = await res.json();
+      sessionStorage.setItem('authToken', token);
+      onLogin({ username: u, role });
       navigate('/');
-    } else {
-      setError('Invalid username or password');
+    } catch (err) {
+      setError('Unable to reach the server. Check your connection and try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -75,8 +93,22 @@ const Login = ({ onLogin }) => {
             </div>
             <h2 className="ukpn-login-card-title">Welcome back</h2>
             <p className="ukpn-login-card-text">
-              Sign in with your assigned credentials to continue.
+              Sign in with your Microsoft account or assigned credentials.
             </p>
+
+            <button
+              type="button"
+              onClick={handleAadSignIn}
+              className="ukpn-login-submit ukpn-login-aad"
+              disabled={submitting}
+            >
+              <ShieldCheck size={18} />
+              <span>Sign in with Microsoft</span>
+            </button>
+
+            <div className="ukpn-login-divider">
+              <span>or sign in with credentials</span>
+            </div>
 
             <form onSubmit={handleSubmit} className="ukpn-login-form">
               <div className="ukpn-login-field">
@@ -125,8 +157,8 @@ const Login = ({ onLogin }) => {
                 </motion.div>
               )}
 
-              <button type="submit" className="ukpn-login-submit">
-                <span>Sign in to dashboard</span>
+              <button type="submit" className="ukpn-login-submit" disabled={submitting}>
+                <span>{submitting ? 'Signing in\u2026' : 'Sign in to dashboard'}</span>
                 <ArrowRight size={18} />
               </button>
             </form>

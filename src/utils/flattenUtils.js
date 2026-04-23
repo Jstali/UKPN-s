@@ -2,15 +2,13 @@
 // Each audit record contains a nested events array; these functions produce
 // one flat row per event so DataTable can render them uniformly.
 
-import { parseHeader, formatDateTime, formatFlowVersion } from './auditUtils';
+import { parseHeader, formatDateTime, formatFlowVersion, pick } from './auditUtils';
 import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, STATUSES_WITHOUT_DESTINATION } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
 import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
-
-// Returns the first non-empty, non-"UNKNOWN" value from a list of candidates.
-const pick = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+// pick() lives in auditUtils.js and is re-exported here via the import above.
 
 const normalizeVersion = (value) => {
   const str = String(value || '').trim();

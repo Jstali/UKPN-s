@@ -17,10 +17,11 @@ export const DTC_EVENT_TYPE_MAP = {
 };
 
 export const NON_DTC_EVENT_TYPE_MAP = {
-  '1': 'Received',
-  '2': null,  // File Stored To Blob — hidden
-  '3': 'Published',
-  '4': 'NetApp Delivered',
+  '1':  'Received',
+  '2':  null,  // File Stored To Blob — hidden
+  '3':  'Published',
+  '4':  'NetApp Delivered',
+  '22': 'Delivered',
 };
 
 // Statuses that should suppress the destination application column
@@ -60,9 +61,14 @@ export const resolveNonDtcEventType = (event) => {
   if (raw in NON_DTC_EVENT_TYPE_MAP) {
     return NON_DTC_EVENT_TYPE_MAP[raw]; // may be null (hidden)
   }
-  const label = event?.description || event?.Description || raw;
-  if (NON_DTC_HIDDEN_PATTERN.test(label)) return null;
-  return label;
+  const description = event?.description || event?.Description || '';
+  if (description) {
+    if (NON_DTC_HIDDEN_PATTERN.test(description)) return null;
+    return description;
+  }
+  // No mapping and no description: prefix bare numeric codes so they read clearly.
+  if (raw && /^\d+$/.test(raw)) return `Event ${raw}`;
+  return raw;
 };
 
 // Map a raw status string to its display label

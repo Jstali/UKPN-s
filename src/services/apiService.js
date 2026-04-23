@@ -1,7 +1,8 @@
 // Unified API service.
-// Replaces the bloated api.js — all methods now delegate to shared fetch helpers.
+// All endpoints resolve to the Express proxy (server.js), which injects
+// Azure function codes server-side. No codes ever reach the browser bundle.
 
-import { ENDPOINTS, API_CODES, API_BASE, AUDIT_PAGE_SIZE, DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
+import { ENDPOINTS, AUDIT_PAGE_SIZE, DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
 import { fetchJson, fetchAuditPage } from './fetchUtils';
 
 // ─── Simple reference-data endpoints ────────────────────────────────────────
@@ -67,7 +68,7 @@ export const fetchFileStatusSummary = () =>
 
 // POST — sends styled HTML email with Excel attachment for DTC or SAP audit data
 export const sendAuditExportEmail = (payload) => {
-  console.log('📧 Audit Email Export — POST to:', ENDPOINTS.auditEmailExport, '| payload:', payload);
+  console.log('📧 Audit Email Export — POST to:', ENDPOINTS.auditEmailExport);
   return fetchJson(
     ENDPOINTS.auditEmailExport,
     'Audit Email Export',
@@ -90,15 +91,25 @@ export const fetchNonDtcAuditData = (continuationToken = null, pageSize = NON_DT
   fetchAuditPage(ENDPOINTS.nonDtcAudit, 'Non-DTC Audit', continuationToken, pageSize, options);
 
 // ─── File download / preview ─────────────────────────────────────────────────
+// Calls the proxy; `type=nonDtc` lets server.js pick the correct Azure function code.
 
-const fetchFileResponse = async (apiEndpoint, path, codeKey) => {
+const authHeader = () => {
+  try {
+    const token = sessionStorage.getItem('authToken');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+};
+
+const fetchFileResponse = async (apiEndpoint, path, isNonDtc) => {
   const cleanPath = String(path || '').trim();
   if (!cleanPath) throw new Error('Missing file path');
 
-  const code = API_CODES[codeKey] || API_CODES.dtc;
-  const url  = `${apiEndpoint}?path=${encodeURIComponent(cleanPath)}${code ? `&code=${encodeURIComponent(code)}` : ''}`;
+  const type = isNonDtc ? 'nonDtc' : 'dtc';
+  const url  = `${apiEndpoint}?path=${encodeURIComponent(cleanPath)}&type=${type}`;
 
-  const res = await fetch(url, { method: 'GET' });
+  const res = await fetch(url, { method: 'GET', headers: authHeader() });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(text || `Request failed with status ${res.status}`);
@@ -112,16 +123,12 @@ const fetchFileResponse = async (apiEndpoint, path, codeKey) => {
 };
 
 export const downloadFileByPath = async (path, isNonDtc = false) => {
-  const { res, filename } = await fetchFileResponse(
-    ENDPOINTS.downloadFile, path, isNonDtc ? 'nonDtc' : 'dtcDownload'
-  );
+  const { res, filename } = await fetchFileResponse(ENDPOINTS.downloadFile, path, isNonDtc);
   return { blob: await res.blob(), filename };
 };
 
 export const viewBlobFileByPath = async (path, isNonDtc = false) => {
-  const { res, filename } = await fetchFileResponse(
-    ENDPOINTS.viewFile, path, isNonDtc ? 'nonDtc' : 'dtcPreview'
-  );
+  const { res, filename } = await fetchFileResponse(ENDPOINTS.viewFile, path, isNonDtc);
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     const json    = await res.json();

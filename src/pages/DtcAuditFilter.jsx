@@ -81,9 +81,6 @@ const getSourceFileName = (item) =>
   item.Source_FileName || item.source_file_name || item.SourceFileName ||
   item.Source_File_Name || item.fileName || item.filename || '';
 
-// Log missing Header_String fields only once per session
-let _missingHeaderLogged = false;
-
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -438,11 +435,6 @@ const DtcAuditFilter = () => {
   // Auto-query on data load — use filters from navigation state or defaults
   useEffect(() => {
     if (auditData.length > 0) {
-      console.log('[DtcAuditFilter] Auto-query triggered');
-      console.log('[DtcAuditFilter] auditData length:', auditData.length);
-      console.log('[DtcAuditFilter] location.state?.filters:', location.state?.filters);
-      console.log('[DtcAuditFilter] initialFilters:', initialFilters);
-      console.log('[DtcAuditFilter] appliedFilters:', appliedFilters);
       handleQuery(initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -518,9 +510,7 @@ const DtcAuditFilter = () => {
     }
     setDateError('');
     let results = [];
-    console.log('[DtcAuditFilter] handleQuery - auditData length:', auditData.length);
-    console.log('[DtcAuditFilter] handleQuery - filters:', f);
-    
+
     auditData.forEach(item => {
       const headerStr = getHeaderString(item);
       const parsed = parseHeader(headerStr);
@@ -533,12 +523,6 @@ const DtcAuditFilter = () => {
       const sourceApplication = (item.events && item.events.length > 0) 
         ? (item.events[0]?.applicationName || 'Unknown')
         : (item.Source_Application || item.source_application || item.SourceApplication || 'Unknown');
-
-      if (!headerStr && !_missingHeaderLogged) {
-        _missingHeaderLogged = true;
-        console.log('[DtcAuditFilter] Sample item missing Header_String — all available fields:', Object.keys(item));
-        console.log('[DtcAuditFilter] Sample item values:', JSON.stringify(item, null, 2).substring(0, 2000));
-      }
 
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {

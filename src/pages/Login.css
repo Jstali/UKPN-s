@@ -406,6 +406,41 @@
   transform: translateY(0);
 }
 
+/* ===== AAD (Microsoft) sign-in variant ===== */
+.ukpn-login-submit.ukpn-login-aad {
+  background: linear-gradient(135deg, #2f2f2f 0%, #1a1a1a 100%);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  margin-bottom: 14px;
+}
+
+.ukpn-login-submit.ukpn-login-aad:hover {
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+}
+
+.ukpn-login-submit.ukpn-login-aad::before {
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0));
+}
+
+/* ===== "or sign in with credentials" divider ===== */
+.ukpn-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 14px;
+  color: #94a3b8;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ukpn-login-divider::before,
+.ukpn-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
 /* ===== Demo Section ===== */
 .ukpn-login-demo {
   margin-top: 20px;

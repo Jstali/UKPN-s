@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/api/node_modules
+**/node_modules
 /.pnp
 .pnp.js
 
@@ -22,3 +24,12 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
+
+# Per-developer deploy config (contains Azure resource names, never real secrets
+# but still better to keep out of the repo for privacy).
+scripts/deploy.config.bat

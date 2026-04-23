@@ -9,12 +9,15 @@ import React, {
 } from 'react';
 import api, { fetchDtcSubscriptions, fetchFlows } from '../utils/api';
 import { fetchFileStatusSummary } from '../services/apiService';
-import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
+import { DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE, ENDPOINTS } from '../constants/apiConfig';
 
 const AppContext = createContext(null);
 
-// DTC auto-refresh: only page 1 — avoids re-fetching large datasets every minute
-const AUTO_REFRESH_INTERVAL_MS = 60_000;
+// DTC auto-refresh: only page 1 — avoids re-fetching large datasets every minute.
+// 5 minutes is a compromise between "see new files promptly" and "don't churn
+// the browser tab every minute". On 10k+ record backends a 60s interval
+// combined with flattening + filter-options recompute was enough to OOM Edge.
+const AUTO_REFRESH_INTERVAL_MS = 300_000;
 
 const DTC_CACHE_KEY     = 'fc_dtc_cache';
 const NON_DTC_CACHE_KEY = 'fc_nondtc_cache';
@@ -64,6 +67,11 @@ export const AppProvider = ({ children }) => {
   const [dtcLoadingMore,     setDtcLoadingMore]     = useState(false);
   const [dtcPageMeta,        setDtcPageMeta]        = useState(null);
 
+  // Non-DTC incremental pagination state — user-driven, mirrors the DTC pattern
+  const [nonDtcHasMore,           setNonDtcHasMore]           = useState(false);
+  const [nonDtcContinuationToken, setNonDtcContinuationToken] = useState(null);
+  const [nonDtcLoadingMore,       setNonDtcLoadingMore]       = useState(false);
+
   const [subscriptionData,   setSubscriptionData]   = useState([]);
   const [subscriptionLoading,setSubscriptionLoading]= useState(false);
   const [isLocalSubscription,setIsLocalSubscription]= useState(false);
@@ -83,11 +91,62 @@ export const AppProvider = ({ children }) => {
   // Tracks current auditData length so auto-refresh can decide whether to preserve loaded pages
   const auditDataRef          = useRef([]);
 
+  // Rehydrate session on mount. Two paths:
+  //   1. SWA AAD: /.auth/me returns a `clientPrincipal` on deployed SWA.
+  //   2. JWT fallback: if no SWA principal, verify our own token via /api/auth/me.
+  // Local dev never hits (1) because /.auth/* 404s; it skips silently and
+  // falls through to the JWT path.
   useEffect(() => {
-    const savedUser = sessionStorage.getItem('user');
-    if (!savedUser) return;
-    try { setUser(JSON.parse(savedUser)); }
-    catch { sessionStorage.removeItem('user'); }
+    let cancelled = false;
+    (async () => {
+      // --- Path 1: Azure Static Web Apps AAD ---------------------------------
+      try {
+        const r = await fetch('/.auth/me', { headers: { Accept: 'application/json' } });
+        if (!cancelled && r.ok) {
+          const body = await r.json().catch(() => null);
+          const principal = body?.clientPrincipal;
+          if (principal && principal.userDetails) {
+            const profile = {
+              username: principal.userDetails,
+              // Role mapping from AAD claims is a follow-up; default to Admin.
+              role: 'Admin',
+              authMethod: 'aad',
+            };
+            setUser(profile);
+            sessionStorage.setItem('user', JSON.stringify(profile));
+            sessionStorage.setItem('authMethod', 'aad');
+            return;
+          }
+        }
+      } catch { /* /.auth/me not reachable (local dev) — fall through */ }
+
+      // --- Path 2: JWT issued by our Express proxy --------------------------
+      const token = sessionStorage.getItem('authToken');
+      if (!token) return;
+      try {
+        const res = await fetch(ENDPOINTS.me, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('authMethod');
+          return;
+        }
+        const profile = await res.json();
+        setUser({ ...profile, authMethod: 'jwt' });
+        sessionStorage.setItem('user', JSON.stringify(profile));
+        sessionStorage.setItem('authMethod', 'jwt');
+      } catch {
+        if (!cancelled) {
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('authMethod');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Cache only the first page of DTC data to keep localStorage small
@@ -190,20 +249,12 @@ export const AppProvider = ({ children }) => {
         resultCount:    dtcRecords.length,
       });
 
-      // Non-DTC page 1 — show immediately
+      // Non-DTC: store page 1 only and expose pagination state.
+      // Extra pages are loaded on demand via loadMoreNonDtcData().
       commitNonDtcData(nonDtcRecords);
+      setNonDtcHasMore(nonDtcFirst?.hasMore ?? !!nonDtcFirst?.continuationToken);
+      setNonDtcContinuationToken(nonDtcFirst?.continuationToken || null);
       setLoading(false);
-
-      // Background: continue paginating Non-DTC only (DTC is user-driven)
-      let nonDtcToken = nonDtcFirst?.continuationToken || null;
-      while (nonDtcToken && !controller.signal.aborted) {
-        const page      = await api.fetchNonDtcAuditData(nonDtcToken, NON_DTC_PAGE_SIZE, { signal: controller.signal });
-        if (controller.signal.aborted) break;
-        const newRows   = Array.isArray(page?.data) ? page.data : [];
-        nonDtcRecords.push(...newRows);
-        nonDtcToken     = page?.continuationToken || null;
-        if (newRows.length > 0) commitNonDtcData([...nonDtcRecords]);
-      }
 
       setDataComplete(true);
       return true;
@@ -265,8 +316,41 @@ export const AppProvider = ({ children }) => {
     }
   }, [dtcHasMore, dtcContinuationToken, dtcLoadingMore]);
 
-  // ── On mount ────────────────────────────────────────────────────────────────
+  // ── User-triggered "Load More" for Non-DTC ─────────────────────────────────
+  // Mirrors the DTC pattern: appends the next page, dedupes by id, and writes
+  // the merged list back to cache so reloads still see the extended dataset.
+  const loadMoreNonDtcData = useCallback(async () => {
+    if (!nonDtcHasMore || !nonDtcContinuationToken || nonDtcLoadingMore) return;
+
+    setNonDtcLoadingMore(true);
+    try {
+      const result = await api.fetchNonDtcAuditData(nonDtcContinuationToken, NON_DTC_PAGE_SIZE, {});
+      if (!result || result.aborted) return;
+
+      const newRecords = Array.isArray(result.data) ? result.data : [];
+      setNonDtcAuditData(prev => {
+        const existingIds = new Set(prev.map(r => r.id).filter(Boolean));
+        const deduped = newRecords.filter(r => !r.id || !existingIds.has(r.id));
+        const merged = [...prev, ...deduped];
+        writeCache(NON_DTC_CACHE_KEY, merged);
+        return merged;
+      });
+      setNonDtcHasMore(result.hasMore ?? !!result.continuationToken);
+      setNonDtcContinuationToken(result.continuationToken || null);
+      if (result.error) setNonDtcFetchError(result.error);
+    } catch (err) {
+      setNonDtcFetchError(err.message || 'Failed to load more Non-DTC data');
+    } finally {
+      setNonDtcLoadingMore(false);
+    }
+  }, [nonDtcHasMore, nonDtcContinuationToken, nonDtcLoadingMore]);
+
+  // ── On mount (after login only) ────────────────────────────────────────────
+  // Wait for `user` before hitting any /api/proxy/* route — otherwise we fire
+  // unauthenticated requests during the login screen, producing noisy 401s
+  // and (pre-fix) tripping the auth:expired → logout loop.
   useEffect(() => {
+    if (!user) return undefined;
     if (mountedRef.current) return undefined;
     mountedRef.current = true;
 
@@ -280,7 +364,7 @@ export const AppProvider = ({ children }) => {
     return () => {
       if (activeControllerRef.current) activeControllerRef.current.abort();
     };
-  }, [fetchAllData, fetchSubscriptions, fetchFlowsData, fetchFileStatus]);
+  }, [user, fetchAllData, fetchSubscriptions, fetchFlowsData, fetchFileStatus]);
 
   // ── Auto-refresh ────────────────────────────────────────────────────────────
   // Silently re-fetches DTC page 1 only — resets pagination state so "Load More"
@@ -290,7 +374,7 @@ export const AppProvider = ({ children }) => {
       clearInterval(refreshTimerRef.current);
       refreshTimerRef.current = null;
     }
-    if (!autoRefresh) return undefined;
+    if (!autoRefresh || !user) return undefined;
 
     refreshTimerRef.current = setInterval(() => {
       fetchAllData({ silent: true });
@@ -303,27 +387,67 @@ export const AppProvider = ({ children }) => {
         refreshTimerRef.current = null;
       }
     };
-  }, [autoRefresh, fetchAllData, fetchFileStatus]);
+  }, [autoRefresh, user, fetchAllData, fetchFileStatus]);
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   const login = useCallback((userData) => {
-    setUser(userData);
-    sessionStorage.setItem('user', JSON.stringify(userData));
+    // Called by Login.jsx after a successful JWT login. AAD sign-ins take
+    // the full /.auth/login/aad round-trip and land back via rehydrate, so
+    // they don't pass through here.
+    const profile = { ...userData, authMethod: userData.authMethod || 'jwt' };
+    setUser(profile);
+    sessionStorage.setItem('user', JSON.stringify(profile));
+    sessionStorage.setItem('authMethod', profile.authMethod);
   }, []);
 
   const logout = useCallback(() => {
+    const authMethod = sessionStorage.getItem('authMethod');
+
     if (activeControllerRef.current) activeControllerRef.current.abort();
+
+    // JWT sessions: tell the proxy to forget the token (currently a no-op
+    // server-side but keeps the API shape honest).
+    if (authMethod === 'jwt') {
+      const token = sessionStorage.getItem('authToken');
+      if (token) {
+        fetch(ENDPOINTS.logout, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
+    }
+
+    // Common cleanup — both paths
     setUser(null);
     setAuditData([]);
     setNonDtcAuditData([]);
     setSubscriptionData([]);
     setDtcHasMore(false);
     setDtcContinuationToken(null);
+    setNonDtcHasMore(false);
+    setNonDtcContinuationToken(null);
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('authMethod');
     localStorage.removeItem(DTC_CACHE_KEY);
     localStorage.removeItem(NON_DTC_CACHE_KEY);
+    mountedRef.current = false;
+
+    // AAD sessions: bounce to SWA logout endpoint. This drops the session
+    // cookie on the SWA side and lands the user back on /login.
+    if (authMethod === 'aad') {
+      window.location.href = '/.auth/logout?post_logout_redirect_uri=/login';
+    }
   }, []);
+
+  // fetchUtils emits 'auth:expired' when any proxy call returns 401
+  // (stale/expired JWT). Clear local state so the app routes back to login
+  // instead of hammering the API with a dead token.
+  useEffect(() => {
+    const handler = () => logout();
+    window.addEventListener('auth:expired', handler);
+    return () => window.removeEventListener('auth:expired', handler);
+  }, [logout]);
 
   const contextValue = useMemo(() => ({
     user,
@@ -342,9 +466,12 @@ export const AppProvider = ({ children }) => {
     dtcLoadingMore,
     dtcPageMeta,
     loadMoreDtcData,
-    // Non-DTC audit data
+    // Non-DTC audit data + user-gated pagination
     nonDtcAuditData,
     nonDtcFetchError,
+    nonDtcHasMore,
+    nonDtcLoadingMore,
+    loadMoreNonDtcData,
     // Flows (pre-fetched on mount — used by DtcFilterDropdown to avoid timing race)
     flowsData,
     // Subscriptions
@@ -362,6 +489,7 @@ export const AppProvider = ({ children }) => {
     auditData, loading, dataComplete, fetchError, fetchAllData,
     dtcHasMore, dtcLoadingMore, dtcPageMeta, loadMoreDtcData,
     nonDtcAuditData, nonDtcFetchError,
+    nonDtcHasMore, nonDtcLoadingMore, loadMoreNonDtcData,
     flowsData,
     subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions,
     fileStatusSummary, fileStatusSummaryError,
