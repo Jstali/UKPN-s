@@ -33,7 +33,7 @@ stages:
           - task: AzureStaticWebApp@0
             inputs:
               app_location: '/' # React project is at the root(/) or in app location
-             # api_location: 'api' # Azure functions path
+              api_location: 'api' # Azure functions path
               output_location: 'build' # React build files are inside "build" folder
               azure_static_web_apps_api_token: '$(AZURE_STATIC_WEB_APPS_API_TOKEN_QA)'
             displayName: 'Deploy React App to Azure Static Web Apps'
