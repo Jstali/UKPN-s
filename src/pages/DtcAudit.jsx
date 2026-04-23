@@ -239,7 +239,7 @@ const DtcAudit = () => {
               },
             }}
             onViewDetail={() =>
-              navigate('/dtc-audit-filter', { state: { filters: appliedFilters || filters } })
+              navigate('/dtc-audit-filter', { state: { filters: appliedFilters || DEFAULT_FILTERS } })
             }
             onPageChange={handlePageChange}
             isLoadingMore={!hasQueried && dtcLoadingMore}
