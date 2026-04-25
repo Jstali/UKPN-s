@@ -103,7 +103,7 @@ const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails, loadi
       {/* Cards Grid — responsive 3 cols on large, 2 on medium, 1 on small */}
       <div className="metrics-grid">
         {loading ? (
-          Array.from({ length: 4 }).map((_, index) => (
+          Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
               className="metrics-card"
@@ -137,6 +137,7 @@ const FileStatusSection = ({ fileStats, dashboardUpdatedAt, onShowDetails, loadi
                   <AnimatedCounter value={item.value} />
                 </div>
                 <div className="metrics-card-label">{item.label}</div>
+                {item.desc && <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px', lineHeight: 1.3 }}>{item.desc}</div>}
               </div>
             </motion.div>
           ))

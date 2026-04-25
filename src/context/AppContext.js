@@ -72,7 +72,7 @@ export const AppProvider = ({ children }) => {
   const [flowsLoading,       setFlowsLoading]       = useState(false);
 
   // File status summary from dedicated count API
-  const [fileStatusSummary,      setFileStatusSummary]      = useState({ totalFiles: null, successFiles: null, pendingFiles: null });
+  const [fileStatusSummary,      setFileStatusSummary]      = useState({ totalFiles: null, successFiles: null, deliveredFiles: null, pendingFiles: null, invalidFileCount: null });
   const [fileStatusSummaryError, setFileStatusSummaryError] = useState(null);
 
   // Strict in-flight lock — only one fetch cycle may run at a time

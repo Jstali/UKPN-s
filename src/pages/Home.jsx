@@ -125,21 +125,24 @@ const Home = () => {
   const fileStats = React.useMemo(() => {
     const computedDelivered = dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length;
     const computedTotal     = auditData.length + nonDtcAuditData.length;
-    // API field         → UI card
-    // totalFiles        → Total Inbound Files
-    // successFiles      → Total Files to be Delivered
-    // deliveredFiles    → Total Files Delivered
-    // pendingFiles      → Total Files Pending for Delivery
-    const totalInboundFiles  = fileStatusSummary?.totalFiles     ?? inboundFiles.length;
-    const totalToBeDelivered = fileStatusSummary?.successFiles   ?? computedTotal;
-    const totalDelivered     = fileStatusSummary?.deliveredFiles ?? computedDelivered;
-    const pendingDelivery    = fileStatusSummary?.pendingFiles   ?? Math.max(computedTotal - computedDelivered, 0);
+    // API field          → UI card
+    // totalFiles         → Total Inbound Files
+    // successFiles       → Total Files to Be Delivered (count of event type 3 per UUID)
+    // deliveredFiles     → Total Delivered Files
+    // pendingFiles       → Total Files Pending for Delivery
+    // invalidFileCount   → Total Invalid File Count
+    const totalInboundFiles  = fileStatusSummary?.totalFiles      ?? inboundFiles.length;
+    const totalToBeDelivered = fileStatusSummary?.successFiles    ?? computedTotal;
+    const totalDelivered     = fileStatusSummary?.deliveredFiles  ?? computedDelivered;
+    const pendingDelivery    = fileStatusSummary?.pendingFiles    ?? Math.max(computedTotal - computedDelivered, 0);
+    const invalidFileCount   = fileStatusSummary?.invalidFileCount ?? 0;
     return {
       filesReceived: computedTotal,
       totalInboundFiles,
       totalToBeDelivered,
       totalDelivered,
       pendingDelivery,
+      invalidFileCount,
       duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
     };
   }, [auditData, nonDtcAuditData, dtcDeliveredFiles, inboundFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount, fileStatusSummary]);

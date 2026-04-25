@@ -21,7 +21,7 @@ export const NAV_CARDS = [
   },
 ];
 
-export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0 }) => {
+export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 0, totalDelivered = 0, pendingDelivery = 0, invalidFileCount = 0 }) => {
   const hasPending = pendingDelivery > 0;
 
   return [
@@ -37,7 +37,8 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
     },
     {
       key: 'subscriptions',
-      label: 'Total Files to be Delivered',
+      label: 'Total Files to Be Delivered',
+      desc: 'Total event 3 per UUID',
       value: totalToBeDelivered,
       iconSrc: 'Subscription.png',
       color: hasPending ? '#f59e0b' : '#16a34a',
@@ -47,7 +48,7 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
     },
     {
       key: 'deliveries',
-      label: 'Total Files Delivered',
+      label: 'Total Delivered Files',
       value: totalDelivered,
       iconSrc: 'Total deliveries.png',
       color: '#16a34a',
@@ -64,6 +65,16 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
       bgColor: hasPending ? '#fffbeb' : '#f0fdf4',
       borderColor: hasPending ? '#fcd34d' : '#bbf7d0',
       trend: '-3%',
+    },
+    {
+      key: 'invalid',
+      label: 'Total Invalid File Count',
+      value: invalidFileCount,
+      iconSrc: 'Pending delivery.png',
+      color: '#dc2626',
+      bgColor: '#fef2f2',
+      borderColor: '#fecaca',
+      trend: null,
     },
   ];
 };
