@@ -28,6 +28,22 @@ const mapStatusDisplay = (status) => {
   if (s === 'file transfer' || s === 'file transferred') return 'Delivered';
   return status;
 };
+
+// Maps the raw boolean/string "processed" DB flag to a business-readable label.
+// true  → file has been acknowledged and consumed by the downstream receiving application.
+// false → file delivered but downstream acknowledgement not yet received.
+const formatProcessed = (value) => {
+  const v = String(value ?? '').trim().toLowerCase();
+  if (v === 'true')  return 'Processed';
+  if (v === 'false') return 'Not Processed';
+  return value || '—';
+};
+
+const PROCESSED_STYLE = {
+  true:  { background: '#dcfce7', color: '#16a34a' },
+  false: { background: '#fef2f2', color: '#dc2626' },
+  other: { background: '#f1f5f9', color: '#475569' },
+};
 const normalizeVersion = (value) => {
   const str = String(value || '').trim();
   if (!str) return '';
@@ -255,27 +271,33 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
 };
 
 const ALL_COLUMNS = [
-  { key: 'fileId', label: 'File ID' },
-  { key: 'fileName', label: 'File Name' },
-  { key: 'sourcePath', label: 'Source Path' },
-  { key: 'headerString', label: 'Header String' },
-  { key: 'flow', label: 'Flow' },
-  { key: 'version', label: 'Version' },
-  { key: 'fromRole', label: 'From Role' },
-  { key: 'fromMPID', label: 'From MPID' },
-  { key: 'toRole', label: 'To Role' },
-  { key: 'toMPID', label: 'To MPID' },
-  { key: 'recApp', label: 'Receiving App' },
-  { key: 'application', label: 'Dest Application' },
-  { key: 'eventType', label: 'Event Type' },
-  { key: 'status', label: 'Status' },
-  { key: 'id', label: 'Unique ID' },
-  { key: 'timestamp', label: 'Timestamp' },
-  { key: 'eventId', label: 'Event ID' },
-  { key: 'destinationPath', label: 'Destination Path' },
+  { key: 'fileId',              label: 'File ID' },
+  { key: 'fileName',            label: 'File Name' },
+  { key: 'sourcePath',          label: 'Source Path' },
+  { key: 'sourceApp',           label: 'Source Application' },
+  { key: 'headerString',        label: 'Header String' },
+  { key: 'flow',                label: 'Flow' },
+  { key: 'version',             label: 'Version' },
+  { key: 'fromRole',            label: 'From Role' },
+  { key: 'fromMPID',            label: 'From MPID' },
+  { key: 'toRole',              label: 'To Role' },
+  { key: 'toMPID',              label: 'To MPID' },
+  { key: 'recApp',              label: 'Receiving App' },
+  { key: 'application',         label: 'Dest Application' },
+  { key: 'eventType',           label: 'Event Type' },
+  { key: 'status',              label: 'Status' },
+  { key: 'id',                  label: 'Unique ID' },
+  { key: 'timestamp',           label: 'Timestamp' },
+  { key: 'eventId',             label: 'Event ID' },
+  { key: 'destinationPath',     label: 'Destination Path' },
   { key: 'destinationFileName', label: 'Destination File' },
-  { key: 'checksum', label: 'Checksum' },
-  { key: 'processed', label: 'Processed' },
+  { key: 'checksum',            label: 'Checksum' },
+  {
+    key:     'processed',
+    label:   'Processed',
+    tooltip: 'Indicates whether the downstream receiving application has acknowledged and consumed this file event. ' +
+             '"Processed" = downstream confirmed receipt; "Not Processed" = delivered but acknowledgement not yet received.',
+  },
 ];
 
 const DATE_COLUMNS = ['timestamp'];
@@ -434,6 +456,12 @@ const DtcAuditFilter = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [dateError, setDateError] = useState('');
   const filterBtnRefs = useRef({});
+
+  // Derive flow options from flattened results — guarantees dropdown matches actual row values.
+  const flowOptions = useMemo(
+    () => [...new Set(filteredResults.map(r => r.flow).filter(v => v && v !== '-'))].sort(),
+    [filteredResults]
+  );
 
   // Auto-query on data load — use filters from navigation state or defaults
   useEffect(() => {
@@ -680,6 +708,7 @@ const DtcAuditFilter = () => {
       <DtcFilterDropdown
         filters={dropdownFilters}
         auditData={auditData}
+        flowOptions={flowOptions}
         subscriptionAppNames={subscriptionAppNames}
         onFilterChange={handleDropdownFilterChange}
         onReset={handleReset}
@@ -865,9 +894,13 @@ const DtcAuditFilter = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span
                           onClick={() => handleSort(col.key)}
+                          title={col.tooltip}
                           style={{ cursor: 'pointer', flex: 1, display: 'flex', alignItems: 'center', gap: '3px' }}
                         >
                           {col.label}
+                          {col.tooltip && (
+                            <span style={{ fontSize: '9px', opacity: 0.7, marginLeft: '1px', flexShrink: 0 }}>ⓘ</span>
+                          )}
                           <span style={{ display: 'inline-flex', flexDirection: 'column', marginLeft: '2px', lineHeight: 0, flexShrink: 0 }}>
                             <ArrowUp size={10}
                               color={sortConfig.key === col.key && sortConfig.direction === 'asc' ? '#fbbf24' : 'rgba(255,255,255,0.35)'}
@@ -937,7 +970,17 @@ const DtcAuditFilter = () => {
                             </span>
                           ) : col.key === 'eventType' ? (
                             formatEventType(row[col.key])
-                          ) : (
+                          ) : col.key === 'processed' ? (() => {
+                            const v = String(row[col.key] ?? '').trim().toLowerCase();
+                            const style = v === 'true' ? PROCESSED_STYLE.true
+                                        : v === 'false' ? PROCESSED_STYLE.false
+                                        : PROCESSED_STYLE.other;
+                            return (
+                              <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, ...style }}>
+                                {formatProcessed(row[col.key])}
+                              </span>
+                            );
+                          })() : (
                             row[col.key] || ''
                           )}
                         </td>
