@@ -95,8 +95,9 @@ const flattenDtcItem = (item) => {
       timestamp:           event.timestamp || '',
       rawTimestamp:        event.timestamp || '',
       eventId:             event.id || '',
-      destinationPath:     event.Destination_Path || '',
-      destinationFileName: event.Destination_fileName || '',
+      destinationPath:     String(event.Event_Type) === '4' ? (event.Destination_Path || '') : '',
+      destinationFileName: String(event.Event_Type) === '4'
+        ? (event.Destination_fileName || event.Destination_FileName || event.Destination_file_name || '') : '',
     });
 
     return rows;
