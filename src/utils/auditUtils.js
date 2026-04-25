@@ -9,9 +9,9 @@ export const parseHeader = (headerStr) => {
   return {
     flowVersion: parts[1] || '',
     fromRole: parts[2] || '',
-    fromMPID: parts[5] || '',
+    fromMPID: parts[3] || '',
     toRole: parts[4] || '',
-    toMPID: parts[3] || '',
+    toMPID: parts[5] || '',
     recApp: parts[6] || '',
   };
 };
