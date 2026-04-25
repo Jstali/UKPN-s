@@ -1,3 +1,5 @@
+import { mapNonDtcStatus } from '../constants/eventTypes';
+
 const normalizeStatus = (status) => String(status || '').toLowerCase().trim();
 
 export const isDuplicateChecksumStatus = (status) => normalizeStatus(status) === 'duplicate checksum';
@@ -9,7 +11,7 @@ export const isDtcFailedStatus = (status) => {
 };
 
 export const isNonDtcFailedStatus = (status) => {
-  const normalized = normalizeStatus(status);
+  const normalized = normalizeStatus(mapNonDtcStatus(status));
   if (!normalized || isDuplicateChecksumStatus(normalized)) return false;
   // Broad pattern match to cover all SAP PI failure terminology
   return (

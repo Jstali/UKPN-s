@@ -3,7 +3,7 @@
 // one flat row per event so DataTable can render them uniformly.
 
 import { parseHeader, formatDateTime, formatFlowVersion } from './auditUtils';
-import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, STATUSES_WITHOUT_DESTINATION } from '../constants/eventTypes';
+import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, STATUSES_WITHOUT_DESTINATION } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
 import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
@@ -160,7 +160,7 @@ export const flattenNonDtcAuditData = (data = []) => {
         toMPID:      item.toMPID || '-',
         sourceApplication: item.sourceAppName || '-',
         application: event.destinationApplication || event.applicationName || '',
-        status:      event.status || event.Status || item.status || '',
+        status:      mapNonDtcStatus(event.status ?? event.Status ?? item.status ?? ''),
         fileType,
         fileName:    fileName || '-',
         sourceApp:   item.sourceAppName || item.subscription || '-',

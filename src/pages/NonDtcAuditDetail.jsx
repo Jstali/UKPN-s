@@ -6,17 +6,7 @@ import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import FileViewModal from '../components/FileViewModal';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
-
-const NON_DTC_EVENT_TYPE_MAP = {
-  '1': 'File Pickup from Source',
-  '2': 'File Stored To Blob',
-  '3': 'File Subscribe',
-  '4': 'File Delivered',
-};
-const mapNonDtcEventType = (event) => {
-  const raw = String(event.eventType || event.event_type || event.Event_Type || event.EventType || '');
-  return event.description || event.Description || NON_DTC_EVENT_TYPE_MAP[raw] || raw;
-};
+import { resolveNonDtcEventType, mapNonDtcStatus } from '../constants/eventTypes';
 
 const ALL_COLUMNS = [
   { key: 'fileId', label: 'File ID' },
@@ -43,11 +33,11 @@ const mapItem = (item) => ({
   sourceAppName: item.sourceAppName || '',
   sourceFileName: item.sourceFileName || '',
   subscription: item.subscription || '',
-  status: item.status || '',
+  status: mapNonDtcStatus(item.status),
   timestamp: item.timestamp || '',
   eventType: (item.events && item.events.length > 0)
-    ? [...new Set(item.events.map(e => mapNonDtcEventType(e)).filter(Boolean))].join(', ')
-    : mapNonDtcEventType({ eventType: item.eventType }),
+    ? [...new Set(item.events.map(e => resolveNonDtcEventType(e)).filter(Boolean))].join(', ')
+    : resolveNonDtcEventType({ eventType: item.eventType }),
   changeFeedStatus: item.changeFeedStatus || '',
   requestStatus: item.requestStatus || '',
   processedTime: item.processedTime || '',
@@ -311,15 +301,21 @@ const NonDtcAuditDetail = () => {
                       {raw.events.map((event, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafbff' }}>
                           <td style={{ padding: '8px 14px', color: '#94a3b8', fontWeight: 600 }}>{idx + 1}</td>
-                          <td style={{ padding: '8px 14px' }}>{formatValue(mapNonDtcEventType(event))}</td>
+                          <td style={{ padding: '8px 14px' }}>{formatValue(resolveNonDtcEventType(event))}</td>
                           <td style={{ padding: '8px 14px' }}>
-                            <span style={{
-                              padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
-                              background: (event.status || '').toLowerCase() === 'success' ? '#dcfce7' : (event.status || '').toLowerCase().includes('fail') ? '#fef2f2' : '#f1f5f9',
-                              color: (event.status || '').toLowerCase() === 'success' ? '#16a34a' : (event.status || '').toLowerCase().includes('fail') ? '#dc2626' : '#475569',
-                            }}>
-                              {formatValue(event.status)}
-                            </span>
+                            {(() => {
+                              const st = mapNonDtcStatus(event.status);
+                              const sl = st.toLowerCase();
+                              return (
+                                <span style={{
+                                  padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
+                                  background: sl === 'success' ? '#dcfce7' : sl.includes('fail') ? '#fef2f2' : '#f1f5f9',
+                                  color:      sl === 'success' ? '#16a34a' : sl.includes('fail') ? '#dc2626' : '#475569',
+                                }}>
+                                  {st || '-'}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}>{event.timestamp ? new Date(event.timestamp).toLocaleString('en-GB') : '-'}</td>
                           <td style={{ padding: '8px 14px' }}>{formatValue(event.applicationName)}</td>

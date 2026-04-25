@@ -66,3 +66,19 @@ export const mapStatusDisplay = (status) => {
   const key = String(status || '').trim().toLowerCase();
   return STATUS_DISPLAY_MAP[key] || status;
 };
+
+export const NON_DTC_STATUS_MAP = {
+  '0': 'Pending',
+  '1': 'Success',
+  '2': 'Failed',
+  '3': 'Duplicate',
+};
+
+// Resolve a Non-DTC status value — handles both numeric codes and pre-existing strings.
+export const mapNonDtcStatus = (status) => {
+  const raw = String(status ?? '').trim();
+  if (raw === '') return '';
+  if (raw in NON_DTC_STATUS_MAP) return NON_DTC_STATUS_MAP[raw];
+  if (isNaN(Number(raw))) return raw; // already a descriptive string
+  return `Unknown (code: ${raw})`;
+};
