@@ -144,6 +144,18 @@ export const flattenNonDtcAuditData = (data = []) => {
     const subscriptionEvent = events.find(e => String(e?.eventType || e?.event_type || e?.Event_Type || e?.EventType || '') === '3');
     const flowValue = subscriptionEvent?.subscription || item.subscription || item.description || '-';
 
+    // Meta fields — try all known key variants to handle different record-type serializers
+    const changeFeedStatus =
+      item.changeFeedStatus   || item.ChangeFeedStatus   ||
+      item.change_feed_status || item.changeFeed         || item.change_feed || '';
+    const requestStatus =
+      item.requestStatus   || item.RequestStatus   ||
+      item.request_status  || item.reqStatus        || item.req_status || '';
+    const processedTime =
+      item.processedTime   || item.ProcessedTime   ||
+      item.processed_time  || item.processTime     ||
+      item.process_time    || item.processingTime  || item.processing_time || '';
+
     events.forEach(event => {
       const resolvedEventType = resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType });
       if (resolvedEventType === null) return;
@@ -173,6 +185,10 @@ export const flattenNonDtcAuditData = (data = []) => {
         Blob_Location:              itemBlobLocation || evtBlobLocation,
         Blob_File_Name:             itemBlobFileName || evtBlobFileName,
         Source_FileName:            fileName,
+        changeFeedStatus,
+        requestStatus,
+        processedTime,
+        lastUpdatedAt: item.lastUpdatedAt || item.LastUpdatedAt || item.last_updated_at || '',
         eventType: resolvedEventType,
         startDate: item.events?.[0]?.timestamp
           ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',

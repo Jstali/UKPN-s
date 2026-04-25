@@ -28,22 +28,58 @@ const matchesMultiSelect = (selectedValue, actualValue) => {
   return selectedValues.includes(actualValue);
 };
 
-const mapItem = (item) => ({
-  fileId: item.id || '',
-  sourceAppName: item.sourceAppName || '',
-  sourceFileName: item.sourceFileName || '',
-  subscription: item.subscription || '',
-  status: mapNonDtcStatus(item.status),
-  timestamp: item.timestamp || '',
-  eventType: (item.events && item.events.length > 0)
-    ? [...new Set(item.events.map(e => resolveNonDtcEventType(e)).filter(Boolean))].join(', ')
-    : resolveNonDtcEventType({ eventType: item.eventType }),
-  changeFeedStatus: item.changeFeedStatus || '',
-  requestStatus: item.requestStatus || '',
-  processedTime: item.processedTime || '',
-  lastUpdatedAt: item.lastUpdatedAt || '',
-  rawData: item,
-});
+const resolveItemMeta = (item) => {
+  const changeFeedStatus =
+    item.changeFeedStatus   || item.ChangeFeedStatus   ||
+    item.change_feed_status || item.changeFeed         ||
+    item.change_feed        || '';
+
+  const requestStatus =
+    item.requestStatus   || item.RequestStatus   ||
+    item.request_status  || item.reqStatus        ||
+    item.req_status      || '';
+
+  const processedTime =
+    item.processedTime   || item.ProcessedTime   ||
+    item.processed_time  || item.processTime     ||
+    item.process_time    || item.processingTime  ||
+    item.processing_time || '';
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (!changeFeedStatus && !requestStatus && !processedTime) {
+      const keys = Object.keys(item);
+      const hasFeed = keys.some(k => k.toLowerCase().includes('feed') || k.toLowerCase().includes('change'));
+      const hasReq  = keys.some(k => k.toLowerCase().includes('request') || k.toLowerCase().includes('req'));
+      const hasProc = keys.some(k => k.toLowerCase().includes('process'));
+      if (!hasFeed || !hasReq || !hasProc) {
+        console.warn('[NonDtcAuditDetail] Missing meta fields for record id=%s. Available keys: %s',
+          item.id, keys.join(', '));
+      }
+    }
+  }
+
+  return { changeFeedStatus, requestStatus, processedTime };
+};
+
+const mapItem = (item) => {
+  const { changeFeedStatus, requestStatus, processedTime } = resolveItemMeta(item);
+  return {
+    fileId: item.id || '',
+    sourceAppName: item.sourceAppName || '',
+    sourceFileName: item.sourceFileName || '',
+    subscription: item.subscription || '',
+    status: mapNonDtcStatus(item.status),
+    timestamp: item.timestamp || '',
+    eventType: (item.events && item.events.length > 0)
+      ? [...new Set(item.events.map(e => resolveNonDtcEventType(e)).filter(Boolean))].join(', ')
+      : resolveNonDtcEventType({ eventType: item.eventType }),
+    changeFeedStatus,
+    requestStatus,
+    processedTime,
+    lastUpdatedAt: item.lastUpdatedAt || item.LastUpdatedAt || item.last_updated_at || '',
+    rawData: item,
+  };
+};
 
 const formatValue = (value) => {
   if (value === null || value === undefined || String(value).trim() === '') return '-';
@@ -210,10 +246,10 @@ const NonDtcAuditDetail = () => {
       { label: 'Subscription', value: raw.subscription },
       { label: 'Status', value: raw.status || selectedRecord.status },
       { label: 'Timestamp', value: raw.timestamp || selectedRecord.timestamp },
-      { label: 'Change Feed Status', value: raw.changeFeedStatus },
-      { label: 'Request Status', value: raw.requestStatus },
-      { label: 'Processed Time', value: raw.processedTime },
-      { label: 'Last Updated At', value: raw.lastUpdatedAt },
+      { label: 'Change Feed Status', value: selectedRecord.changeFeedStatus || '—' },
+      { label: 'Request Status',     value: selectedRecord.requestStatus    || '—' },
+      { label: 'Processed Time',     value: selectedRecord.processedTime    || '—' },
+      { label: 'Last Updated At',    value: selectedRecord.lastUpdatedAt    || raw.lastUpdatedAt || '—' },
     ];
 
     return (
