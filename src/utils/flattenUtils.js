@@ -3,7 +3,7 @@
 // one flat row per event so DataTable can render them uniformly.
 
 import { parseHeader, formatDateTime, formatFlowVersion } from './auditUtils';
-import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, STATUSES_WITHOUT_DESTINATION } from '../constants/eventTypes';
+import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, DTC_EVENT_TYPES_WITH_DESTINATION } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
 import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
@@ -69,9 +69,9 @@ const flattenDtcItem = (item) => {
     const eventType = resolveDtcEventType(event);
     // Skip event types mapped to null (e.g. "File Store to Blob")
     if (eventType === null) return rows;
-    const application = STATUSES_WITHOUT_DESTINATION.has(eventStatus.toLowerCase().trim())
-      ? ''
-      : (event.applicationName || event.Destination_Application || '');
+    const application = DTC_EVENT_TYPES_WITH_DESTINATION.has(String(event.Event_Type))
+      ? (event.applicationName || event.Destination_Application || '')
+      : '';
 
     rows.push({
       ...item,

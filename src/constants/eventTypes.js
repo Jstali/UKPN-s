@@ -23,12 +23,15 @@ export const NON_DTC_EVENT_TYPE_MAP = {
   '4': 'NetApp Delivered',
 };
 
-// Statuses that should suppress the destination application column
+// Statuses that should suppress the destination application column (legacy — kept for reference)
 export const STATUSES_WITHOUT_DESTINATION = new Set([
   'publish',
   'published',
   'valid subscription',
 ]);
+
+// Only these DTC event types carry a meaningful destination application
+export const DTC_EVENT_TYPES_WITH_DESTINATION = new Set(['3', '4', '22']);
 
 // Statuses remapped for cleaner display labels
 export const STATUS_DISPLAY_MAP = {
