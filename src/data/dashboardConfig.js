@@ -71,9 +71,9 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
       label: 'Total Invalid File Count',
       value: invalidFileCount,
       iconSrc: 'Pending delivery.png',
-      color: '#dc2626',
-      bgColor: '#fef2f2',
-      borderColor: '#fecaca',
+      color:       invalidFileCount > 0 ? '#dc2626' : '#16a34a',
+      bgColor:     invalidFileCount > 0 ? '#fef2f2' : '#f0fdf4',
+      borderColor: invalidFileCount > 0 ? '#fecaca' : '#bbf7d0',
       trend: null,
     },
   ];
