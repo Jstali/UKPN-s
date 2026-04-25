@@ -69,6 +69,7 @@ export const AppProvider = ({ children }) => {
   const [isLocalSubscription,setIsLocalSubscription]= useState(false);
   const [subscriptionError,  setSubscriptionError]  = useState(null);
   const [flowsData,          setFlowsData]          = useState([]);
+  const [flowsLoading,       setFlowsLoading]       = useState(false);
 
   // File status summary from dedicated count API
   const [fileStatusSummary,      setFileStatusSummary]      = useState({ totalFiles: null, successFiles: null, pendingFiles: null });
@@ -105,11 +106,14 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const fetchFlowsData = useCallback(async () => {
+    setFlowsLoading(true);
     try {
       const { data } = await fetchFlows();
       setFlowsData(Array.isArray(data) ? data : []);
     } catch {
       setFlowsData([]);
+    } finally {
+      setFlowsLoading(false);
     }
   }, []);
 
@@ -347,6 +351,7 @@ export const AppProvider = ({ children }) => {
     nonDtcFetchError,
     // Flows (pre-fetched on mount — used by DtcFilterDropdown to avoid timing race)
     flowsData,
+    flowsLoading,
     // Subscriptions
     subscriptionData,
     subscriptionLoading,
@@ -362,7 +367,7 @@ export const AppProvider = ({ children }) => {
     auditData, loading, dataComplete, fetchError, fetchAllData,
     dtcHasMore, dtcLoadingMore, dtcPageMeta, loadMoreDtcData,
     nonDtcAuditData, nonDtcFetchError,
-    flowsData,
+    flowsData, flowsLoading,
     subscriptionData, subscriptionLoading, isLocalSubscription, subscriptionError, fetchSubscriptions,
     fileStatusSummary, fileStatusSummaryError,
   ]);

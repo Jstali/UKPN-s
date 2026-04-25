@@ -1,13 +1,12 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Search, RotateCcw, ChevronDown } from 'lucide-react';
-import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
 import api, { fetchDropdownValues } from '../utils/api';
 import { useApp } from '../context/AppContext';
 
 // Import from shared constants — single source of truth
 import { DTC_EVENT_TYPE_MAP as EVENT_TYPE_MAP } from '../constants/eventTypes';
 
-const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
+const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false, loading = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [popupStyle, setPopupStyle] = useState({ position: 'fixed', top: 0, left: 0, visibility: 'hidden' });
@@ -151,6 +150,16 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
               />
             </div>
           )}
+          {loading && (
+            <div style={{ padding: '8px 12px', fontSize: '12px', color: '#94a3b8', textAlign: 'center' }}>
+              Loading options…
+            </div>
+          )}
+          {!loading && filteredOptions.length === 0 && !searchQuery && options.length === 0 && (
+            <div style={{ padding: '8px 12px', fontSize: '12px', color: '#94a3b8', textAlign: 'center' }}>
+              No options available
+            </div>
+          )}
           <div
             onClick={handleSelectAll}
             role="option"
@@ -215,8 +224,8 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versionOptions = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
-  const { flowsData } = useApp();
+const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOptions = [], versionOptions = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
+  const { flowsData, flowsLoading } = useApp();
   const [dateError, setDateError] = React.useState('');
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
   const [destAppsFromApi, setDestAppsFromApi] = React.useState([]);
@@ -269,7 +278,12 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versio
 
   // Extract unique values dynamically from audit data
   const uniqueValues = useMemo(() => {
-    const apiFlows = Array.isArray(flowsData) && flowsData.length > 0 ? flowsData : [];
+    // flowOptions come from pre-flattened rows in the parent (same deriveFlowVersion logic
+    // as the table), so these are guaranteed to match the `flow` field used in filtering.
+    // API flows supplement for when audit data hasn't loaded yet.
+    const apiFlows = Array.isArray(flowsData) ? flowsData : [];
+    const allFlows = [...new Set([...apiFlows, ...flowOptions])].sort();
+
     const apiSourceApps = sourceAppsFromApi.length > 0 ? sourceAppsFromApi : [];
     const apiDestApps = destAppsFromApi.length > 0 ? destAppsFromApi : [];
     const apiFromRole = [...dropdownValues.fromRole].sort();
@@ -279,10 +293,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versio
 
     if (!auditData || auditData.length === 0) {
       return {
-        sourceApplication: apiSourceApps.length > 0 ? apiSourceApps.sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
-        destinationApplication: apiDestApps.length > 0 ? apiDestApps.sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
+        sourceApplication: apiSourceApps.length > 0 ? [...apiSourceApps].sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
+        destinationApplication: apiDestApps.length > 0 ? [...apiDestApps].sort() : (subscriptionAppNames.length ? [...subscriptionAppNames].sort() : []),
         eventType: [],
-        flow: apiFlows.sort(),
+        flow: allFlows,
         version: versionOptions,
         fromRole: apiFromRole,
         fromMPID: apiFromMPID,
@@ -296,18 +310,10 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versio
       sourceApplication: new Set(apiSourceApps.length > 0 ? apiSourceApps : subscriptionAppNames),
       destinationApplication: new Set(apiDestApps.length > 0 ? apiDestApps : subscriptionAppNames),
       eventType: new Set(),
-      flow: new Set(apiFlows),
+      flow: new Set(allFlows),
     };
 
     auditData.forEach(item => {
-      const parsed = parseHeader(item.Header_String);
-
-      if (parsed.flowVersion) {
-        const formatted = formatFlowVersion(parsed.flowVersion);
-        const [flow = ''] = String(formatted || '').split(' ');
-        if (flow) values.flow.add(flow);
-      }
-
       const sourceApp = item.events?.[0]?.applicationName;
       if (sourceApp && sourceApp !== 'Unknown') values.sourceApplication.add(sourceApp);
 
@@ -336,11 +342,12 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versio
       fromMPID: apiFromMPID,
       toRole: apiToRole,
       toMPID: apiToMPID,
-      // version and fileId come from pre-flattened data (robust field resolution)
+      // flow, version and fileId come from pre-flattened data (robust field resolution)
+      flow: allFlows,
       version: versionOptions,
       fileId: fileIdOptions,
     };
-  }, [auditData, subscriptionAppNames, flowsData, sourceAppsFromApi, destAppsFromApi, dropdownValues, versionOptions, fileIdOptions]);
+  }, [auditData, subscriptionAppNames, flowsData, flowOptions, sourceAppsFromApi, destAppsFromApi, dropdownValues, versionOptions, fileIdOptions]);
 
   // Reordered fields based on priority
   const orderedFields = [
@@ -397,6 +404,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], fileIdOptions = [], versio
                   onChange={(value) => onFilterChange(field, value)}
                   style={selectStyle}
                   searchable={field === 'flow' || field === 'version' || field === 'fromMPID' || field === 'toMPID'}
+                  loading={field === 'flow' && flowsLoading}
                 />
               </div>
             ))}

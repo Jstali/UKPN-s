@@ -1,7 +1,7 @@
 // Generic filter-state hook shared by DTC and Non-DTC audit pages.
 // Handles: state, apply, reset, sessionStorage persistence, and scroll restoration.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { sessionGet, sessionSet, sessionDel } from '../utils/storageUtils';
 
 /**
@@ -16,6 +16,11 @@ export const useAuditFilters = (defaultFilters, storageKey, applyFn, dataDeps = 
   const [filteredResults, setFilteredResults] = useState([]);
   const [hasQueried,      setHasQueried]      = useState(false);
 
+  // Always keep the latest applyFn available without putting it in dep arrays.
+  // This prevents stale closures when globalAuditData loads after hook initialization.
+  const applyFnRef = useRef(applyFn);
+  useEffect(() => { applyFnRef.current = applyFn; });
+
   // Restore persisted filter state when data loads (e.g. returning from a detail page)
   useEffect(() => {
     const saved       = sessionGet(`${storageKey}_filters`);
@@ -24,7 +29,7 @@ export const useAuditFilters = (defaultFilters, storageKey, applyFn, dataDeps = 
     if (saved && wasQueried) {
       setFilters(saved);
       if (dataDeps.every(d => Array.isArray(d) ? d.length > 0 : !!d)) {
-        setFilteredResults(applyFn(saved));
+        setFilteredResults(applyFnRef.current(saved));
         setAppliedFilters(saved);
         setHasQueried(true);
       }
@@ -49,7 +54,7 @@ export const useAuditFilters = (defaultFilters, storageKey, applyFn, dataDeps = 
 
   const apply = useCallback((overrideFilters) => {
     const f = overrideFilters || filters;
-    const results = applyFn(f);
+    const results = applyFnRef.current(f);
     setFilteredResults(results);
     setAppliedFilters({ ...f });
     setHasQueried(true);

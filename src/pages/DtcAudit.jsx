@@ -110,6 +110,15 @@ const DtcAudit = () => {
     [flattenedAuditData]
   );
 
+  // Derive flow options from flattened rows — guarantees options match the `flow` field
+  // used in filtering (flattenDtcItem uses deriveFlowVersion() which has multiple fallbacks,
+  // while DtcFilterDropdown only parsed Header_String — causing empty options when headers
+  // are UNKNOWN but flow data exists in other fields).
+  const flowOptions = useMemo(
+    () => [...new Set(flattenedAuditData.map(r => r.flow).filter(v => v && v !== '-'))].sort(),
+    [flattenedAuditData]
+  );
+
   // Auto-fetch next DTC page when the user navigates to a table page that needs more rows
   useEffect(() => {
     if (hasQueried) return;
@@ -198,6 +207,7 @@ const DtcAudit = () => {
         <DtcFilterDropdown
           filters={filters}
           auditData={globalAuditData}
+          flowOptions={flowOptions}
           fileIdOptions={fileIdOptions}
           versionOptions={versionOptions}
           subscriptionAppNames={subscriptionAppNames}
