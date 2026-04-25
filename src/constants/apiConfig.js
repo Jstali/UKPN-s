@@ -17,12 +17,12 @@ export const API_CODES = {
   flows:            code('REACT_APP_FLOWS_API_CODE'),
   sourceApp:        code('REACT_APP_SOURCE_APP_API_CODE'),
   destApp:          code('REACT_APP_DEST_APP_API_CODE'),
-  appStatus:        code('REACT_APP_APP_STATUS_API_CODE') || 'REDACTED_APP_STATUS_API_CODE=',
+  appStatus:        code('REACT_APP_APP_STATUS_API_CODE'),
   dropdown:         code('REACT_APP_DROPDOWN_VALUES_API_CODE'),
   dtcDownload:      code('REACT_APP_DTC_DOWNLOAD_API_CODE'),
   dtcPreview:       code('REACT_APP_DTC_PREVIEW_API_CODE') || code('REACT_APP_DTC_DOWNLOAD_API_CODE'),
-  fileStatusSummary: code('REACT_APP_FILE_STATUS_SUMMARY_CODE') || 'REDACTED_FILE_STATUS_SUMMARY_CODE=',
-  auditEmailExport:  code('REACT_APP_AUDIT_EMAIL_EXPORT_CODE')  || 'REDACTED_AUDIT_EMAIL_EXPORT_CODE=',
+  fileStatusSummary: code('REACT_APP_FILE_STATUS_SUMMARY_CODE'),
+  auditEmailExport:  code('REACT_APP_AUDIT_EMAIL_EXPORT_CODE'),
 };
 
 // Build a full endpoint URL including its function code
@@ -45,10 +45,6 @@ export const ENDPOINTS = {
   downloadFile:      `${HOST}/api/fileConnectDownloadFileByID`,
   viewFile:          `${HOST}/api/fileConnectViewBlobFile`,
 };
-
-// Proxy / local dev server settings
-export const API_BASE      = process.env.REACT_APP_API_URL || 'http://localhost:4000';
-export const USE_PROXY     = process.env.REACT_APP_USE_API === 'true';
 
 // Timeouts
 export const AUDIT_TIMEOUT_MS = 60_000;

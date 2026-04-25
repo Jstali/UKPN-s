@@ -1,26 +1,8 @@
 // Unified API service.
 // Replaces the bloated api.js — all methods now delegate to shared fetch helpers.
 
-import { ENDPOINTS, API_CODES, API_BASE, USE_PROXY, AUDIT_PAGE_SIZE, DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
+import { ENDPOINTS, API_CODES, AUDIT_PAGE_SIZE, DTC_PAGE_SIZE, NON_DTC_PAGE_SIZE } from '../constants/apiConfig';
 import { fetchJson, fetchAuditPage } from './fetchUtils';
-
-// ─── Auth token helpers (proxy mode only) ───────────────────────────────────
-
-const getToken = () => sessionStorage.getItem('authToken');
-
-const authHeaders = () => ({
-  'Content-Type': 'application/json',
-  ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-});
-
-const proxyFetch = async (path, init = {}) => {
-  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders(), ...init });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error || 'Request failed');
-  }
-  return res.json();
-};
 
 // ─── Simple reference-data endpoints ────────────────────────────────────────
 
@@ -150,35 +132,7 @@ export const viewBlobFileByPath = async (path, isNonDtc = false) => {
   return { content: await res.text(), filename };
 };
 
-// ─── Proxy-mode only endpoints ───────────────────────────────────────────────
-
-const proxy = {
-  login:           (username, password) => {
-    if (!USE_PROXY) return null;
-    return proxyFetch('/api/auth/login', {
-      method: 'POST',
-      body:   JSON.stringify({ username, password }),
-    }).then(data => { sessionStorage.setItem('authToken', data.token); return data; });
-  },
-  logout: async () => {
-    if (!USE_PROXY) return;
-    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: authHeaders() }).catch(() => {});
-    sessionStorage.removeItem('authToken');
-  },
-  validateSession: () => USE_PROXY ? proxyFetch('/api/auth/me')              : null,
-  getInfo:         () => USE_PROXY ? proxyFetch('/api/dashboard/info')       : null,
-  updateInfo: (info) =>
-    USE_PROXY ? proxyFetch('/api/dashboard/info', { method: 'PUT', body: JSON.stringify({ info }) }) : null,
-  getPerformance:  () => USE_PROXY ? proxyFetch('/api/performance')          : null,
-  getAppStatus:    () => USE_PROXY ? proxyFetch('/api/status/apps')          : null,
-  clearCache:      () => USE_PROXY ? proxyFetch('/api/admin/cache/clear', { method: 'POST' }) : null,
-  health:          () => proxyFetch('/api/health'),
-};
-
-// Default export keeps the same surface area as the original `api` object
-// so existing call sites (AppContext, components) need no changes.
 const apiService = {
-  ...proxy,
   fetchDtcAuditData,
   fetchNonDtcAuditData,
   fetchDtcSubscriptions,
