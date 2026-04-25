@@ -144,7 +144,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   };
 
   const handleSelectAll = () => {
-    onChange('All');
+    onChange(value === 'All' ? '' : 'All');
   };
 
   return (
@@ -214,21 +214,21 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
           <div
             onClick={handleSelectAll}
             role="option"
-            aria-selected={selectedValues.length === 0}
+            aria-selected={value === 'All'}
             style={{
               padding: '8px 12px',
               cursor: 'pointer',
               fontSize: '13px',
               borderBottom: '1px solid #f1f5f9',
-              background: selectedValues.length === 0 ? '#f8fafc' : '#fff',
-              fontWeight: selectedValues.length === 0 ? 600 : 400
+              background: value === 'All' ? '#f8fafc' : '#fff',
+              fontWeight: value === 'All' ? 600 : 400
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-            onMouseLeave={(e) => e.currentTarget.style.background = selectedValues.length === 0 ? '#f8fafc' : '#fff'}
+            onMouseLeave={(e) => e.currentTarget.style.background = value === 'All' ? '#f8fafc' : '#fff'}
           >
             <input
               type="checkbox"
-              checked={selectedValues.length === 0}
+              checked={value === 'All'}
               readOnly
               style={{ marginRight: '8px', cursor: 'pointer' }}
             />

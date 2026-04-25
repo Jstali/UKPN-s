@@ -117,30 +117,30 @@ const MultiCheckboxDropdown = ({
         >
           {/* Select All */}
           <div
-            onClick={() => onChange('All')}
+            onClick={() => onChange(value === 'All' ? '' : 'All')}
             role="option"
-            aria-selected={selectedValues.length === 0}
+            aria-selected={value === 'All'}
             style={{
               padding: '8px 12px',
               cursor: 'pointer',
               fontSize: '13px',
               borderBottom: '1px solid #f1f5f9',
-              background: selectedValues.length === 0 ? '#eef2ff' : '#fff',
-              fontWeight: selectedValues.length === 0 ? 600 : 400,
+              background: value === 'All' ? '#eef2ff' : '#fff',
+              fontWeight: value === 'All' ? 600 : 400,
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
             }}
             onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-            onMouseLeave={e => e.currentTarget.style.background = selectedValues.length === 0 ? '#eef2ff' : '#fff'}
+            onMouseLeave={e => e.currentTarget.style.background = value === 'All' ? '#eef2ff' : '#fff'}
           >
-            <input type="checkbox" readOnly checked={selectedValues.length === 0} style={{ cursor: 'pointer' }} />
+            <input type="checkbox" readOnly checked={value === 'All'} style={{ cursor: 'pointer' }} />
             All
           </div>
 
           {options.map(option => {
             // When "All" is selected every option is considered checked
-            const isAllSelected = value === 'All' || selectedValues.length === 0;
+            const isAllSelected = value === 'All';
             const isChecked = isAllSelected || selectedValues.includes(option);
             return (
               <div
