@@ -288,16 +288,9 @@ const ALL_COLUMNS = [
   { key: 'status',              label: 'Status' },
   { key: 'id',                  label: 'Unique ID' },
   { key: 'timestamp',           label: 'Timestamp' },
-  { key: 'eventId',             label: 'Event ID' },
   { key: 'destinationPath',     label: 'Destination Path' },
   { key: 'destinationFileName', label: 'Destination File' },
   { key: 'checksum',            label: 'Checksum' },
-  {
-    key:     'processed',
-    label:   'Processed',
-    tooltip: 'Indicates whether the downstream receiving application has acknowledged and consumed this file event. ' +
-             '"Processed" = downstream confirmed receipt; "Not Processed" = delivered but acknowledgement not yet received.',
-  },
 ];
 
 const DATE_COLUMNS = ['timestamp'];
