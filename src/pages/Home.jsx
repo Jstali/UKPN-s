@@ -125,13 +125,18 @@ const Home = () => {
   const fileStats = React.useMemo(() => {
     const computedDelivered = dtcDeliveredFiles.length + nonDtcAuditData.filter(isNonDtcDelivered).length;
     const computedTotal     = auditData.length + nonDtcAuditData.length;
-    // Use API summary values when available; fall back to locally computed counts
-    const totalToBeDelivered = fileStatusSummary?.totalFiles   ?? computedTotal;
-    const totalDelivered     = fileStatusSummary?.successFiles ?? computedDelivered;
-    const pendingDelivery    = fileStatusSummary?.pendingFiles ?? Math.max(computedTotal - computedDelivered, 0);
+    // API field         → UI card
+    // totalFiles        → Total Inbound Files
+    // successFiles      → Total Files to be Delivered
+    // deliveredFiles    → Total Files Delivered
+    // pendingFiles      → Total Files Pending for Delivery
+    const totalInboundFiles  = fileStatusSummary?.totalFiles     ?? inboundFiles.length;
+    const totalToBeDelivered = fileStatusSummary?.successFiles   ?? computedTotal;
+    const totalDelivered     = fileStatusSummary?.deliveredFiles ?? computedDelivered;
+    const pendingDelivery    = fileStatusSummary?.pendingFiles   ?? Math.max(computedTotal - computedDelivered, 0);
     return {
       filesReceived: computedTotal,
-      totalInboundFiles: inboundFiles.length,
+      totalInboundFiles,
       totalToBeDelivered,
       totalDelivered,
       pendingDelivery,

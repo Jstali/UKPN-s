@@ -53,17 +53,26 @@ export const fetchDtcSubscriptions = () =>
     (d) => (Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []),
   ).then(r => ({ data: r.data ?? [], isLocal: false, error: r.error }));
 
-// File status summary — totalFiles, successFiles, pendingFiles
+// File status summary
+// API field      → UI card
+// totalFiles     → Total Inbound Files
+// successFiles   → Total Files to be Delivered
+// deliveredFiles → Total Files Delivered
+// pendingFiles   → Total Files Pending for Delivery
 export const fetchFileStatusSummary = () =>
   fetchJson(
     ENDPOINTS.fileStatusSummary,
     'File Status Summary',
     (d) => ({
-      totalFiles:   d?.totalFiles   ?? null,
-      successFiles: d?.successFiles ?? null,
-      pendingFiles: d?.pendingFiles ?? null,
+      totalFiles:     d?.totalFiles     ?? null,
+      successFiles:   d?.successFiles   ?? null,
+      deliveredFiles: d?.deliveredFiles ?? null,
+      pendingFiles:   d?.pendingFiles   ?? null,
     }),
-  ).then(r => ({ data: r.data ?? { totalFiles: null, successFiles: null, pendingFiles: null }, error: r.error }));
+  ).then(r => ({
+    data: r.data ?? { totalFiles: null, successFiles: null, deliveredFiles: null, pendingFiles: null },
+    error: r.error,
+  }));
 
 // POST — sends styled HTML email with Excel attachment for DTC or SAP audit data
 export const sendAuditExportEmail = (payload) => {
