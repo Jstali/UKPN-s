@@ -105,6 +105,7 @@ const MultiCheckboxDropdown = ({
       {isOpen && (
         <div
           role="listbox"
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             ...popupStyle,
             background: '#fff',

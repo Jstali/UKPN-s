@@ -122,6 +122,7 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
         <div
           role="listbox"
           aria-multiselectable="true"
+          onMouseDown={(e) => e.stopPropagation()}
           style={{
             ...popupStyle,
             background: '#fff',
