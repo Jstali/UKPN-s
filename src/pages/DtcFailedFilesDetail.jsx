@@ -5,6 +5,7 @@ import { ArrowLeft, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
+import { isFailedEventType } from '../utils/statusUtils';
 
 const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
@@ -43,7 +44,7 @@ const deriveFlowVersion = (item, parsedFlowVersion, event) => {
 const isFailedStatus = (status) => {
   const s = (status || '').toLowerCase();
   if (s === 'duplicate checksum') return false;
-  return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
+  return s === 'failed' || s === 'checksum mismatch';
 };
 
 const FlowMultiSelectDropdown = ({ value, options, onChange }) => {
@@ -182,6 +183,7 @@ const flattenAuditEvents = (data) => {
           destinationPath: event.Destination_Path || event.destinationPath || event.destination_path || '',
           destinationFileName: event.Destination_fileName || event.destinationFileName || event.destination_fileName || '',
           checksum: event.Checksum || event.checksum || item.Checksum || item.checksum || '',
+          rawEventType: String(event.Event_Type ?? ''),
         });
       });
     }
@@ -228,7 +230,7 @@ const DtcFailedFilesDetail = () => {
 
   // Memoize failed records
   const failedRecords = useMemo(() => {
-    return flattenedData.filter(row => isFailedStatus(row.status));
+    return flattenedData.filter(row => isFailedStatus(row.status) || isFailedEventType(row.rawEventType));
   }, [flattenedData]);
 
   // Apply filters
