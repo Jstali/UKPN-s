@@ -1,13 +1,21 @@
 // Single source of truth for all event type mappings across DTC and Non-DTC
 
 export const DTC_EVENT_TYPE_MAP = {
-  '1': 'Received',
-  '2': 'Subscribed',
-  '3': 'Published',
-  '4': 'NetApp Delivered',
-  '21': 'Invalid Flow',
-  '22': 'Delivered',
-  '32': 'File Processed',
+  '0':  'Invalid Structure',
+  '1':  'Archived, later updated to Publish',
+  '2':  'Valid Subscription, Invalid flow, or VALID_FILE',
+  '3':  'Subscribe / Subscribed',
+  '4':  'File Delivered',
+  '5':  'Delivery Failed / Destination Path Unavailable',
+  '6':  'Destination App Inactive',
+  '7':  'Invalid Subscription / File Delivery Failed',
+  '8':  'CHECKSUM_MISMATCH',
+  '21': 'Duplicate checksum',
+  '22': 'File Transferred',
+  '23': 'ACK Received',
+  '31': 'Published',
+  '32': 'ACK Generate',
+  '33': 'User Received ACK',
   // null = hidden: these event types are suppressed from table rows and filter options
   'File Store to Blob':   null,
   'File Stored to Blob':  null,
@@ -17,10 +25,21 @@ export const DTC_EVENT_TYPE_MAP = {
 };
 
 export const NON_DTC_EVENT_TYPE_MAP = {
-  '1': 'Received',
-  '2': null,  // File Stored To Blob — hidden
-  '3': 'Published',
-  '4': 'NetApp Delivered',
+  '0':  'Invalid Structure',
+  '1':  'Archived, later updated to Publish',
+  '2':  'Valid Subscription, Invalid flow, or VALID_FILE',
+  '3':  'Subscribe / Subscribed',
+  '4':  'File Delivered',
+  '5':  'Delivery Failed / Destination Path Unavailable',
+  '6':  'Destination App Inactive',
+  '7':  'Invalid Subscription / File Delivery Failed',
+  '8':  'CHECKSUM_MISMATCH',
+  '21': 'Duplicate checksum',
+  '22': 'File Transferred',
+  '23': 'ACK Received',
+  '31': 'Published',
+  '32': 'ACK Generate',
+  '33': 'User Received ACK',
 };
 
 // Statuses that should suppress the destination application column (legacy — kept for reference)

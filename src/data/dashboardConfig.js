@@ -38,7 +38,6 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
     {
       key: 'subscriptions',
       label: 'Total Files to Be Delivered',
-      desc: 'Total event 3 per UUID',
       value: totalToBeDelivered,
       iconSrc: 'Subscription.png',
       color: hasPending ? '#f59e0b' : '#16a34a',
