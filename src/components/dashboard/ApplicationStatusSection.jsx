@@ -111,11 +111,9 @@ const ApplicationStatusSection = ({ dashboardUpdatedAt }) => {
             />
             <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{overallLabel}</span>
           </div>
-          {!fetchLoading && apps.length > 0 && (
-            <span style={{ fontSize: '12px', fontWeight: 600, color: anyUnhealthy ? '#dc2626' : '#16a34a' }}>
-              {anyUnhealthy
-                ? `${apps.filter(a => !a.healthy).length} unhealthy`
-                : `${apps.length} healthy`}
+          {!fetchLoading && anyUnhealthy && (
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#dc2626' }}>
+              {apps.filter(a => !a.healthy).length} unhealthy
             </span>
           )}
         </div>

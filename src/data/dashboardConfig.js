@@ -67,7 +67,7 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
     },
     {
       key: 'invalid',
-      label: 'Total Invalid File Count',
+      label: 'Total Invalid File',
       value: invalidFileCount,
       iconSrc: 'Pending delivery.png',
       color:       invalidFileCount > 0 ? '#dc2626' : '#16a34a',
