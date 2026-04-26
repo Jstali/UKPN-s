@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
 import { parseHeader, formatFlowVersion } from '../../utils/auditUtils';
+import { isFailedEventType } from '../../utils/statusUtils';
+import { DTC_EVENT_TYPE_MAP } from '../../constants/eventTypes';
 
 const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => {
   const [expandedCategory, setExpandedCategory] = useState(null);
@@ -114,12 +116,17 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                     const flowDisplay = dtcFlowParts.flow || 'N/A';
                     const versionDisplay = dtcFlowParts.version || 'N/A';
                     const statusDisplay = isDtc
-                      ? (file.events?.find(e => {
-                          const s = (e.Status || e.status || '').toLowerCase();
-                          // Exclude "duplicate checksum" - it's not a failure
-                          if (s === 'duplicate checksum') return false;
-                          return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
-                        })?.Status || 'Failed')
+                      ? (() => {
+                          const failedEvent = file.events?.find(e => {
+                            const s = (e.Status || e.status || '').toLowerCase();
+                            if (s === 'duplicate checksum') return false;
+                            return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch' || isFailedEventType(e.Event_Type);
+                          });
+                          if (!failedEvent) return 'Failed';
+                          const s = (failedEvent.Status || failedEvent.status || '').toLowerCase();
+                          if (s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch') return failedEvent.Status || failedEvent.status;
+                          return DTC_EVENT_TYPE_MAP[String(failedEvent.Event_Type)] || failedEvent.Status || 'Failed';
+                        })()
                       : (file.status || file.Status || 'Failed');
 
                     return (

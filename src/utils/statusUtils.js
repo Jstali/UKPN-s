@@ -4,6 +4,12 @@ const normalizeStatus = (status) => String(status || '').toLowerCase().trim();
 
 export const isDuplicateChecksumStatus = (status) => normalizeStatus(status) === 'duplicate checksum';
 
+// Event types that represent a failed file (covers both DTC and Non-DTC)
+export const FAILED_EVENT_TYPES = new Set(['0', '5', '6', '8', '9', '21']);
+
+export const isFailedEventType = (eventType) =>
+  FAILED_EVENT_TYPES.has(String(eventType ?? ''));
+
 export const isDtcFailedStatus = (status) => {
   const normalized = normalizeStatus(status);
   if (!normalized || isDuplicateChecksumStatus(normalized)) return false;
@@ -36,6 +42,11 @@ export const isNonDtcFailedRecord = (item) => {
   if (isNonDtcFailedStatus(item.status) || isNonDtcFailedStatus(item.Status)) return true;
 
   const events = Array.isArray(item.events) ? item.events : [];
-  return events.some((e) => isNonDtcFailedStatus(e?.status) || isNonDtcFailedStatus(e?.Status));
+  return events.some((e) =>
+    isNonDtcFailedStatus(e?.status) ||
+    isNonDtcFailedStatus(e?.Status) ||
+    isFailedEventType(e?.Event_Type) ||
+    isFailedEventType(e?.eventType)
+  );
 };
 

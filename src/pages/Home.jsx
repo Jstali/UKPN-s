@@ -10,7 +10,7 @@ import PerformanceSection from '../components/dashboard/PerformanceSection';
 import FailedFilesSection from '../components/dashboard/FailedFilesSection';
 import EditModal from '../components/dashboard/EditModal';
 import { parseHeader } from '../utils/auditUtils';
-import { isDtcFailedStatus, isNonDtcFailedRecord } from '../utils/statusUtils';
+import { isDtcFailedStatus, isNonDtcFailedRecord, isFailedEventType } from '../utils/statusUtils';
 import { buildPerformanceStats } from '../utils/performanceUtils';
 
 import { useApp } from '../context/AppContext';
@@ -88,7 +88,9 @@ const Home = () => {
 
   const failedFiles = React.useMemo(() => {
     const dtcFailed = auditData.filter(item =>
-      item.events?.some(e => isFailedStatus(e.Status) || isFailedStatus(e.status))
+      item.events?.some(e =>
+        isFailedStatus(e.Status) || isFailedStatus(e.status) || isFailedEventType(e.Event_Type)
+      )
     );
     const nonDtcFailed = nonDtcAuditData.filter(item =>
       isNonDtcFailedRecord(item)

@@ -5,6 +5,7 @@ import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+import { isFailedEventType } from '../utils/statusUtils';
 
 const normalizeVersion = (value) => {
   const str = String(value || '').trim();
@@ -56,7 +57,7 @@ const FailedFiles = () => {
       const sourceApp = item.events?.[0]?.applicationName || 'Unknown';
 
       item.events?.forEach(event => {
-        if (isFailedStatus(event.Status) || isFailedStatus(event.status)) {
+        if (isFailedStatus(event.Status) || isFailedStatus(event.status) || isFailedEventType(event.Event_Type)) {
           const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
           const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
           const [flow = '-', version = '-'] = formattedFlowVersion.split(' ');
@@ -80,7 +81,11 @@ const FailedFiles = () => {
 
   const nonDtcFailed = useMemo(() => {
     return auditData.filter(item =>
-      isFailedStatus(item.status) || isFailedStatus(item.Status)
+      isFailedStatus(item.status) ||
+      isFailedStatus(item.Status) ||
+      (Array.isArray(item.events) && item.events.some(e =>
+        isFailedEventType(e?.Event_Type) || isFailedEventType(e?.eventType)
+      ))
     );
   }, [auditData]);
   const allFailedRecords = isDtc ? dtcFailed : nonDtcFailed;

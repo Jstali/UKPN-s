@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
+import { isFailedEventType } from '../utils/statusUtils';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
   DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
@@ -184,6 +185,7 @@ const flattenAuditEvents = (data) => {
           eventId: event.id || '',
           destinationPath: event.Destination_Path || '',
           destinationFileName: event.Destination_fileName || '',
+          rawEventType: String(event.Event_Type ?? ''),
         });
       });
     }
@@ -213,7 +215,7 @@ const DtcFailedFiles = () => {
 
   // Memoize failed records
   const failedRecords = useMemo(() => {
-    return flattenedData.filter(row => isFailedStatus(row.status));
+    return flattenedData.filter(row => isFailedStatus(row.status) || isFailedEventType(row.rawEventType));
   }, [flattenedData]);
 
   // Apply filters
