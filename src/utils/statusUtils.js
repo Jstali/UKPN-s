@@ -19,6 +19,7 @@ export const isDtcFailedStatus = (status) => {
 export const isNonDtcFailedStatus = (status) => {
   const normalized = normalizeStatus(mapNonDtcStatus(status));
   if (!normalized || isDuplicateChecksumStatus(normalized)) return false;
+  if (normalized === 'invalid subscription') return false;
   // Broad pattern match to cover all SAP PI failure terminology
   return (
     normalized.includes('fail') ||          // failed, failure
