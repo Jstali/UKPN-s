@@ -64,13 +64,14 @@ export const fetchFileStatusSummary = () =>
     ENDPOINTS.fileStatusSummary,
     'File Status Summary',
     (d) => ({
-      totalFiles:     d?.totalFiles     ?? null,
-      successFiles:   d?.successFiles   ?? null,
-      deliveredFiles: d?.deliveredFiles ?? null,
-      pendingFiles:   d?.pendingFiles   ?? null,
+      totalFiles:       d?.totalFiles                                           ?? null,
+      successFiles:     d?.Total_Files_to_Be_Delivered_count ?? d?.successFiles ?? null,
+      deliveredFiles:   d?.deliveredFiles                                       ?? null,
+      pendingFiles:     d?.pendingFiles                                         ?? null,
+      invalidFileCount: d?.invalidFileCount                                     ?? null,
     }),
   ).then(r => ({
-    data: r.data ?? { totalFiles: null, successFiles: null, deliveredFiles: null, pendingFiles: null },
+    data: r.data ?? { totalFiles: null, successFiles: null, deliveredFiles: null, pendingFiles: null, invalidFileCount: null },
     error: r.error,
   }));
 

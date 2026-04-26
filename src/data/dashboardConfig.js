@@ -30,9 +30,9 @@ export const FILE_STATUS_ITEMS = ({ totalInboundFiles = 0, totalToBeDelivered = 
       label: 'Total Inbound Files',
       value: totalInboundFiles,
       iconSrc: 'Subscription.png',
-      color: '#d97706',
-      bgColor: '#fffbeb',
-      borderColor: '#fcd34d',
+      color: '#16a34a',
+      bgColor: '#f0fdf4',
+      borderColor: '#bbf7d0',
       trend: null,
     },
     {
