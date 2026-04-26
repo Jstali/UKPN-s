@@ -2,8 +2,8 @@
 
 export const DTC_EVENT_TYPE_MAP = {
   '0':  'Invalid Structure',
-  '1':  'Archived, later updated to Publish',
-  '2':  'Valid Subscription, Invalid flow, or VALID_FILE',
+  '1':  'Archived / Later updated to Publish',
+  '2':  'Valid Subscription / Invalid flow / VALID_FILE',
   '3':  'Subscribe / Subscribed',
   '4':  'File Delivered',
   '5':  'Delivery Failed / Destination Path Unavailable',
@@ -26,8 +26,8 @@ export const DTC_EVENT_TYPE_MAP = {
 
 export const NON_DTC_EVENT_TYPE_MAP = {
   '0':  'Invalid Structure',
-  '1':  'Archived, later updated to Publish',
-  '2':  'Valid Subscription, Invalid flow, or VALID_FILE',
+  '1':  'Archived / Later updated to Publish',
+  '2':  'Valid Subscription / Invalid flow / VALID_FILE',
   '3':  'Subscribe / Subscribed',
   '4':  'File Delivered',
   '5':  'Delivery Failed / Destination Path Unavailable',
