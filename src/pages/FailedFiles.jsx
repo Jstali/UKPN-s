@@ -46,7 +46,7 @@ const FailedFiles = () => {
     const s = (status || '').toLowerCase();
     // Exclude "duplicate checksum" - it's not a failure
     if (s === 'duplicate checksum') return false;
-    return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch';
+    return s === 'failed' || s === 'checksum mismatch';
   };
 
   // Extract failed records from audit data

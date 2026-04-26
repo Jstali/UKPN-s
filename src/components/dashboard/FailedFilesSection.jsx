@@ -120,11 +120,11 @@ const FailedFilesSection = ({ dtcFailed, nonDtcFailed, dashboardUpdatedAt }) => 
                           const failedEvent = file.events?.find(e => {
                             const s = (e.Status || e.status || '').toLowerCase();
                             if (s === 'duplicate checksum') return false;
-                            return s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch' || isFailedEventType(e.Event_Type);
+                            return s === 'failed' || s === 'checksum mismatch' || isFailedEventType(e.Event_Type);
                           });
                           if (!failedEvent) return 'Failed';
                           const s = (failedEvent.Status || failedEvent.status || '').toLowerCase();
-                          if (s === 'failed' || s === 'invalid subscription' || s === 'checksum mismatch') return failedEvent.Status || failedEvent.status;
+                          if (s === 'failed' || s === 'checksum mismatch') return failedEvent.Status || failedEvent.status;
                           return DTC_EVENT_TYPE_MAP[String(failedEvent.Event_Type)] || failedEvent.Status || 'Failed';
                         })()
                       : (file.status || file.Status || 'Failed');

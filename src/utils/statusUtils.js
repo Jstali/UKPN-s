@@ -13,7 +13,7 @@ export const isFailedEventType = (eventType) =>
 export const isDtcFailedStatus = (status) => {
   const normalized = normalizeStatus(status);
   if (!normalized || isDuplicateChecksumStatus(normalized)) return false;
-  return normalized === 'failed' || normalized === 'invalid subscription' || normalized === 'checksum mismatch';
+  return normalized === 'failed' || normalized === 'checksum mismatch';
 };
 
 export const isNonDtcFailedStatus = (status) => {
