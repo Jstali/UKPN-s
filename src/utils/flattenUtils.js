@@ -9,6 +9,13 @@ import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
+// Corrects known application name casing issues from the API.
+const normalizeAppName = (name) => {
+  if (!name) return name;
+  if (String(name).toLowerCase() === 'electralink') return 'ElectraLink';
+  return name;
+};
+
 // Resolves a boolean/string "processed" field from multiple candidates.
 const resolveProcessed = (...candidates) => {
   for (const c of candidates) {
@@ -28,7 +35,7 @@ const flattenDtcItem = (item) => {
   const events   = item.events || [];
   if (!events.length) return [];
 
-  const sourceApplication = events[0]?.applicationName || 'Unknown';
+  const sourceApplication = normalizeAppName(events[0]?.applicationName) || 'Unknown';
   const rawFlowVersion    = deriveFlowVersion(item, parsed.flowVersion);
   const formattedFV       = formatFlowVersion(rawFlowVersion) || '-';
   const [flow, version]   = formattedFV.split(' ');
@@ -48,7 +55,7 @@ const flattenDtcItem = (item) => {
     if (event.Event_Type in DTC_EVENT_TYPE_MAP && DTC_EVENT_TYPE_MAP[event.Event_Type] === null) return rows;
     const eventType = mapStatusDisplay(eventStatus);
     const application = DTC_EVENT_TYPES_WITH_DESTINATION.has(String(event.Event_Type))
-      ? (event.applicationName || event.Destination_Application || '')
+      ? normalizeAppName(event.applicationName || event.Destination_Application) || ''
       : '';
 
     rows.push({
@@ -149,8 +156,8 @@ export const flattenNonDtcAuditData = (data = []) => {
         fromMPID:    item.fromMPID || '-',
         toRole:      item.toRole || '-',
         toMPID:      item.toMPID || '-',
-        sourceApplication: item.sourceAppName || '-',
-        application: event.destinationApplication || event.applicationName || '',
+        sourceApplication: normalizeAppName(item.sourceAppName) || '-',
+        application: normalizeAppName(event.destinationApplication || event.applicationName) || '',
         status:      mapNonDtcStatus(event.status ?? event.Status ?? item.status ?? ''),
         fileType,
         fileName:    fileName || '-',
