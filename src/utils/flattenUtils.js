@@ -2,34 +2,12 @@
 // Each audit record contains a nested events array; these functions produce
 // one flat row per event so DataTable can render them uniformly.
 
-import { parseHeader, formatDateTime, formatFlowVersion } from './auditUtils';
+import { parseHeader, formatDateTime, formatFlowVersion, pick, deriveFlowVersion } from './auditUtils';
 import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, DTC_EVENT_TYPES_WITH_DESTINATION } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
 import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
-
-// Returns the first non-empty, non-"UNKNOWN" value from a list of candidates.
-const pick = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
-
-const normalizeVersion = (value) => {
-  const str = String(value || '').trim();
-  if (!str) return '';
-  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
-};
-
-// Derives the flow+version string from an item and its parsed header value.
-const deriveFlowVersion = (item, parsedFlowVersion) => {
-  const direct =
-    parsedFlowVersion || item.Flow_Version || item.flow_version ||
-    item.flowVersion  || item.flow || '';
-  if (direct) return direct;
-
-  const flowOnly    = item.Flow || item.flow || '';
-  const versionOnly = normalizeVersion(item.Version || item.version || '');
-  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
-  return flowOnly;
-};
 
 // Resolves a boolean/string "processed" field from multiple candidates.
 const resolveProcessed = (...candidates) => {

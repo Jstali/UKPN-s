@@ -6,10 +6,10 @@ import ExportDropdown from '../components/ExportDropdown';
 import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { useApp } from '../context/AppContext';
-import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion } from '../utils/auditUtils';
+import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion, deriveFlowVersion, pick } from '../utils/auditUtils';
+import { mapStatusDisplay } from '../constants/eventTypes';
 import { applyDtcFilters } from '../utils/dtcFilterUtils';
 
-const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 const EVENT_TYPE_MAP = {
   '1': 'Received',
   '2': 'Subscribed',
@@ -21,13 +21,6 @@ const EVENT_TYPE_MAP = {
   'Failed': 'Failed'
 };
 const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
-
-const mapStatusDisplay = (status) => {
-  const s = String(status || '').trim().toLowerCase();
-  if (s === 'file delivered') return 'Net App Delivered';
-  if (s === 'file transfer' || s === 'file transferred') return 'Delivered';
-  return status;
-};
 
 // Maps the raw boolean/string "processed" DB flag to a business-readable label.
 // true  → file has been acknowledged and consumed by the downstream receiving application.
@@ -43,32 +36,6 @@ const PROCESSED_STYLE = {
   true:  { background: '#dcfce7', color: '#16a34a' },
   false: { background: '#fef2f2', color: '#dc2626' },
   other: { background: '#f1f5f9', color: '#475569' },
-};
-const normalizeVersion = (value) => {
-  const str = String(value || '').trim();
-  if (!str) return '';
-  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
-};
-
-const deriveFlowVersion = (item, parsedFlowVersion, flowFromFilename) => {
-  const direct =
-    parsedFlowVersion ||
-    item.Flow_Version ||
-    item.flow_version ||
-    item.flowVersion ||
-    item.flow ||
-    item.FlowVersion ||
-    flowFromFilename ||
-    '';
-
-  if (direct) return direct;
-
-  const flowOnly = item.Flow || item.flow || '';
-  const versionOnly = normalizeVersion(item.Version || item.version || '');
-  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
-  if (flowOnly) return flowOnly;
-
-  return '';
 };
 
 const resolveProcessedValue = (...candidates) => {
@@ -96,9 +63,6 @@ const getHeaderString = (item) =>
 const getSourceFileName = (item) =>
   item.Source_FileName || item.source_file_name || item.SourceFileName ||
   item.Source_File_Name || item.fileName || item.filename || '';
-
-// Log missing Header_String fields only once per session
-let _missingHeaderLogged = false;
 
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -459,11 +423,6 @@ const DtcAuditFilter = () => {
   // Auto-query on data load — use filters from navigation state or defaults
   useEffect(() => {
     if (auditData.length > 0) {
-      console.log('[DtcAuditFilter] Auto-query triggered');
-      console.log('[DtcAuditFilter] auditData length:', auditData.length);
-      console.log('[DtcAuditFilter] location.state?.filters:', location.state?.filters);
-      console.log('[DtcAuditFilter] initialFilters:', initialFilters);
-      console.log('[DtcAuditFilter] appliedFilters:', appliedFilters);
       handleQuery(initialFilters);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -539,9 +498,7 @@ const DtcAuditFilter = () => {
     }
     setDateError('');
     let results = [];
-    console.log('[DtcAuditFilter] handleQuery - auditData length:', auditData.length);
-    console.log('[DtcAuditFilter] handleQuery - filters:', f);
-    
+
     auditData.forEach(item => {
       const headerStr = getHeaderString(item);
       const parsed = parseHeader(headerStr);
@@ -554,12 +511,6 @@ const DtcAuditFilter = () => {
       const sourceApplication = (item.events && item.events.length > 0) 
         ? (item.events[0]?.applicationName || 'Unknown')
         : (item.Source_Application || item.source_application || item.SourceApplication || 'Unknown');
-
-      if (!headerStr && !_missingHeaderLogged) {
-        _missingHeaderLogged = true;
-        console.log('[DtcAuditFilter] Sample item missing Header_String — all available fields:', Object.keys(item));
-        console.log('[DtcAuditFilter] Sample item values:', JSON.stringify(item, null, 2).substring(0, 2000));
-      }
 
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {
@@ -574,7 +525,7 @@ const DtcAuditFilter = () => {
           
           results.push({
             id: item.id,
-            fileId: item.id || pickId(item.File_ID, item.fileId, item.file_id, item.correlationId),
+            fileId: item.id || pick(item.File_ID, item.fileId, item.file_id, item.correlationId),
             fileName,
             sourcePath: item.Source_Path || item.source_path || item.SourcePath || '',
             headerString: headerStr,

@@ -4,14 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
-import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
-import { isFailedEventType } from '../utils/statusUtils';
+import { parseHeader, formatFlowVersion, deriveFlowVersion, pick } from '../utils/auditUtils';
+import { isFailedEventType, isDtcFailedStatus } from '../utils/statusUtils';
 import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
   DTC_SUMMARY_COLUMNS_SPLIT_FLOW_VERSION,
 } from '../data/dtcSummaryColumns';
-
-const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
 const EVENT_TYPE_MAP = {
   '1': 'Received',
@@ -19,30 +17,6 @@ const EVENT_TYPE_MAP = {
   '3': 'Published',
   '4': 'Delivered',
   'Failed': 'Failed'
-};
-
-const normalizeVersion = (value) => {
-  const str = String(value || '').trim();
-  if (!str) return '';
-  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
-};
-
-const deriveFlowVersion = (item, parsedFlowVersion, event) => {
-  const direct =
-    parsedFlowVersion ||
-    item.Flow_Version ||
-    item.flow_version ||
-    item.flowVersion ||
-    item.flow ||
-    '';
-  if (direct) return direct;
-
-  const flowOnly = item.Flow || item.flow || '';
-  const versionOnly = normalizeVersion(item.Version || item.version || '');
-  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
-  if (flowOnly) return flowOnly;
-
-  return '';
 };
 
 const FlowMultiSelectDropdown = ({ value, options, onChange }) => {
@@ -145,13 +119,6 @@ const FlowMultiSelectDropdown = ({ value, options, onChange }) => {
 
 const flattenAuditEvents = (data) => {
   const flatData = [];
-  // Log first UNKNOWN-flow item so we can see what fields the API returns
-  const firstUnknown = data.find(item =>
-    !parseHeader(item.Header_String).flowVersion &&
-    !item.Flow_Version && !item.flow_version && !item.flow && !item.Flow
-  );
-  if (firstUnknown) console.log('[DtcFailedFiles] Sample UNKNOWN-flow record:', firstUnknown);
-
   data.forEach(item => {
     const parsed = parseHeader(item.Header_String);
     if (item.events && item.events.length > 0) {
@@ -169,7 +136,7 @@ const flattenAuditEvents = (data) => {
           flowVersion: formattedFlowVersion,
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
-          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+          fileId: pick(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fromRole: parsed.fromRole,
           fromMPID: parsed.fromMPID,
           toRole: parsed.toRole,
@@ -200,13 +167,6 @@ const DtcFailedFiles = () => {
   const [fileNameFilter, setFileNameFilter] = useState('');
   const isBusiness = user?.role === 'Business';
 
-  const isFailedStatus = (status) => {
-    const s = (status || '').toLowerCase();
-    // Exclude "duplicate checksum" - it's not a failure
-    if (s === 'duplicate checksum') return false;
-    return s === 'failed' || s === 'checksum mismatch';
-  };
-
   // Memoize flattened data once
   const flattenedData = useMemo(() => {
     if (auditData.length === 0) return [];
@@ -215,35 +175,20 @@ const DtcFailedFiles = () => {
 
   // Memoize failed records
   const failedRecords = useMemo(() => {
-    return flattenedData.filter(row => isFailedStatus(row.status) || isFailedEventType(row.rawEventType));
+    return flattenedData.filter(row => isDtcFailedStatus(row.status) || isFailedEventType(row.rawEventType));
   }, [flattenedData]);
 
-  // Apply filters
+  // Apply filters — single pass with Set lookup for flow membership
   const failedFiles = useMemo(() => {
-    let filtered = failedRecords;
-
-    if (flowFilter && flowFilter !== 'All') {
-      const selectedFlows = flowFilter.split(',').filter(Boolean);
-      filtered = filtered.filter(row => selectedFlows.includes(row.flow));
-    }
-
-    if (fileNameFilter) {
-      console.log('[DtcFailedFiles] Filtering by fileName:', fileNameFilter, 'Filter length:', fileNameFilter.length);
-      console.log('[DtcFailedFiles] Sample row.fileName:', failedRecords[0]?.fileName, 'Type:', typeof failedRecords[0]?.fileName);
-      
-      const beforeFilter = filtered.length;
-      filtered = filtered.filter(row => {
-        const fileName = row.fileName;
-        const matches = fileName && fileName.toLowerCase().includes(fileNameFilter.toLowerCase());
-        if (!matches && fileName) {
-          console.log('[DtcFailedFiles] No match - fileName:', fileName, 'Filter:', fileNameFilter);
-        }
-        return matches;
-      });
-      console.log('[DtcFailedFiles] Before filter:', beforeFilter, 'After filter:', filtered.length);
-    }
-
-    return filtered;
+    const selectedFlows = new Set(
+      (!flowFilter || flowFilter === 'All') ? [] : flowFilter.split(',').filter(Boolean)
+    );
+    const lower = fileNameFilter.toLowerCase();
+    return failedRecords.filter(row => {
+      if (selectedFlows.size && !selectedFlows.has(row.flow)) return false;
+      if (lower && !row.fileName?.toLowerCase().includes(lower)) return false;
+      return true;
+    });
   }, [failedRecords, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {

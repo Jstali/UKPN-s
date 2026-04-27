@@ -4,10 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BarChart3, Activity } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
-import { parseHeader, formatFlowVersion } from '../utils/auditUtils';
-import { isFailedEventType } from '../utils/statusUtils';
-
-const pickId = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+import { parseHeader, formatFlowVersion, deriveFlowVersion, pick } from '../utils/auditUtils';
+import { isFailedEventType, isDtcFailedStatus } from '../utils/statusUtils';
 
 const EVENT_TYPE_MAP = {
   '1': 'Received',
@@ -15,36 +13,6 @@ const EVENT_TYPE_MAP = {
   '3': 'Published',
   '4': 'Delivered',
   'Failed': 'Failed'
-};
-
-const normalizeVersion = (value) => {
-  const str = String(value || '').trim();
-  if (!str) return '';
-  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
-};
-
-const deriveFlowVersion = (item, parsedFlowVersion, event) => {
-  const direct =
-    parsedFlowVersion ||
-    item.Flow_Version ||
-    item.flow_version ||
-    item.flowVersion ||
-    item.flow ||
-    '';
-  if (direct) return direct;
-
-  const flowOnly = item.Flow || item.flow || '';
-  const versionOnly = normalizeVersion(item.Version || item.version || '');
-  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
-  if (flowOnly) return flowOnly;
-
-  return '';
-};
-
-const isFailedStatus = (status) => {
-  const s = (status || '').toLowerCase();
-  if (s === 'duplicate checksum') return false;
-  return s === 'failed' || s === 'checksum mismatch';
 };
 
 const FlowMultiSelectDropdown = ({ value, options, onChange }) => {
@@ -164,7 +132,7 @@ const flattenAuditEvents = (data) => {
           flowVersion: formattedFlowVersion,
           flow: flowVersionParts[0] || '-',
           version: flowVersionParts[1] || '-',
-          fileId: pickId(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+          fileId: pick(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
           fileName: item.Source_FileName || item.fileName || item.file_name || '',
           sourcePath: item.Source_Path || item.sourcePath || item.source_path || '',
           headerString: item.Header_String || item.headerString || item.header_string || '',
@@ -230,25 +198,20 @@ const DtcFailedFilesDetail = () => {
 
   // Memoize failed records
   const failedRecords = useMemo(() => {
-    return flattenedData.filter(row => isFailedStatus(row.status) || isFailedEventType(row.rawEventType));
+    return flattenedData.filter(row => isDtcFailedStatus(row.status) || isFailedEventType(row.rawEventType));
   }, [flattenedData]);
 
-  // Apply filters
+  // Apply filters — single pass with Set lookup for flow membership
   const filteredRecords = useMemo(() => {
-    let filtered = failedRecords;
-
-    if (flowFilter && flowFilter !== 'All') {
-      const selectedFlows = flowFilter.split(',').filter(Boolean);
-      filtered = filtered.filter(row => selectedFlows.includes(row.flow));
-    }
-
-    if (fileNameFilter) {
-      filtered = filtered.filter(row =>
-        row.fileName && row.fileName.toLowerCase().includes(fileNameFilter.toLowerCase())
-      );
-    }
-
-    return filtered;
+    const selectedFlows = new Set(
+      (!flowFilter || flowFilter === 'All') ? [] : flowFilter.split(',').filter(Boolean)
+    );
+    const lower = fileNameFilter.toLowerCase();
+    return failedRecords.filter(row => {
+      if (selectedFlows.size && !selectedFlows.has(row.flow)) return false;
+      if (lower && !row.fileName?.toLowerCase().includes(lower)) return false;
+      return true;
+    });
   }, [failedRecords, flowFilter, fileNameFilter]);
 
   const uniqueFlows = useMemo(() => {

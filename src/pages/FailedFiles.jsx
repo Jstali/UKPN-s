@@ -4,32 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Filter, X, ArrowLeft } from 'lucide-react';
 
 import { useApp } from '../context/AppContext';
-import { parseHeader, formatFlowVersion, EVENT_TYPE_LABELS } from '../utils/auditUtils';
-import { isFailedEventType } from '../utils/statusUtils';
-
-const normalizeVersion = (value) => {
-  const str = String(value || '').trim();
-  if (!str) return '';
-  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
-};
-
-const deriveFlowVersion = (item, parsedFlowVersion) => {
-  const direct =
-    parsedFlowVersion ||
-    item.Flow_Version ||
-    item.flow_version ||
-    item.flowVersion ||
-    item.flow ||
-    '';
-  if (direct) return direct;
-
-  const flowOnly = item.Flow || item.flow || '';
-  const versionOnly = normalizeVersion(item.Version || item.version || '');
-  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
-  if (flowOnly) return flowOnly;
-
-  return '';
-};
+import { parseHeader, formatFlowVersion, deriveFlowVersion, EVENT_TYPE_LABELS } from '../utils/auditUtils';
+import { isFailedEventType, isDtcFailedStatus } from '../utils/statusUtils';
 
 const FailedFiles = () => {
   const location = useLocation();
@@ -42,13 +18,6 @@ const FailedFiles = () => {
   const { auditData: dtcAuditData, nonDtcAuditData, loading, dataComplete } = useApp();
   const auditData = isDtc ? dtcAuditData : nonDtcAuditData;
 
-  const isFailedStatus = (status) => {
-    const s = (status || '').toLowerCase();
-    // Exclude "duplicate checksum" - it's not a failure
-    if (s === 'duplicate checksum') return false;
-    return s === 'failed' || s === 'checksum mismatch';
-  };
-
   // Extract failed records from audit data
   const dtcFailed = useMemo(() => {
     const failed = [];
@@ -57,7 +26,7 @@ const FailedFiles = () => {
       const sourceApp = item.events?.[0]?.applicationName || 'Unknown';
 
       item.events?.forEach(event => {
-        if (isFailedStatus(event.Status) || isFailedStatus(event.status) || isFailedEventType(event.Event_Type)) {
+        if (isDtcFailedStatus(event.Status) || isDtcFailedStatus(event.status) || isFailedEventType(event.Event_Type)) {
           const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
           const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
           const [flow = '-', version = '-'] = formattedFlowVersion.split(' ');
@@ -81,8 +50,8 @@ const FailedFiles = () => {
 
   const nonDtcFailed = useMemo(() => {
     return auditData.filter(item =>
-      isFailedStatus(item.status) ||
-      isFailedStatus(item.Status) ||
+      isDtcFailedStatus(item.status) ||
+      isDtcFailedStatus(item.Status) ||
       (Array.isArray(item.events) && item.events.some(e =>
         isFailedEventType(e?.Event_Type) || isFailedEventType(e?.eventType)
       ))

@@ -40,6 +40,33 @@ export const formatToRoleMPID = (toRole, toMPID) => {
   return `${toRole || ''} ${toMPID || ''}`.trim();
 };
 
+// Pads a numeric version string to 3 digits (e.g. "1" → "001"); leaves
+// non-numeric values unchanged.
+export const normalizeVersion = (value) => {
+  const str = String(value || '').trim();
+  if (!str) return '';
+  return /^\d+$/.test(str) ? str.padStart(3, '0') : str;
+};
+
+// Resolves the flow+version string from an audit item by walking known
+// field-name variants. `flowFromFilename` is an optional last-resort fallback
+// used by DTC Audit filter where the flow code can be parsed from the file name.
+export const deriveFlowVersion = (item, parsedFlowVersion, flowFromFilename) => {
+  const direct =
+    parsedFlowVersion ||
+    item.Flow_Version || item.flow_version || item.flowVersion ||
+    item.flow || item.FlowVersion || flowFromFilename || '';
+  if (direct) return direct;
+
+  const flowOnly = item.Flow || item.flow || '';
+  const versionOnly = normalizeVersion(item.Version || item.version || '');
+  if (flowOnly && versionOnly) return `${flowOnly} ${versionOnly}`;
+  return flowOnly;
+};
+
+// Returns the first non-empty, non-"UNKNOWN" value from a list of candidates.
+export const pick = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
+
 // Wildcard matching: cos* = startsWith, *cos = endsWith, *cos* = contains, plain = contains
 export const wildcardMatch = (value, pattern) => {
   const val = value.toLowerCase();

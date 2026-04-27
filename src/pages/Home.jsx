@@ -49,10 +49,6 @@ const Home = () => {
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
   const NON_DTC_DELIVERED_STATUSES = ['success', 'succeeded', 'delivered', 'file transferred', 'completed', 'complete', 'processed'];
 
-  const isFailedStatus = (status) => {
-    return isDtcFailedStatus(status);
-  };
-
   const isNonDtcDelivered = (item) => {
     const rootStatus = String(item?.status || item?.Status || '').toLowerCase().trim();
     if (NON_DTC_DELIVERED_STATUSES.includes(rootStatus)) return true;
@@ -89,7 +85,7 @@ const Home = () => {
   const failedFiles = React.useMemo(() => {
     const dtcFailed = auditData.filter(item =>
       item.events?.some(e =>
-        isFailedStatus(e.Status) || isFailedStatus(e.status) || isFailedEventType(e.Event_Type)
+        isDtcFailedStatus(e.Status) || isDtcFailedStatus(e.status) || isFailedEventType(e.Event_Type)
       )
     );
     const nonDtcFailed = nonDtcAuditData.filter(item =>
@@ -269,7 +265,7 @@ const Home = () => {
     };
     const detail = detailsMap[type];
     if (detail) navigate('/analytics', { state: { ...detail, type } });
-  }, [auditData, nonDtcAuditData, fileStats, inboundFiles, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, isFailedStatus, navigate]);
+  }, [auditData, nonDtcAuditData, fileStats, inboundFiles, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, navigate]);
 
   return (
     <div className="dashboard-root">
