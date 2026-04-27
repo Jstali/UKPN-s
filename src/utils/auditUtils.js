@@ -173,9 +173,9 @@ export const formatDateTime = (timestamp) => {
   const ukMatch = String(timestamp).match(/^(\d{2})[-/](\d{2})[-/](\d{4})\s*(\d{2}):(\d{2}):(\d{2})/);
   if (ukMatch) {
     const [, day, month, year, hours, minutes, seconds] = ukMatch;
-    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   }
-  
+
   // Otherwise parse as standard date
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return timestamp;
@@ -201,5 +201,5 @@ export const formatDateTime = (timestamp) => {
   const minutes = getValue('minute');
   const seconds = getValue('second');
   
-  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 };
