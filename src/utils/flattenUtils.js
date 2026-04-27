@@ -3,7 +3,7 @@
 // one flat row per event so DataTable can render them uniformly.
 
 import { parseHeader, formatDateTime, formatFlowVersion, pick, deriveFlowVersion } from './auditUtils';
-import { resolveDtcEventType, resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, DTC_EVENT_TYPES_WITH_DESTINATION } from '../constants/eventTypes';
+import { resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, DTC_EVENT_TYPES_WITH_DESTINATION, DTC_EVENT_TYPE_MAP } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
 import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
@@ -44,9 +44,9 @@ const flattenDtcItem = (item) => {
     // Skip "valid subscription" noise events
     if (eventStatus.toLowerCase().trim() === 'valid subscription') return rows;
 
-    const eventType = resolveDtcEventType(event);
     // Skip event types mapped to null (e.g. "File Store to Blob")
-    if (eventType === null) return rows;
+    if (event.Event_Type in DTC_EVENT_TYPE_MAP && DTC_EVENT_TYPE_MAP[event.Event_Type] === null) return rows;
+    const eventType = mapStatusDisplay(eventStatus);
     const application = DTC_EVENT_TYPES_WITH_DESTINATION.has(String(event.Event_Type))
       ? (event.applicationName || event.Destination_Application || '')
       : '';

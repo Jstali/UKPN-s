@@ -103,7 +103,7 @@ export const flattenFailedAuditEvents = (data, eventTypeMap = {}) => {
         recApp: parsed.recApp,
         sourceApplication,
         application: event.applicationName || event.Destination_Application || 'Unknown',
-        eventType: event.Status === 'Failed' ? 'Failed' : (eventTypeMap[event.Event_Type] || event.Event_Type || 'Unknown'),
+        eventType: event.Status || 'Unknown',
         status: event.Status || 'Unknown',
         processed: event.processed || 'false',
         timestamp: event.timestamp || '',
