@@ -49,7 +49,7 @@ const Home = () => {
   const canEditInfo = user?.role === 'Business' || user?.role === 'Core Support' || user?.role === 'Admin';
   const NON_DTC_DELIVERED_STATUSES = ['success', 'succeeded', 'delivered', 'file transferred', 'completed', 'complete', 'processed'];
 
-  const isNonDtcDelivered = (item) => {
+  const isNonDtcDelivered = useCallback((item) => {
     const rootStatus = String(item?.status || item?.Status || '').toLowerCase().trim();
     if (NON_DTC_DELIVERED_STATUSES.includes(rootStatus)) return true;
 
@@ -59,7 +59,8 @@ const Home = () => {
       const s = String(e?.Status || e?.status || '').toLowerCase().trim();
       return NON_DTC_DELIVERED_STATUSES.includes(s);
     });
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dtcDeliveredFiles = React.useMemo(() => {
     return auditData.filter(item => {
@@ -143,7 +144,7 @@ const Home = () => {
       invalidFileCount,
       duplicateChecksum: duplicateChecksumFiles.length + nonDtcDuplicateChecksumCount,
     };
-  }, [auditData, nonDtcAuditData, dtcDeliveredFiles, inboundFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount, fileStatusSummary]);
+  }, [auditData, nonDtcAuditData, dtcDeliveredFiles, inboundFiles, duplicateChecksumFiles, nonDtcDuplicateChecksumCount, fileStatusSummary, isNonDtcDelivered]);
 
   const showDetails = useCallback((type) => {
     // Calculate actual status distribution from combined DTC and Non-DTC audit data

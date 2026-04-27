@@ -7,19 +7,8 @@ import DtcFilterDropdown from '../components/DtcFilterDropdown';
 import { exportToPDF, exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { useApp } from '../context/AppContext';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion, deriveFlowVersion, pick } from '../utils/auditUtils';
-import { mapStatusDisplay } from '../constants/eventTypes';
+import { mapStatusDisplay, AUDIT_FILTER_EVENT_LABELS as EVENT_TYPE_MAP } from '../constants/eventTypes';
 import { applyDtcFilters } from '../utils/dtcFilterUtils';
-
-const EVENT_TYPE_MAP = {
-  '1': 'Received',
-  '2': 'Subscribed',
-  '3': 'Published',
-  '4': 'Delivered',
-  '21': 'Invalid Flow',
-  '22': 'File Transferred',
-  '32': 'File Processed',
-  'Failed': 'Failed'
-};
 const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
 
 // Maps the raw boolean/string "processed" DB flag to a business-readable label.

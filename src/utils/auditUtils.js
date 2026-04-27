@@ -67,6 +67,57 @@ export const deriveFlowVersion = (item, parsedFlowVersion, flowFromFilename) => 
 // Returns the first non-empty, non-"UNKNOWN" value from a list of candidates.
 export const pick = (...candidates) => candidates.find(v => v && v !== 'UNKNOWN') || '';
 
+// Flattens DTC audit data (one row per event) for the failed-files pages.
+// `eventTypeMap` maps Event_Type → display label for the eventType column.
+// Output is a strict superset of the fields used by both DtcFailedFiles and
+// DtcFailedFilesDetail — extra columns are simply ignored by DataTable when
+// they're not declared in the page's column config.
+export const flattenFailedAuditEvents = (data, eventTypeMap = {}) => {
+  const flatData = [];
+  data.forEach(item => {
+    const parsed = parseHeader(item.Header_String);
+    if (!item.events || item.events.length === 0) return;
+
+    const sourceApplication = item.events[0]?.applicationName || 'Unknown';
+    const reversedEvents = [...item.events].reverse();
+
+    reversedEvents.forEach(event => {
+      const rawFlowVersion = deriveFlowVersion(item, parsed.flowVersion);
+      const formattedFlowVersion = formatFlowVersion(rawFlowVersion) || '-';
+      const flowVersionParts = formattedFlowVersion.split(' ');
+
+      flatData.push({
+        ...item,
+        id: item.id,
+        flowVersion: formattedFlowVersion,
+        flow: flowVersionParts[0] || '-',
+        version: flowVersionParts[1] || '-',
+        fileId: pick(item.File_ID, item.fileId, item.file_id, item.correlationId, item.id),
+        fileName: item.Source_FileName || item.fileName || item.file_name || '',
+        sourcePath: item.Source_Path || item.sourcePath || item.source_path || '',
+        headerString: item.Header_String || item.headerString || item.header_string || '',
+        fromRole: parsed.fromRole,
+        fromMPID: parsed.fromMPID,
+        toRole: parsed.toRole,
+        toMPID: parsed.toMPID,
+        recApp: parsed.recApp,
+        sourceApplication,
+        application: event.applicationName || event.Destination_Application || 'Unknown',
+        eventType: event.Status === 'Failed' ? 'Failed' : (eventTypeMap[event.Event_Type] || event.Event_Type || 'Unknown'),
+        status: event.Status || 'Unknown',
+        processed: event.processed || 'false',
+        timestamp: event.timestamp || '',
+        eventId: event.id || '',
+        destinationPath: event.Destination_Path || event.destinationPath || event.destination_path || '',
+        destinationFileName: event.Destination_fileName || event.destinationFileName || event.destination_fileName || '',
+        checksum: event.Checksum || event.checksum || item.Checksum || item.checksum || '',
+        rawEventType: String(event.Event_Type ?? ''),
+      });
+    });
+  });
+  return flatData;
+};
+
 // Wildcard matching: cos* = startsWith, *cos = endsWith, *cos* = contains, plain = contains
 export const wildcardMatch = (value, pattern) => {
   const val = value.toLowerCase();

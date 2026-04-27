@@ -44,6 +44,26 @@ export const NON_DTC_EVENT_TYPE_MAP = {
   '33': 'ACK Received Inbound',
 };
 
+// Compact label set used by the failed-files pages and DTC Audit filter dropdown.
+// Diverges from DTC_EVENT_TYPE_MAP intentionally — these labels are shorter and
+// match the historical UI text on those screens. Use this when you want the
+// shorter "Received / Subscribed / Published / Delivered / Failed" naming.
+export const FAILED_FILES_EVENT_LABELS = {
+  '1': 'Received',
+  '2': 'Subscribed',
+  '3': 'Published',
+  '4': 'Delivered',
+  'Failed': 'Failed',
+};
+
+// Audit-filter variant — adds a few extra labels used only by DtcAuditFilter.
+export const AUDIT_FILTER_EVENT_LABELS = {
+  ...FAILED_FILES_EVENT_LABELS,
+  '21': 'Invalid Flow',
+  '22': 'File Transferred',
+  '32': 'File Processed',
+};
+
 // Statuses that should suppress the destination application column (legacy — kept for reference)
 export const STATUSES_WITHOUT_DESTINATION = new Set([
   'publish',
