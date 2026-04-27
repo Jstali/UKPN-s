@@ -9,11 +9,15 @@ import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
-// Corrects known application name casing issues from the API.
+// Corrects known application name casing/formatting issues from the API.
+const APP_NAME_MAP = {
+  'electralink':  'ElectraLink',
+  'grey_it':      'IM Grey IT',
+  'im_greyit':    'IM Grey IT',
+};
 const normalizeAppName = (name) => {
   if (!name) return name;
-  if (String(name).toLowerCase() === 'electralink') return 'ElectraLink';
-  return name;
+  return APP_NAME_MAP[String(name).toLowerCase()] ?? name;
 };
 
 // Resolves a boolean/string "processed" field from multiple candidates.
