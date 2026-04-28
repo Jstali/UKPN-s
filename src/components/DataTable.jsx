@@ -500,6 +500,19 @@ const DataTable = ({
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = sortedData.slice(startIndex, startIndex + pageSize);
 
+  // Precompute per-row group index so alternating colour is based on file group, not row index
+  const rowGroupIndices = (() => {
+    if (!groupByKey) return null;
+    const indices = [];
+    let gIdx = -1;
+    let lastVal = undefined;
+    paginatedData.forEach(row => {
+      if (row[groupByKey] !== lastVal) { gIdx++; lastVal = row[groupByKey]; }
+      indices.push(gIdx);
+    });
+    return indices;
+  })();
+
   const handleSort = (key) => {
     setSortConfig({
       key,
@@ -1070,7 +1083,8 @@ const DataTable = ({
               </tr>
             ) : (
               paginatedData.map((row, idx) => {
-                const rowBg = idx % 2 === 0 ? '#ffffff' : '#edf0f7';
+                const colorIdx = rowGroupIndices ? rowGroupIndices[idx] : idx;
+                const rowBg = colorIdx % 2 === 0 ? '#ffffff' : '#edf0f7';
 
                 return (
                   <tr key={idx} style={{ background: selectedSet.has(getRowDocId(row)) ? '#f0f4ff' : rowBg }}>
