@@ -1084,7 +1084,7 @@ const DataTable = ({
             ) : (
               paginatedData.map((row, idx) => {
                 const colorIdx = rowGroupIndices ? rowGroupIndices[idx] : idx;
-                const rowBg = colorIdx % 2 === 0 ? '#ffffff' : '#d8dff0';
+                const rowBg = colorIdx % 2 === 0 ? '#ffffff' : '#e8ecf4';
 
                 return (
                   <tr key={idx} style={{ background: selectedSet.has(getRowDocId(row)) ? '#f0f4ff' : rowBg }}>
