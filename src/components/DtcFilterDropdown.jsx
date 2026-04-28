@@ -499,7 +499,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
 
             {/* File ID */}
             <div>
-              <label style={labelStyle}>File ID</label>
+              <label style={labelStyle}>HFile ID</label>
               <MultiSelectDropdown
                 label="HFile ID"
                 value={filters.fileId}
