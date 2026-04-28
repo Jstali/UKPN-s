@@ -105,10 +105,7 @@ const DtcAudit = () => {
     [flattenedAuditData]
   );
 
-  const versionOptions = useMemo(
-    () => [...new Set(flattenedAuditData.map(r => r.version).filter(v => v && v !== '-'))].sort(),
-    [flattenedAuditData]
-  );
+  const versionOptions = ['001', '002', '003', '004'];
 
   // Derive flow options from flattened rows — guarantees options match the `flow` field
   // used in filtering (flattenDtcItem uses deriveFlowVersion() which has multiple fallbacks,
