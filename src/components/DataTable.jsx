@@ -278,11 +278,13 @@ const DataTable = ({
   const [colWidths, setColWidths] = useState({});
 
   // Merge column-definition defaults with user-resized widths
+  // Include compactColumns so widths defined only there (e.g. flow) are also applied
   const effectiveColWidths = useMemo(() => {
     const defaults = {};
     (columns || []).forEach(col => { if (col.width) defaults[col.key] = col.width; });
+    (compactColumns || []).forEach(col => { if (col.width) defaults[col.key] = col.width; });
     return { ...defaults, ...colWidths };
-  }, [columns, colWidths]);
+  }, [columns, compactColumns, colWidths]);
   const [viewAll, setViewAll] = useState(false);
   const resizing = useRef(null);
 
