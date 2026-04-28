@@ -53,7 +53,7 @@ const getSourceFileName = (item) =>
   item.Source_File_Name || item.fileName || item.filename || '';
 
 const ALL_COLUMNS = [
-  { key: 'fileId',              label: 'File ID' },
+  { key: 'fileId',              label: 'HFile ID' },
   { key: 'fileName',            label: 'File Name' },
   { key: 'sourcePath',          label: 'Source Path' },
   { key: 'sourceApp',           label: 'Source Application' },

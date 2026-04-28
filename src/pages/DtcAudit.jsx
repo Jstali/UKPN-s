@@ -32,7 +32,7 @@ const CRITERIA_FIELDS = [
   { label: 'Event Timestamp To',      key: 'eventTimestampTo' },
   { label: 'File Creation Date',      key: 'fileCreationDate' },
   { label: 'Publish Date',            key: 'publishDate' },
-  { label: 'File ID',                 key: 'fileId' },
+  { label: 'HFile ID',                key: 'fileId' },
   { label: 'Message ID',              key: 'msgId' },
 ];
 

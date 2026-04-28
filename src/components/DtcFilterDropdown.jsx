@@ -501,7 +501,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
             <div>
               <label style={labelStyle}>File ID</label>
               <MultiSelectDropdown
-                label="File ID"
+                label="HFile ID"
                 value={filters.fileId}
                 options={uniqueValues.fileId || []}
                 onChange={(value) => onFilterChange('fileId', value)}
