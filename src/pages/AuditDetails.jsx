@@ -7,10 +7,10 @@ import { DTC_AUDIT_DETAIL_SUMMARY_FIELDS } from '../data/dtcSummaryColumns';
 // Summary columns - must match DTC Audit table exactly
 // Additional detail fields (exclude From Role/To Role as they're in Summary)
 const DETAIL_FIELDS = [
+  { key: 'Source_FileName', label: 'Source Path' },
   { key: 'destinationPath', label: 'Destination Path' },
   { key: 'destinationFileName', label: 'Destination File Name' },
   { key: 'Header_String', label: 'Header String' },
-  { key: 'Source_Path', label: 'Source Path' },
   { key: 'eventType', label: 'Event Type' },
 ];
 

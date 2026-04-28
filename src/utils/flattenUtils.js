@@ -108,10 +108,8 @@ const flattenDtcItem = (item) => {
       timestamp:           event.timestamp || '',
       rawTimestamp:        event.timestamp || '',  // preserved for date comparisons in filters (not affected by formatting)
       eventId:             event.id || '',
-      // Destination path and file are only populated for NetApp Delivered events (type 4)
-      destinationPath:     String(event.Event_Type) === '4' ? (event.Destination_Path || '') : '',
-      destinationFileName: String(event.Event_Type) === '4'
-        ? (event.Destination_fileName || event.Destination_FileName || event.Destination_file_name || '') : '',
+      destinationPath:     event.Destination_Folder || event.Destination_Path || '',
+      destinationFileName: event.Destination_fileName || event.Destination_FileName || event.Destination_file_name || '',
     });
 
     return rows;
