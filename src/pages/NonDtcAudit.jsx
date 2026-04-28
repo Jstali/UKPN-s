@@ -318,6 +318,7 @@ const NonDtcAudit = () => {
           compactColumns={COMPACT_COLUMNS}
           exportColumns={NON_DTC_COLUMNS}
           defaultSort={{ key: 'startDate', direction: 'desc' }}
+          groupByKey="fileId"
           isNonDtc
           defaultPageSize={50}
           onDownload

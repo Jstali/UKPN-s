@@ -235,7 +235,7 @@ const DtcAudit = () => {
             compactColumns={columns}
             defaultSort={{ key: 'timestamp', direction: 'desc' }}
             defaultPageSize={50}
-            groupByKey="eventId"
+            groupByKey="fileId"
             onDownload
             exportConfig={{
               filename: 'DTC_Audit_Export',
