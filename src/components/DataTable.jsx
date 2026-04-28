@@ -40,7 +40,13 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
   useEffect(() => {
     if (anchorRef?.current) {
       const rect = anchorRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, left: rect.left });
+      const POPOVER_WIDTH = 320;
+      const wouldOverflow = rect.left + POPOVER_WIDTH > window.innerWidth - 8;
+      if (wouldOverflow) {
+        setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+      } else {
+        setPos({ top: rect.bottom + 4, left: rect.left });
+      }
     }
   }, [anchorRef]);
 
@@ -111,7 +117,10 @@ const ColumnFilterPopover = ({ col, columnFilters, setColumnFilters, onClose, al
       ref={ref}
       onClick={(e) => e.stopPropagation()}
       style={{
-        position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999,
+        position: 'fixed',
+        top: pos.top,
+        ...(pos.right !== undefined ? { right: pos.right } : { left: pos.left }),
+        zIndex: 9999,
         background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px',
         boxShadow: '0 8px 24px rgba(0,0,0,0.15)', padding: '12px',
         minWidth: '240px', maxWidth: '320px',
