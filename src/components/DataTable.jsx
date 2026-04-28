@@ -441,7 +441,7 @@ const DataTable = ({
           return cellVal.includes(val);
         }
         if (!val.includes('*')) {
-          return cellVal.toLowerCase() === val.toLowerCase() || cellVal.toLowerCase().includes(val.toLowerCase());
+          return cellVal.toLowerCase() === val.toLowerCase();
         }
         return wildcardMatch(cellVal, val);
       });
