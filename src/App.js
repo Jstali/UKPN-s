@@ -135,8 +135,17 @@ const PageLoader = () => (
 );
 
 function AppRoutes() {
-  const { user, login, logout } = useApp();
+  const { user, userLoading, login } = useApp();
 
+  // Show spinner while /.auth/me is being fetched on Azure SWA.
+  // Prevents the Login page from flashing briefly before the SSO user is resolved.
+  if (userLoading) {
+    return <PageLoader />;
+  }
+
+  // No authenticated user — show Login page.
+  // On Azure SWA this should never be reached (SWA redirects to AAD before React loads).
+  // On local dev this is the normal username/password login fallback.
   if (!user) {
     return (
       <Suspense fallback={<PageLoader />}>
