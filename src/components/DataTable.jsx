@@ -1070,25 +1070,10 @@ const DataTable = ({
               </tr>
             ) : (
               paginatedData.map((row, idx) => {
-                // Determine group background color
-                let groupBg = '#fff';
-                if (groupByKey && row[groupByKey]) {
-                  const prevRow = idx > 0 ? paginatedData[idx - 1] : null;
-                  const currentGroup = row[groupByKey];
-                  const prevGroup = prevRow ? prevRow[groupByKey] : null;
-
-                  // Track group index
-                  let groupIndex = 0;
-                  for (let i = 0; i <= idx; i++) {
-                    if (i === 0 || paginatedData[i][groupByKey] !== paginatedData[i - 1][groupByKey]) {
-                      if (i < idx) groupIndex++;
-                    }
-                  }
-                  groupBg = groupIndex % 2 === 0 ? '#fff' : '#f9fafb';
-                }
+                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
 
                 return (
-                  <tr key={idx} style={{ background: selectedSet.has(getRowDocId(row)) ? '#f0f4ff' : groupBg }}>
+                  <tr key={idx} style={{ background: selectedSet.has(getRowDocId(row)) ? '#f0f4ff' : rowBg }}>
                     {enableSelection && (
                       <td style={{ padding: '6px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
                         <input
@@ -1142,7 +1127,7 @@ const DataTable = ({
                       </td>
                     ))}
                     {onDownload && (
-                      <td style={{ padding: '6px 10px', position: 'sticky', right: 0, background: groupBg, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)', zIndex: 1 }}>
+                      <td style={{ padding: '6px 10px', position: 'sticky', right: 0, background: rowBg, boxShadow: '-2px 0 4px rgba(0,0,0,0.06)', zIndex: 1 }}>
                         <div style={{ display: 'flex', gap: '4px' }}>
                           <button
                             className="table-action-btn"
