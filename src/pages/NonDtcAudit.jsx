@@ -28,7 +28,7 @@ const NON_DTC_COLUMNS = [
 ];
 
 const COMPACT_COLUMNS = [
-  { key: 'flow',              label: 'Flow',             width: 65  },
+  { key: 'flow',              label: 'Flow',             width: 52  },
   { key: 'fileId',            label: 'File ID',          width: 120 },
   { key: 'timestamp',         label: 'Timestamp',        width: 120 },
   { key: 'sourceApplication', label: 'Source',           width: 86  },
