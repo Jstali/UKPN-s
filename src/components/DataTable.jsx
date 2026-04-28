@@ -1070,7 +1070,7 @@ const DataTable = ({
               </tr>
             ) : (
               paginatedData.map((row, idx) => {
-                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const rowBg = idx % 2 === 0 ? '#ffffff' : '#edf0f7';
 
                 return (
                   <tr key={idx} style={{ background: selectedSet.has(getRowDocId(row)) ? '#f0f4ff' : rowBg }}>
