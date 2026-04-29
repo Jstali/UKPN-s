@@ -428,6 +428,7 @@ const NonDtcAuditDetail = () => {
         <DataTable
           tableId="non_dtc_audit_detail"
           data={filteredResults}
+          hideViewDetail={true}
           columns={ALL_COLUMNS}
           exportColumns={ALL_COLUMNS}
           compactColumns={ALL_COLUMNS}
