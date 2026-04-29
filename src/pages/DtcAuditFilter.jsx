@@ -335,10 +335,7 @@ const DtcAuditFilter = () => {
           const formattedFlowVersion = formatFlowVersion(rawFlow) || '-';
           const flowVersionParts = formattedFlowVersion.split(' ');
           const rawTimestamp = event.timestamp || event.Timestamp || event.created || event.Created || '';
-          const eventTypeKey = event.Status === 'Failed'
-            ? 'Failed'
-            : (event.Event_Type || event.event_type || event.eventType || 'Unknown');
-          const eventTypeValue = EVENT_TYPE_MAP[eventTypeKey] || eventTypeKey;
+          const eventTypeValue = event.Status || event.status || 'Unknown';
           const applicationValue = event.applicationName || event.Destination_Application || event.destinationApplication || 'NA';
           
           results.push({

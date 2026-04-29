@@ -65,10 +65,7 @@ const flattenDtcItem = (item) => {
   return [...events].reverse().reduce((rows, event) => {
     const eventStatus = event.Status || event.status || 'Unknown';
 
-    // eventType column shows the actual Status from the API log (e.g. "Delivered", "Failed").
-    // mapStatusDisplay normalises raw status strings
-    // (e.g. "File Transfer" → "Delivered", "File Delivered" → "Net App Delivered").
-    const eventType = mapStatusDisplay(eventStatus);
+    const eventType = eventStatus;
 
     // Destination application is only meaningful for specific event types.
     // For other event types (e.g. Archived, Published) there is no destination.
@@ -94,7 +91,7 @@ const flattenDtcItem = (item) => {
       sourceApplication,                    // normalised source app name
       application,                          // normalised destination app name (only set for relevant event types)
       eventType,                            // actual status from log (not a hardcoded label)
-      status:              mapStatusDisplay(eventStatus),
+      status:              eventStatus,
       processed:           resolveProcessed(event.processed, event.Processed, item.processed, item.Processed),
       timestamp:           event.timestamp || '',
       rawTimestamp:        event.timestamp || '',  // preserved for date comparisons in filters (not affected by formatting)
@@ -168,7 +165,7 @@ export const flattenNonDtcAuditData = (data = []) => {
 
     events.forEach(event => {
       // Resolve and normalise the event type label
-      const resolvedEventType = resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }) || '';
+      const rawEventStatus = event.description || event.Description || event.status || event.Status || event.eventType || event.event_type || event.Event_Type || item.eventType || '';
 
       rows.push({
         uniqueId:    item.id || '',
@@ -200,7 +197,7 @@ export const flattenNonDtcAuditData = (data = []) => {
         requestStatus,
         processedTime,
         lastUpdatedAt: item.lastUpdatedAt || item.LastUpdatedAt || item.last_updated_at || '',
-        eventType: resolvedEventType,          // resolved Non-DTC event type label
+        eventType: rawEventStatus,
         // startDate/endDate: first and last event timestamps for the record
         startDate: item.events?.[0]?.timestamp
           ? new Date(item.events[0].timestamp).toLocaleString('en-GB') : '',
