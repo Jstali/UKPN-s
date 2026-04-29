@@ -43,8 +43,10 @@ const writeCache = (key, records, limit = null) => {
 
 export const AppProvider = ({ children }) => {
   const [user,          setUser]          = useState(() => {
-    const saved = sessionStorage.getItem('user');
-    try { return saved ? JSON.parse(saved) : null; } catch { return null; }
+    try {
+      const saved = sessionStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
   });
   const [userLoading,   setUserLoading]   = useState(false);
   const [autoRefresh,   setAutoRefresh]   = useState(true);
