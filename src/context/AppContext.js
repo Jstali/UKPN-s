@@ -100,7 +100,7 @@ export const AppProvider = ({ children }) => {
   const commitNonDtcData = useCallback((records) => {
     const data = Array.isArray(records) ? records : [];
     setNonDtcAuditData(data);
-    writeCache(NON_DTC_CACHE_KEY, data);
+    writeCache(NON_DTC_CACHE_KEY, data, NON_DTC_PAGE_SIZE);
   }, []);
 
   const fetchFlowsData = useCallback(async () => {
