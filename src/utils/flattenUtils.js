@@ -6,7 +6,7 @@
 import { parseHeader, formatDateTime, formatFlowVersion, pick, deriveFlowVersion } from './auditUtils';
 import { mapNonDtcStatus, getEventStatusValue } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
-import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
+import { getNonDtcBlobPath, getDisplayDestPath, getDisplaySourcePath } from './blobPathUtils';
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
@@ -61,6 +61,12 @@ const flattenDtcItem = (item) => {
   const toRole   = pick(parsed.toRole,   item.To_Role,   item.to_role,   item.toRole);
   const toMPID   = pick(parsed.toMPID,   item.To_MPID,   item.to_mpid,   item.toMPID);
 
+  // Source/Destination paths are file-level attributes — same shape as Non-DTC.
+  // Computed once per file and applied to every event row of that file, so the
+  // table shows a consistent path for the file across all its event rows.
+  const fileSourcePath      = getDisplaySourcePath(item);
+  const fileDestinationPath = getDisplayDestPath(item);
+
   // Reverse events so the most recent event appears first in the table
   return [...events].reverse().reduce((rows, event) => {
     if (!event || typeof event !== 'object') return rows; // skip null/corrupt events
@@ -109,7 +115,8 @@ const flattenDtcItem = (item) => {
       timestamp:           event.timestamp || '',
       rawTimestamp:        event.timestamp || '',  // preserved for date comparisons in filters (not affected by formatting)
       eventId:             event.id || '',
-      destinationPath:     event['Destination Folder'] || event.Destination_Folder || event.netappfilepath || event.destinationfilepath || event.Destination_Path || event.destination_path || event.destinationPath || event.DestinationPath || '',
+      sourcePath:          fileSourcePath,
+      destinationPath:     fileDestinationPath,
       destinationFileName: event['Destination File Name'] || event.Destination_fileName || event.Destination_FileName || event.Destination_file_name || event.destinationFileName || event.destinationfilename || event.DestinationFileName || '',
     });
 
@@ -161,7 +168,8 @@ export const flattenNonDtcAuditData = (data = []) => {
     const fileName       = item.sourceFileName || '';
     const fileType       = fileName ? fileName.split('.').pop().toUpperCase() : '-';  // derive extension from filename
     const blobPath       = item.blobArchiveLocation || getNonDtcBlobPath(item);
-    const displayDestPath = getNonDtcDisplayDestPath(item);
+    const displayDestPath = getDisplayDestPath(item);
+    const displaySourcePath = getDisplaySourcePath(item);
 
     // Blob archive fields — try top-level item first, then event-level
     const itemBlobArchive  = item.Blob_Archive_Link_Location || item.blobArchiveLinkLocation || item.blob_archive_link_location || '';
@@ -223,7 +231,7 @@ export const flattenNonDtcAuditData = (data = []) => {
         sourceApp:   item.sourceAppName || item.subscription || '-',
         sourceFile:  fileName || '',
         subscription: item.subscription || '',
-        sourcePath:  item.sourcePath || '',
+        sourcePath:  displaySourcePath,
         destinationPath: displayDestPath,
         _blobPath:   blobPath,
         // Blob fields: prefer event-level values (more specific), fall back to item-level

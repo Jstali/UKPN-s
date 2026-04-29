@@ -14,6 +14,8 @@ const DTC_COL_WIDTHS = {
   application:       94,
   eventType:         88,
   fileName:         140,
+  sourcePath:       150,
+  destinationPath:  150,
   eventId:          112,
 };
 
@@ -32,6 +34,8 @@ export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW = [
   w('application', 'Destination'),
   w('eventType', 'Event Type'),
   w('fileName', 'Source File Name'),
+  w('sourcePath', 'Source Path'),
+  w('destinationPath', 'Destination Path'),
 ];
 
 export const DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION = [...DTC_SUMMARY_COLUMNS_COMBINED_FLOW];
@@ -53,4 +57,6 @@ export const DTC_AUDIT_DETAIL_SUMMARY_FIELDS = [
   w('application', 'Destination'),
   w('eventType', 'Event Type'),
   w('fileName', 'Source File Name'),
+  w('sourcePath', 'Source Path'),
+  w('destinationPath', 'Destination Path'),
 ];

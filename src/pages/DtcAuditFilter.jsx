@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import { parseHeader, wildcardMatch, formatEventType, formatDateTime, formatFlowVersion, deriveFlowVersion, pick } from '../utils/auditUtils';
 import { mapStatusDisplay, AUDIT_FILTER_EVENT_LABELS as EVENT_TYPE_MAP } from '../constants/eventTypes';
 import { applyDtcFilters } from '../utils/dtcFilterUtils';
+import { getDisplaySourcePath, getDisplayDestPath } from '../utils/blobPathUtils';
 
 // Maps the raw boolean/string "processed" DB flag to a business-readable label.
 // true  → file has been acknowledged and consumed by the downstream receiving application.
@@ -331,6 +332,11 @@ const DtcAuditFilter = () => {
         : (item.Source_Application || item.source_application || item.SourceApplication || 'Unknown');
 
       if (item.events && item.events.length > 0) {
+        // Source/Destination paths are file-level — same shape used in flattenUtils.js
+        // and in the Non-DTC mapping. Compute once per file and apply to every event row.
+        const fileSourcePath      = getDisplaySourcePath(item);
+        const fileDestinationPath = getDisplayDestPath(item);
+
         item.events.forEach(event => {
           if (!event || typeof event !== 'object') return;
           const formattedFlowVersion = formatFlowVersion(rawFlow) || '-';
@@ -338,12 +344,12 @@ const DtcAuditFilter = () => {
           const rawTimestamp = event.timestamp || event.Timestamp || event.created || event.Created || '';
           const eventTypeValue = event.Status || event.status || 'Unknown';
           const applicationValue = event.applicationName || event.Destination_Application || event.destinationApplication || 'NA';
-          
+
           results.push({
             id: item.id,
             fileId: item.id || pick(item.File_ID, item.fileId, item.file_id, item.correlationId),
             fileName,
-            sourcePath: item.Source_FileName || item.Source_Path || item.source_path || item.SourcePath || '',
+            sourcePath: fileSourcePath,
             headerString: headerStr,
             flowVersion: formattedFlowVersion,
             flow: flowVersionParts[0] || '-',
@@ -361,7 +367,7 @@ const DtcAuditFilter = () => {
             timestamp: formatDateTime(rawTimestamp),
             rawTimestamp,
             eventId: event.id || event.eventId || '',
-            destinationPath: event['Destination Folder'] || event.Destination_Folder || event.netappfilepath || event.destinationfilepath || event.Destination_Path || event.destination_path || event.destinationPath || event.DestinationPath || '',
+            destinationPath: fileDestinationPath,
             destinationFileName: event['Destination File Name'] || event.Destination_fileName || event.Destination_FileName || event.Destination_file_name || event.destinationFileName || event.destinationfilename || event.DestinationFileName || '',
             checksum: item.Checksum_From_User || item.checksum || '',
             _rid: item._rid,

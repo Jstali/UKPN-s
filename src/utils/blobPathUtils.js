@@ -48,25 +48,48 @@ export const getNonDtcBlobPath = (item) => {
 };
 
 // Destination path fields used for display (not blob-filtered).
+// Shared by DTC and Non-DTC so both audit tables map paths the same way.
+// Includes DTC-specific keys (e.g. "Destination Folder" with a space, netappfilepath)
+// and Non-DTC keys (destinationContent, targetPath, outputPath).
 const DEST_PATH_FIELDS = [
-  'destinationPath', 'Destination_Path', 'destination_path',
+  'Destination Folder', 'Destination_Folder',
+  'destinationPath', 'Destination_Path', 'destination_path', 'DestinationPath',
   'destinationContent', 'DestinationContent', 'destination_content',
   'destPath', 'DestPath', 'dest_path',
   'targetPath', 'TargetPath', 'target_path',
   'outputPath', 'OutputPath', 'output_path',
+  'netappfilepath', 'destinationfilepath',
 ];
 
-// Returns the display destination path for a Non-DTC item.
+// Source path fields — the source path is a file-level (item-level) attribute
+// in both DTC and Non-DTC, so we don't scan events for it.
+const SOURCE_PATH_FIELDS = [
+  'Source_Path', 'sourcePath', 'source_path', 'SourcePath',
+];
+
+// Returns the display destination path for an audit item (DTC or Non-DTC).
 // Searches events in reverse (later events = delivery events have destination),
 // then falls back to top-level item fields.
-export const getNonDtcDisplayDestPath = (item) => {
+export const getDisplayDestPath = (item) => {
   for (const e of [...(item.events || [])].reverse()) {
     for (const f of DEST_PATH_FIELDS) {
-      if (e[f] && String(e[f]).trim()) return String(e[f]).trim();
+      if (e?.[f] && String(e[f]).trim()) return String(e[f]).trim();
     }
   }
   for (const f of DEST_PATH_FIELDS) {
-    if (item[f] && String(item[f]).trim()) return String(item[f]).trim();
+    if (item?.[f] && String(item[f]).trim()) return String(item[f]).trim();
   }
   return '';
 };
+
+// Returns the display source path for an audit item.
+// Source path lives on the item itself in both DTC and Non-DTC payloads.
+export const getDisplaySourcePath = (item) => {
+  for (const f of SOURCE_PATH_FIELDS) {
+    if (item?.[f] && String(item[f]).trim()) return String(item[f]).trim();
+  }
+  return '';
+};
+
+// Backwards-compatible alias — kept so existing Non-DTC imports keep working.
+export const getNonDtcDisplayDestPath = getDisplayDestPath;
