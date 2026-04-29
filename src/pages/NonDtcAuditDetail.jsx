@@ -130,6 +130,10 @@ const NonDtcAuditDetail = () => {
 
   const labelStyle = { fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '4px', display: 'block' };
   const inputStyle = { width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' };
+  const hasTableRows = filteredResults.length > 0;
+  const shouldShowLoading =
+    !hasTableRows &&
+    (loading || (!dataComplete && nonDtcAuditData.length === 0 && !nonDtcFetchError));
 
   if (selectedRecord) {
     const raw = selectedRecord.rawData || {};
@@ -407,7 +411,7 @@ const NonDtcAuditDetail = () => {
       )}
 
       {/* Loading state */}
-      {(loading || (!dataComplete && nonDtcAuditData.length === 0 && !nonDtcFetchError)) && (
+      {shouldShowLoading && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: '300px', flexDirection: 'column', gap: '14px',
@@ -423,7 +427,7 @@ const NonDtcAuditDetail = () => {
       )}
 
       {/* Results Table */}
-      {!loading && dataComplete && hasQueried && (
+      {hasQueried && hasTableRows && (
         <DataTable
           tableId="non_dtc_audit_detail"
           data={filteredResults}
