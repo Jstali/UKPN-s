@@ -82,6 +82,8 @@ const flattenDtcItem = (item) => {
     // destination data in the log (any of the destination-marker fields below).
     // We do NOT gate this on Event_Type — any event with destination data shows it,
     // and events without destination data leave the column blank.
+    const rawEventType = String(event.Event_Type ?? event.event_type ?? event.eventType ?? event.EventType ?? '');
+    const isDestByEventType = rawEventType === '32' || rawEventType === '33';
     const hasDestinationData = !!(
       event.Destination_Application ||
       event['Destination Folder']    || event.Destination_Folder ||
@@ -90,7 +92,7 @@ const flattenDtcItem = (item) => {
       event.netappfilepath           || event.destinationfilepath ||
       event.destinationFileName      || event.destinationfilename || event.DestinationFileName
     );
-    const application = hasDestinationData
+    const application = (hasDestinationData || isDestByEventType)
       ? normalizeAppName(event.Destination_Application || event.applicationName) || ''
       : '';
 
