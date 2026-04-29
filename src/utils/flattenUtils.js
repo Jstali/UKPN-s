@@ -104,10 +104,20 @@ const flattenDtcItem = (item) => {
   }, []);
 };
 
+const MAX_FLAT_ROWS = 20000;
+
 // Flattens ALL DTC audit records into a single flat array (one row per event).
 // Used for the default (unfiltered) DTC Audit table view.
-export const flattenDtcAuditData = (data = []) =>
-  data.flatMap(flattenDtcItem);
+export const flattenDtcAuditData = (data = []) => {
+  const rows = [];
+  for (const item of data) {
+    for (const row of flattenDtcItem(item)) {
+      rows.push(row);
+      if (rows.length >= MAX_FLAT_ROWS) return rows;
+    }
+  }
+  return rows;
+};
 
 // Flattens + applies filters in one pass.
 // Used by DtcAudit.jsx when the user clicks "Apply" on the filter panel.
@@ -164,7 +174,7 @@ export const flattenNonDtcAuditData = (data = []) => {
       item.process_time    || item.processingTime  || item.processing_time || '';
 
     events.forEach(event => {
-      // Resolve and normalise the event type label
+      if (rows.length >= MAX_FLAT_ROWS) return;
       const rawEventStatus = event.description || event.Description || event.status || event.Status || event.eventType || event.event_type || event.Event_Type || item.eventType || '';
 
       rows.push({
