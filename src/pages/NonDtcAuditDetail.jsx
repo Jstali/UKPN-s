@@ -6,7 +6,6 @@ import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import FileViewModal from '../components/FileViewModal';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
-import { mapNonDtcStatus } from '../constants/eventTypes';
 import { flattenNonDtcAuditData, buildFilteredNonDtcResults } from '../utils/flattenUtils';
 
 // Columns mirror the main Non-DTC Audit table so the detail-view results table
@@ -220,51 +219,7 @@ const NonDtcAuditDetail = () => {
               </div>
             </div>
 
-            {raw.events && raw.events.length > 0 && (
-              <div>
-                <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Events ({raw.events.length})
-                </h3>
-                <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                    <thead>
-                      <tr>
-                        {['#', 'Status', 'Timestamp', 'Application', 'Processed'].map(col => (
-                          <th key={col} style={{ padding: '8px 14px', background: '#27187e', color: '#fff', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left', whiteSpace: 'nowrap' }}>
-                            {col}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {raw.events.map((event, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafbff' }}>
-                          <td style={{ padding: '8px 14px', color: '#94a3b8', fontWeight: 600 }}>{idx + 1}</td>
-                          <td style={{ padding: '8px 14px' }}>
-                            {(() => {
-                              const st = mapNonDtcStatus(event.status);
-                              const sl = st.toLowerCase();
-                              return (
-                                <span style={{
-                                  padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
-                                  background: sl === 'success' ? '#dcfce7' : sl.includes('fail') ? '#fef2f2' : '#f1f5f9',
-                                  color:      sl === 'success' ? '#16a34a' : sl.includes('fail') ? '#dc2626' : '#475569',
-                                }}>
-                                  {st || '-'}
-                                </span>
-                              );
-                            })()}
-                          </td>
-                          <td style={{ padding: '8px 14px', whiteSpace: 'nowrap' }}>{event.timestamp ? new Date(event.timestamp).toLocaleString('en-GB') : '-'}</td>
-                          <td style={{ padding: '8px 14px' }}>{formatValue(event.applicationName)}</td>
-                          <td style={{ padding: '8px 14px' }}>{event.processed !== undefined ? String(event.processed) : '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            {/* Events section intentionally removed to match DTC detail page layout */}
           </div>
         </div>
       </motion.div>
