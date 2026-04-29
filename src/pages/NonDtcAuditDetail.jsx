@@ -6,7 +6,7 @@ import MultiCheckboxDropdown from '../components/MultiCheckboxDropdown';
 import FileViewModal from '../components/FileViewModal';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
-import { resolveNonDtcEventType, mapNonDtcStatus } from '../constants/eventTypes';
+import { mapNonDtcStatus } from '../constants/eventTypes';
 import { flattenNonDtcAuditData, buildFilteredNonDtcResults } from '../utils/flattenUtils';
 
 // Columns mirror the main Non-DTC Audit table so the detail-view results table
@@ -229,7 +229,7 @@ const NonDtcAuditDetail = () => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                     <thead>
                       <tr>
-                        {['#', 'Event Type', 'Status', 'Timestamp', 'Application', 'Processed'].map(col => (
+                        {['#', 'Status', 'Timestamp', 'Application', 'Processed'].map(col => (
                           <th key={col} style={{ padding: '8px 14px', background: '#27187e', color: '#fff', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', textAlign: 'left', whiteSpace: 'nowrap' }}>
                             {col}
                           </th>
@@ -240,7 +240,6 @@ const NonDtcAuditDetail = () => {
                       {raw.events.map((event, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafbff' }}>
                           <td style={{ padding: '8px 14px', color: '#94a3b8', fontWeight: 600 }}>{idx + 1}</td>
-                          <td style={{ padding: '8px 14px' }}>{formatValue(resolveNonDtcEventType(event))}</td>
                           <td style={{ padding: '8px 14px' }}>
                             {(() => {
                               const st = mapNonDtcStatus(event.status);
