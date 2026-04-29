@@ -65,9 +65,6 @@ const flattenDtcItem = (item) => {
   return [...events].reverse().reduce((rows, event) => {
     const eventStatus = event.Status || event.status || 'Unknown';
 
-    // Skip internal blob-storage events — no business value, high volume
-    if (event.Event_Type in DTC_EVENT_TYPE_MAP && DTC_EVENT_TYPE_MAP[event.Event_Type] === null) return rows;
-
     const eventType = eventStatus;
 
     // Destination application is only meaningful for specific event types.
@@ -107,20 +104,10 @@ const flattenDtcItem = (item) => {
   }, []);
 };
 
-const MAX_FLAT_ROWS = 15000;
-
 // Flattens ALL DTC audit records into a single flat array (one row per event).
 // Used for the default (unfiltered) DTC Audit table view.
-export const flattenDtcAuditData = (data = []) => {
-  const rows = [];
-  for (const item of data) {
-    for (const row of flattenDtcItem(item)) {
-      rows.push(row);
-      if (rows.length >= MAX_FLAT_ROWS) return rows;
-    }
-  }
-  return rows;
-};
+export const flattenDtcAuditData = (data = []) =>
+  data.flatMap(flattenDtcItem);
 
 // Flattens + applies filters in one pass.
 // Used by DtcAudit.jsx when the user clicks "Apply" on the filter panel.
@@ -177,12 +164,7 @@ export const flattenNonDtcAuditData = (data = []) => {
       item.process_time    || item.processingTime  || item.processing_time || '';
 
     events.forEach(event => {
-      if (rows.length >= MAX_FLAT_ROWS) return;
-
       // Resolve and normalise the event type label
-      const resolvedType = resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType });
-      if (resolvedType === null) return; // skip internal blob-storage events
-
       const rawEventStatus = event.description || event.Description || event.status || event.Status || event.eventType || event.event_type || event.Event_Type || item.eventType || '';
 
       rows.push({
