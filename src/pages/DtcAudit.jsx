@@ -92,6 +92,18 @@ const DtcAudit = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
+  // Restore scroll position when navigating back from detail page
+  useEffect(() => {
+    const savedPos = sessionStorage.getItem('dtcAuditScrollPos');
+    if (savedPos) {
+      sessionStorage.removeItem('dtcAuditScrollPos');
+      const pos = Number(savedPos);
+      requestAnimationFrame(() => {
+        setTimeout(() => window.scrollTo({ top: pos, behavior: 'instant' }), 80);
+      });
+    }
+  }, []);
+
   // Flatten ALL audit data for the default (unfiltered) table view
   const flattenedAuditData = useMemo(
     () => globalAuditData.length ? flattenDtcAuditData(globalAuditData) : [],

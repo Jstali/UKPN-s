@@ -1112,6 +1112,7 @@ const DataTable = ({
                             onClick={() => {
                               sessionStorage.setItem('dataTablePage', String(currentPage));
                               sessionStorage.setItem('dataTablePageSize', String(pageSize));
+                              sessionStorage.setItem('dtcAuditScrollPos', String(window.scrollY));
                               navigate(detailPagePath, { state: { record: row, uniqueId: row.uniqueId || row.id || row.eventId, returnPath: window.location.hash.slice(1) || window.location.pathname, ...navigationState } });
                             }}
                           >
