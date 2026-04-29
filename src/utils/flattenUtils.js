@@ -65,15 +65,6 @@ const flattenDtcItem = (item) => {
   return [...events].reverse().reduce((rows, event) => {
     const eventStatus = event.Status || event.status || 'Unknown';
 
-    // Skip "valid subscription" events — these are internal handshake events that
-    // confirm a subscription exists. They are noise for the audit view.
-    if (eventStatus.toLowerCase().trim() === 'valid subscription') return rows;
-
-    // Skip event types explicitly mapped to null in DTC_EVENT_TYPE_MAP.
-    // These are internal storage events (e.g. "File Store to Blob") that have
-    // no business meaning and should not appear in the audit table.
-    if (event.Event_Type in DTC_EVENT_TYPE_MAP && DTC_EVENT_TYPE_MAP[event.Event_Type] === null) return rows;
-
     // eventType column shows the actual Status from the API log (e.g. "Delivered", "Failed").
     // mapStatusDisplay normalises raw status strings
     // (e.g. "File Transfer" → "Delivered", "File Delivered" → "Net App Delivered").
@@ -176,9 +167,8 @@ export const flattenNonDtcAuditData = (data = []) => {
       item.process_time    || item.processingTime  || item.processing_time || '';
 
     events.forEach(event => {
-      // Resolve and normalise the event type label; skip null-mapped types (suppressed events)
-      const resolvedEventType = resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType });
-      if (resolvedEventType === null) return;  // skip suppressed event types
+      // Resolve and normalise the event type label
+      const resolvedEventType = resolveNonDtcEventType(Object.keys(event).length ? event : { eventType: item.eventType }) || '';
 
       rows.push({
         uniqueId:    item.id || '',
