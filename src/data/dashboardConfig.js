@@ -128,6 +128,8 @@ const COL_WIDTHS = {
   application:       94,
   eventType:         88,
   fileName:         140,
+  sourcePath:       150,
+  destinationPath:  150,
   eventId:          112,
 };
 
@@ -146,6 +148,8 @@ export const FILTERED_COLUMNS = [
   c('application', 'Destination'),
   c('eventType', 'Event Type'),
   c('fileName', 'Source File Name'),
+  c('sourcePath', 'Source Path'),
+  c('destinationPath', 'Destination Path'),
 ];
 
 export const DEFAULT_COLUMNS_BUSINESS = [
@@ -161,6 +165,8 @@ export const DEFAULT_COLUMNS_BUSINESS = [
   c('application', 'Destination'),
   c('eventType', 'Event Type'),
   c('fileName', 'Source File Name'),
+  c('sourcePath', 'Source Path'),
+  c('destinationPath', 'Destination Path'),
 ];
 
 export const DEFAULT_COLUMNS_FULL = [
@@ -176,4 +182,6 @@ export const DEFAULT_COLUMNS_FULL = [
   c('application', 'Destination'),
   c('eventType', 'Event Type'),
   c('fileName', 'Source File Name'),
+  c('sourcePath', 'Source Path'),
+  c('destinationPath', 'Destination Path'),
 ];

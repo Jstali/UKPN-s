@@ -14,9 +14,11 @@ import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 import { flattenNonDtcAuditData } from '../utils/flattenUtils';
 import { validateDateRange, combineDateTime } from '../utils/dateUtils';
 
-// Strip DTC-specific columns that don't apply to Non-DTC
+// Strip DTC-specific columns that don't apply to Non-DTC.
+// Also strip sourcePath/destinationPath here — they are appended explicitly
+// further down (with Non-DTC-specific widths) so we don't double them up.
 const BASE_COLUMNS = DEFAULT_COLUMNS_FULL.filter(
-  ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'].includes(key)
+  ({ key }) => !['flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID', 'sourcePath', 'destinationPath'].includes(key)
 );
 
 const NON_DTC_COLUMNS = [
