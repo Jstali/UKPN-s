@@ -42,8 +42,11 @@ const writeCache = (key, records, limit = null) => {
 };
 
 export const AppProvider = ({ children }) => {
-  const [user,          setUser]          = useState(null);
-  const [userLoading,   setUserLoading]   = useState(true);  // true while /.auth/me is being fetched
+  const [user,          setUser]          = useState(() => {
+    const saved = sessionStorage.getItem('user');
+    try { return saved ? JSON.parse(saved) : null; } catch { return null; }
+  });
+  const [userLoading,   setUserLoading]   = useState(false);
   const [autoRefresh,   setAutoRefresh]   = useState(true);
 
   // Initialise from cache so the UI renders immediately on load
@@ -85,40 +88,6 @@ export const AppProvider = ({ children }) => {
   // Tracks current auditData length so auto-refresh can decide whether to preserve loaded pages
   const auditDataRef          = useRef([]);
 
-  useEffect(() => {
-    // Try Azure SWA SSO first — /.auth/me is provided by Azure Static Web Apps
-    // and returns the currently logged-in AAD user's identity claims.
-    fetch('/.auth/me')
-      .then(res => res.json())
-      .then(data => {
-        const principal = data?.clientPrincipal;
-        if (principal) {
-          // SSO user authenticated — assign Business role to all AAD users
-          setUser({
-            username: principal.userDetails,  // AAD email address
-            name:     principal.userDetails,
-            role:     'Business',
-          });
-        } else {
-          // /.auth/me returned no principal — fall back to sessionStorage
-          // (used in local development where Azure SWA is not running)
-          const savedUser = sessionStorage.getItem('user');
-          if (savedUser) {
-            try { setUser(JSON.parse(savedUser)); }
-            catch { sessionStorage.removeItem('user'); }
-          }
-        }
-      })
-      .catch(() => {
-        // /.auth/me unreachable (local dev) — fall back to sessionStorage login
-        const savedUser = sessionStorage.getItem('user');
-        if (savedUser) {
-          try { setUser(JSON.parse(savedUser)); }
-          catch { sessionStorage.removeItem('user'); }
-        }
-      })
-      .finally(() => setUserLoading(false));
-  }, []);
 
   // Cache only the first page of DTC data to keep localStorage small
   const commitAuditData = useCallback((records) => {
@@ -356,10 +325,7 @@ export const AppProvider = ({ children }) => {
     sessionStorage.removeItem('authToken');
     localStorage.removeItem(DTC_CACHE_KEY);
     localStorage.removeItem(NON_DTC_CACHE_KEY);
-    // On Azure SWA: redirect to the platform logout endpoint which clears the AAD session.
-    // On local dev: /.auth/logout does not exist so this will 404 harmlessly;
-    // the user state is already cleared above so the Login page will show.
-    window.location.href = '/.auth/logout';
+    window.location.href = '/';
   }, []);
 
   const contextValue = useMemo(() => ({
