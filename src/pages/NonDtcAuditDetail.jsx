@@ -7,7 +7,29 @@ import FileViewModal from '../components/FileViewModal';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { resolveNonDtcEventType, mapNonDtcStatus } from '../constants/eventTypes';
+import { normalizeAppName } from '../utils/flattenUtils';
+import { getDisplaySourcePath, getDisplayDestPath } from '../utils/blobPathUtils';
 
+// Pull the destination application from any event that carries it.
+// Non-DTC events use destinationApplication or applicationName for this.
+const findDestinationApp = (item) => {
+  for (const e of [...(item?.events || [])].reverse()) {
+    const app = e?.destinationApplication || e?.applicationName;
+    if (app) return app;
+  }
+  return '';
+};
+
+// Derive a short file-type tag from the filename extension (matches NonDtcAudit.jsx).
+const fileTypeFromName = (name) => {
+  if (!name) return '-';
+  const parts = String(name).split('.');
+  return parts.length > 1 ? parts.pop().toUpperCase() : '-';
+};
+
+// Columns mirror the main Non-DTC Audit table so the detail-view results table
+// surfaces the same data the user saw before navigating in.
+// (Source / Destination / File Type / Source Path / Destination Path were missing.)
 const ALL_COLUMNS = [
   { key: 'fileId', label: 'File ID' },
   { key: 'sourceAppName', label: 'Source App Name' },
@@ -15,7 +37,12 @@ const ALL_COLUMNS = [
   { key: 'subscription', label: 'Subscription' },
   { key: 'status', label: 'Status' },
   { key: 'timestamp', label: 'Timestamp' },
+  { key: 'sourceApplication', label: 'Source' },
+  { key: 'application', label: 'Destination' },
   { key: 'eventType', label: 'Event Type' },
+  { key: 'fileType', label: 'File Type' },
+  { key: 'sourcePath', label: 'Source Path' },
+  { key: 'destinationPath', label: 'Destination Path' },
   { key: 'changeFeedStatus', label: 'Change Feed Status' },
   { key: 'requestStatus', label: 'Request Status' },
   { key: 'processedTime', label: 'Processed Time' },
@@ -63,16 +90,24 @@ const resolveItemMeta = (item) => {
 
 const mapItem = (item) => {
   const { changeFeedStatus, requestStatus, processedTime } = resolveItemMeta(item);
+  const sourceFileName = item.sourceFileName || '';
   return {
     fileId: item.id || '',
     sourceAppName: item.sourceAppName || '',
-    sourceFileName: item.sourceFileName || '',
+    sourceFileName,
     subscription: item.subscription || '',
     status: mapNonDtcStatus(item.status),
     timestamp: item.timestamp || '',
     eventType: (item.events && item.events.length > 0)
       ? [...new Set(item.events.map(e => resolveNonDtcEventType(e)).filter(Boolean))].join(', ')
       : resolveNonDtcEventType({ eventType: item.eventType }),
+    // Same fields the main Non-DTC table shows, kept in lockstep so the
+    // detail-view table doesn't omit data the user saw on the previous screen.
+    sourceApplication: normalizeAppName(item.sourceAppName) || '',
+    application:       normalizeAppName(findDestinationApp(item)) || '',
+    fileType:          fileTypeFromName(sourceFileName),
+    sourcePath:        getDisplaySourcePath(item),
+    destinationPath:   getDisplayDestPath(item),
     changeFeedStatus,
     requestStatus,
     processedTime,
@@ -239,13 +274,21 @@ const NonDtcAuditDetail = () => {
 
   if (selectedRecord) {
     const raw = selectedRecord.rawData || {};
+    // Summary mirrors the main Non-DTC table's columns so the user sees the same
+    // fields they had in the table (Source / Destination / File Type / paths)
+    // on top of the existing per-record metadata.
     const summaryFields = [
-      { label: 'File ID (id)', value: raw.id || selectedRecord.fileId },
-      { label: 'Source App Name', value: raw.sourceAppName },
-      { label: 'Source File Name', value: raw.sourceFileName },
-      { label: 'Subscription', value: raw.subscription },
-      { label: 'Status', value: raw.status || selectedRecord.status },
-      { label: 'Timestamp', value: raw.timestamp || selectedRecord.timestamp },
+      { label: 'File ID (id)',       value: raw.id || selectedRecord.fileId },
+      { label: 'Source App Name',    value: raw.sourceAppName },
+      { label: 'Source File Name',   value: raw.sourceFileName },
+      { label: 'Subscription',       value: raw.subscription },
+      { label: 'Status',             value: raw.status || selectedRecord.status },
+      { label: 'Timestamp',          value: raw.timestamp || selectedRecord.timestamp },
+      { label: 'Source',             value: selectedRecord.sourceApplication },
+      { label: 'Destination',        value: selectedRecord.application },
+      { label: 'File Type',          value: selectedRecord.fileType },
+      { label: 'Source Path',        value: selectedRecord.sourcePath },
+      { label: 'Destination Path',   value: selectedRecord.destinationPath },
       { label: 'Change Feed Status', value: selectedRecord.changeFeedStatus || '—' },
       { label: 'Request Status',     value: selectedRecord.requestStatus    || '—' },
       { label: 'Processed Time',     value: selectedRecord.processedTime    || '—' },

@@ -19,7 +19,9 @@ const APP_NAME_MAP = {
   'grey_it':      'IM Grey IT',    // API returns underscore-separated — correct to readable label
   'im_greyit':    'IM Grey IT',    // Alternate API serialisation of the same application
 };
-const normalizeAppName = (name) => {
+// Exported so the Non-DTC detail view can show the same normalised app names
+// the main DTC and Non-DTC tables show, without duplicating the lookup table.
+export const normalizeAppName = (name) => {
   if (!name) return name;
   // Look up the lowercase version in the map; fall back to original if not found
   return APP_NAME_MAP[String(name).toLowerCase()] ?? name;
