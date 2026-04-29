@@ -4,7 +4,7 @@
 // This is the central data-transformation layer — all pages read from these outputs.
 
 import { parseHeader, formatDateTime, formatFlowVersion, pick, deriveFlowVersion } from './auditUtils';
-import { resolveNonDtcEventType, mapStatusDisplay, mapNonDtcStatus, DTC_EVENT_TYPES_WITH_DESTINATION, DTC_EVENT_TYPE_MAP } from '../constants/eventTypes';
+import { mapNonDtcStatus, getEventStatusValue } from '../constants/eventTypes';
 import { applyDtcFilters } from './dtcFilterUtils';
 import { getNonDtcBlobPath, getNonDtcDisplayDestPath } from './blobPathUtils';
 
@@ -64,14 +64,26 @@ const flattenDtcItem = (item) => {
   // Reverse events so the most recent event appears first in the table
   return [...events].reverse().reduce((rows, event) => {
     if (!event || typeof event !== 'object') return rows; // skip null/corrupt events
-    const eventStatus = event.Status || event.status || 'Unknown';
-
+    // Event Type column shows the raw Status text for that event
+    // (e.g. "Publish", "Valid Subscription", "Subscribed", "File Delivered",
+    // "File Transferred"). One row per event from events[].
+    const eventStatus = getEventStatusValue(event) || 'Unknown';
     const eventType = eventStatus;
 
-    // Destination application is only meaningful for specific event types.
-    // For other event types (e.g. Archived, Published) there is no destination.
-    const application = DTC_EVENT_TYPES_WITH_DESTINATION.has(String(event.Event_Type))
-      ? normalizeAppName(event.applicationName || event.Destination_Application) || ''
+    // Destination column is populated whenever the event itself carries
+    // destination data in the log (any of the destination-marker fields below).
+    // We do NOT gate this on Event_Type — any event with destination data shows it,
+    // and events without destination data leave the column blank.
+    const hasDestinationData = !!(
+      event.Destination_Application ||
+      event['Destination Folder']    || event.Destination_Folder ||
+      event['Destination File Name'] || event.Destination_fileName || event.Destination_FileName || event.Destination_file_name ||
+      event.Destination_Path         || event.destination_path || event.destinationPath || event.DestinationPath ||
+      event.netappfilepath           || event.destinationfilepath ||
+      event.destinationFileName      || event.destinationfilename || event.DestinationFileName
+    );
+    const application = hasDestinationData
+      ? normalizeAppName(event.Destination_Application || event.applicationName) || ''
       : '';
 
     rows.push({
@@ -184,7 +196,14 @@ export const flattenNonDtcAuditData = (data = []) => {
     events.forEach(event => {
       if (rows.length >= MAX_FLAT_ROWS) return;
       if (!event || typeof event !== 'object') return; // skip null/corrupt events
-      const rawEventStatus = event.description || event.Description || event.status || event.Status || event.eventType || event.event_type || event.Event_Type || item.eventType || '';
+      // Event Type column = raw Status text for the event, matching DTC.
+      // Falls back to description-style fields only when Status is absent
+      // so older Non-DTC payloads that pre-date the Status field still render.
+      const rawEventStatus =
+        getEventStatusValue(event) ||
+        event.description || event.Description ||
+        event.eventType   || event.event_type  || event.Event_Type ||
+        item.eventType    || '';
 
       rows.push({
         uniqueId:    item.id || '',

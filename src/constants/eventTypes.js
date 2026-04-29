@@ -71,14 +71,22 @@ export const STATUSES_WITHOUT_DESTINATION = new Set([
   'valid subscription',
 ]);
 
-// Only these DTC event types carry a meaningful destination application
-export const DTC_EVENT_TYPES_WITH_DESTINATION = new Set(['3', '4', '22']);
-
 // Statuses remapped for cleaner display labels
 export const STATUS_DISPLAY_MAP = {
   'file delivered': 'Net App Delivered',
   'file transfer': 'Delivered',
   'file transferred': 'Delivered',
+};
+
+// Read the descriptive Status text directly from an event object.
+// Used by both DTC and Non-DTC flatteners so the Event Type column shows
+// the same field source (event.Status) for every event row in either table.
+// Falls back through case variants; returns '' when no status is present so
+// the column simply renders empty rather than 'Unknown'.
+export const getEventStatusValue = (event) => {
+  if (!event || typeof event !== 'object') return '';
+  const raw = event.Status ?? event.status ?? '';
+  return String(raw).trim();
 };
 
 // Resolve DTC event type label from an event object.
