@@ -24,9 +24,6 @@ const ALL_COLUMNS = [
   { key: 'fileType', label: 'File Type' },
   { key: 'sourcePath', label: 'Source Path' },
   { key: 'destinationPath', label: 'Destination Path' },
-  { key: 'changeFeedStatus', label: 'Change Feed Status' },
-  { key: 'requestStatus', label: 'Request Status' },
-  { key: 'processedTime', label: 'Processed Time' },
   { key: 'lastUpdatedAt', label: 'Last Updated At' },
 ];
 
