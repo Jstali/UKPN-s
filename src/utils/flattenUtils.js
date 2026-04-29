@@ -97,7 +97,7 @@ const flattenDtcItem = (item) => {
       timestamp:           event.timestamp || '',
       rawTimestamp:        event.timestamp || '',  // preserved for date comparisons in filters (not affected by formatting)
       eventId:             event.id || '',
-      destinationPath:     event.Destination_Folder || event.netappfilepath || event.destinationfilepath || event.Destination_Path || event.destination_path || event.destinationPath || event.DestinationPath || '',
+      destinationPath:     event['Destination Folder'] || event.Destination_Folder || event.netappfilepath || event.destinationfilepath || event.Destination_Path || event.destination_path || event.destinationPath || event.DestinationPath || '',
       destinationFileName: event['Destination File Name'] || event.Destination_fileName || event.Destination_FileName || event.Destination_file_name || event.destinationFileName || event.destinationfilename || event.DestinationFileName || '',
     });
 
