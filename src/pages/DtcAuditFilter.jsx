@@ -332,6 +332,7 @@ const DtcAuditFilter = () => {
 
       if (item.events && item.events.length > 0) {
         item.events.forEach(event => {
+          if (!event || typeof event !== 'object') return;
           const formattedFlowVersion = formatFlowVersion(rawFlow) || '-';
           const flowVersionParts = formattedFlowVersion.split(' ');
           const rawTimestamp = event.timestamp || event.Timestamp || event.created || event.Created || '';

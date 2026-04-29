@@ -63,6 +63,7 @@ const flattenDtcItem = (item) => {
 
   // Reverse events so the most recent event appears first in the table
   return [...events].reverse().reduce((rows, event) => {
+    if (!event || typeof event !== 'object') return rows; // skip null/corrupt events
     const eventStatus = event.Status || event.status || 'Unknown';
 
     const eventType = eventStatus;
@@ -123,8 +124,15 @@ export const flattenDtcAuditData = (data = []) => {
 // Used by DtcAudit.jsx when the user clicks "Apply" on the filter panel.
 // Splitting flatten and filter keeps each step independently testable.
 export const buildFilteredDtcResults = (data = [], filters = {}) => {
-  const flat = data.flatMap(flattenDtcItem);  // Step 1: flatten all records
-  return applyDtcFilters(flat, filters);       // Step 2: apply active filter criteria
+  const rows = [];
+  for (const item of data) {
+    for (const row of flattenDtcItem(item)) {
+      rows.push(row);
+      if (rows.length >= MAX_FLAT_ROWS) break;
+    }
+    if (rows.length >= MAX_FLAT_ROWS) break;
+  }
+  return applyDtcFilters(rows, filters);
 };
 
 // ─── Non-DTC ──────────────────────────────────────────────────────────────
@@ -175,6 +183,7 @@ export const flattenNonDtcAuditData = (data = []) => {
 
     events.forEach(event => {
       if (rows.length >= MAX_FLAT_ROWS) return;
+      if (!event || typeof event !== 'object') return; // skip null/corrupt events
       const rawEventStatus = event.description || event.Description || event.status || event.Status || event.eventType || event.event_type || event.Event_Type || item.eventType || '';
 
       rows.push({
