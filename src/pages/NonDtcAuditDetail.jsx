@@ -7,25 +7,7 @@ import FileViewModal from '../components/FileViewModal';
 import DataTable from '../components/DataTable';
 import { useApp } from '../context/AppContext';
 import { resolveNonDtcEventType, mapNonDtcStatus } from '../constants/eventTypes';
-import { normalizeAppName } from '../utils/flattenUtils';
-import { getDisplaySourcePath, getDisplayDestPath } from '../utils/blobPathUtils';
-
-// Pull the destination application from any event that carries it.
-// Non-DTC events use destinationApplication or applicationName for this.
-const findDestinationApp = (item) => {
-  for (const e of [...(item?.events || [])].reverse()) {
-    const app = e?.destinationApplication || e?.applicationName;
-    if (app) return app;
-  }
-  return '';
-};
-
-// Derive a short file-type tag from the filename extension (matches NonDtcAudit.jsx).
-const fileTypeFromName = (name) => {
-  if (!name) return '-';
-  const parts = String(name).split('.');
-  return parts.length > 1 ? parts.pop().toUpperCase() : '-';
-};
+import { flattenNonDtcAuditData, buildFilteredNonDtcResults } from '../utils/flattenUtils';
 
 // Columns mirror the main Non-DTC Audit table so the detail-view results table
 // surfaces the same data the user saw before navigating in.
@@ -48,73 +30,6 @@ const ALL_COLUMNS = [
   { key: 'processedTime', label: 'Processed Time' },
   { key: 'lastUpdatedAt', label: 'Last Updated At' },
 ];
-
-const matchesMultiSelect = (selectedValue, actualValue) => {
-  if (!selectedValue || selectedValue === 'All') return true;
-  const selectedValues = selectedValue.split(',').map(v => v.trim()).filter(Boolean);
-  return selectedValues.includes(actualValue);
-};
-
-const resolveItemMeta = (item) => {
-  const changeFeedStatus =
-    item.changeFeedStatus   || item.ChangeFeedStatus   ||
-    item.change_feed_status || item.changeFeed         ||
-    item.change_feed        || '';
-
-  const requestStatus =
-    item.requestStatus   || item.RequestStatus   ||
-    item.request_status  || item.reqStatus        ||
-    item.req_status      || '';
-
-  const processedTime =
-    item.processedTime   || item.ProcessedTime   ||
-    item.processed_time  || item.processTime     ||
-    item.process_time    || item.processingTime  ||
-    item.processing_time || '';
-
-  if (process.env.NODE_ENV !== 'production') {
-    if (!changeFeedStatus && !requestStatus && !processedTime) {
-      const keys = Object.keys(item);
-      const hasFeed = keys.some(k => k.toLowerCase().includes('feed') || k.toLowerCase().includes('change'));
-      const hasReq  = keys.some(k => k.toLowerCase().includes('request') || k.toLowerCase().includes('req'));
-      const hasProc = keys.some(k => k.toLowerCase().includes('process'));
-      if (!hasFeed || !hasReq || !hasProc) {
-        console.warn('[NonDtcAuditDetail] Missing meta fields for record id=%s. Available keys: %s',
-          item.id, keys.join(', '));
-      }
-    }
-  }
-
-  return { changeFeedStatus, requestStatus, processedTime };
-};
-
-const mapItem = (item) => {
-  const { changeFeedStatus, requestStatus, processedTime } = resolveItemMeta(item);
-  const sourceFileName = item.sourceFileName || '';
-  return {
-    fileId: item.id || '',
-    sourceAppName: item.sourceAppName || '',
-    sourceFileName,
-    subscription: item.subscription || '',
-    status: mapNonDtcStatus(item.status),
-    timestamp: item.timestamp || '',
-    eventType: (item.events && item.events.length > 0)
-      ? [...new Set(item.events.map(e => resolveNonDtcEventType(e)).filter(Boolean))].join(', ')
-      : resolveNonDtcEventType({ eventType: item.eventType }),
-    // Same fields the main Non-DTC table shows, kept in lockstep so the
-    // detail-view table doesn't omit data the user saw on the previous screen.
-    sourceApplication: normalizeAppName(item.sourceAppName) || '',
-    application:       normalizeAppName(findDestinationApp(item)) || '',
-    fileType:          fileTypeFromName(sourceFileName),
-    sourcePath:        getDisplaySourcePath(item),
-    destinationPath:   getDisplayDestPath(item),
-    changeFeedStatus,
-    requestStatus,
-    processedTime,
-    lastUpdatedAt: item.lastUpdatedAt || item.LastUpdatedAt || item.last_updated_at || '',
-    rawData: item,
-  };
-};
 
 const formatValue = (value) => {
   if (value === null || value === undefined || String(value).trim() === '') return '-';
@@ -164,14 +79,12 @@ const NonDtcAuditDetail = () => {
     URL.revokeObjectURL(url);
   };
 
-  const auditData = useMemo(() => (nonDtcAuditData || []).map(mapItem), [nonDtcAuditData]);
+  const auditData = useMemo(() => flattenNonDtcAuditData(nonDtcAuditData || []), [nonDtcAuditData]);
   const selectedRecord = useMemo(() => {
     const navRecord = location.state?.record;
     if (!navRecord) return null;
-    const selectedId = navRecord.uniqueId || navRecord.fileId || navRecord.id;
-    const matched = (nonDtcAuditData || []).find(item => (item.id || '') === selectedId);
-    return matched ? mapItem(matched) : navRecord;
-  }, [location.state, nonDtcAuditData]);
+    return navRecord;
+  }, [location.state]);
 
   // Build filter options from audit data
   const filterOptions = useMemo(() => ({
@@ -194,34 +107,7 @@ const NonDtcAuditDetail = () => {
     if (location.state?.filters && auditData.length > 0) {
       const incomingFilters = location.state.filters;
       setFilters(incomingFilters);
-
-      let results = [...auditData];
-      results = results.filter(r => matchesMultiSelect(incomingFilters.flow, r.flow));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.sourceApp, r.sourceApp));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.destinationApp, r.application));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.eventType, r.eventType));
-      results = results.filter(r => matchesMultiSelect(incomingFilters.fileId, r.fileId));
-      
-      // Date filters
-      if (incomingFilters.eventFrom) {
-        results = results.filter(r => {
-          const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-          return eventDate >= incomingFilters.eventFrom;
-        });
-      }
-      if (incomingFilters.eventTo) {
-        results = results.filter(r => {
-          const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-          return eventDate <= incomingFilters.eventTo;
-        });
-      }
-      if (incomingFilters.fileCreated) {
-        results = results.filter(r => {
-          const fileDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-          return fileDate === incomingFilters.fileCreated;
-        });
-      }
-
+      const results = buildFilteredNonDtcResults(auditData, incomingFilters);
       setFilteredResults(results);
       setHasQueried(true);
       window.history.replaceState({}, document.title);
@@ -238,33 +124,7 @@ const NonDtcAuditDetail = () => {
   };
 
   const handleQuery = () => {
-    let results = [...auditData];
-    results = results.filter(r => matchesMultiSelect(filters.flow, r.flow));
-    results = results.filter(r => matchesMultiSelect(filters.sourceApp, r.sourceApp));
-    results = results.filter(r => matchesMultiSelect(filters.destinationApp, r.application));
-    results = results.filter(r => matchesMultiSelect(filters.eventType, r.eventType));
-    results = results.filter(r => matchesMultiSelect(filters.fileId, r.fileId));
-    
-    // Date filters
-    if (filters.eventFrom) {
-      results = results.filter(r => {
-        const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-        return eventDate >= filters.eventFrom;
-      });
-    }
-    if (filters.eventTo) {
-      results = results.filter(r => {
-        const eventDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-        return eventDate <= filters.eventTo;
-      });
-    }
-    if (filters.fileCreated) {
-      results = results.filter(r => {
-        const fileDate = r.timestamp ? new Date(r.timestamp).toISOString().split('T')[0] : '';
-        return fileDate === filters.fileCreated;
-      });
-    }
-    
+    const results = buildFilteredNonDtcResults(auditData, filters);
     setFilteredResults(results);
     setHasQueried(true);
   };

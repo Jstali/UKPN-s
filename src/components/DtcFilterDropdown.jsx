@@ -3,8 +3,7 @@ import { Search, RotateCcw, ChevronDown } from 'lucide-react';
 import api, { fetchDropdownValues } from '../utils/api';
 import { useApp } from '../context/AppContext';
 
-// Import from shared constants — single source of truth
-import { DTC_EVENT_TYPE_MAP as EVENT_TYPE_MAP } from '../constants/eventTypes';
+import { getEventStatusValue } from '../constants/eventTypes';
 
 const MultiSelectDropdown = ({ label, value, options, onChange, style, searchable = false, loading = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -322,16 +321,8 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
         const destApp = event.applicationName || event.Destination_Application;
         if (destApp && destApp !== 'Unknown') values.destinationApplication.add(destApp);
 
-        const eventTypeKey = event.Event_Type;
-        // null in the map means the event type is intentionally hidden
-        const eventTypeName = eventTypeKey in EVENT_TYPE_MAP
-          ? EVENT_TYPE_MAP[eventTypeKey]
-          : eventTypeKey;
-        if (event.Status === 'Failed') {
-          values.eventType.add('Failed');
-        } else if (eventTypeName) {
-          values.eventType.add(eventTypeName);
-        }
+        const rawEventType = getEventStatusValue(event);
+        if (rawEventType) values.eventType.add(rawEventType);
       });
     });
 

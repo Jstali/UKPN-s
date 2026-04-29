@@ -11,7 +11,7 @@ import SelectionCriteria from '../components/common/SelectionCriteria';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useApp } from '../context/AppContext';
 import { DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
-import { flattenNonDtcAuditData } from '../utils/flattenUtils';
+import { flattenNonDtcAuditData, buildFilteredNonDtcResults } from '../utils/flattenUtils';
 import { validateDateRange, combineDateTime } from '../utils/dateUtils';
 
 // Strip DTC-specific columns that don't apply to Non-DTC.
@@ -63,12 +63,6 @@ const DEFAULT_FILTERS = {
   fileCreated: '', fileCreatedTime: '', publishDate: '', fileId: 'All',
 };
 
-// Returns true when selectedValue is 'All'/empty or matches actualValue.
-const matchesMultiSelect = (selectedValue, actualValue) => {
-  if (!selectedValue || selectedValue === 'All') return true;
-  return selectedValue.split(',').map(v => v.trim()).filter(Boolean).includes(actualValue);
-};
-
 const inputStyle = {
   width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0',
   borderRadius: '8px', fontSize: '13px', background: '#fff', cursor: 'pointer',
@@ -94,13 +88,7 @@ const NonDtcAudit = () => {
 
   // Apply currently set filters to the flat audit data
   const filteredData = useMemo(() => {
-    let result = [...auditData];
-    result = result.filter(r => matchesMultiSelect(appliedFilters.flow,           r.flow));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.sourceApp,      r.sourceApp));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.destinationApp, r.application));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.eventType,      r.eventType));
-    result = result.filter(r => matchesMultiSelect(appliedFilters.fileId,         r.fileId));
-    return result;
+    return buildFilteredNonDtcResults(auditData, appliedFilters);
   }, [auditData, appliedFilters]);
 
   // Unique values for each dropdown, derived from the full (unfiltered) dataset

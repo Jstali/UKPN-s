@@ -258,3 +258,24 @@ export const flattenNonDtcAuditData = (data = []) => {
 
   return rows;
 };
+
+// Shared Non-DTC table filtering used by both default and detail views.
+// Keeps row-selection behavior identical across pages.
+export const buildFilteredNonDtcResults = (rows = [], filters = {}) => {
+  const matchesMultiSelect = (selectedValue, actualValue) => {
+    if (!selectedValue || selectedValue === 'All') return true;
+    return selectedValue
+      .split(',')
+      .map(v => v.trim())
+      .filter(Boolean)
+      .includes(actualValue);
+  };
+
+  let result = [...rows];
+  result = result.filter(r => matchesMultiSelect(filters.flow, r.flow));
+  result = result.filter(r => matchesMultiSelect(filters.sourceApp, r.sourceApp));
+  result = result.filter(r => matchesMultiSelect(filters.destinationApp, r.application));
+  result = result.filter(r => matchesMultiSelect(filters.eventType, r.eventType));
+  result = result.filter(r => matchesMultiSelect(filters.fileId, r.fileId));
+  return result;
+};
