@@ -388,11 +388,18 @@ const DtcFilterDropdown = ({
         { label: 'Event Type', field: 'eventType' },
       ];
 
-  // Business view has 3 fewer primary dropdowns (3 merged vs 6 split).
-  const primaryCount = isBusiness ? 3 : 6;
+  // Business consolidates the three merged dropdowns + Source/Destination/Event Type
+  // into one 6-column primary row so the merged boxes shrink and the right-hand empty
+  // space is filled. The remaining date inputs + HFile ID then collapse into a single
+  // 5-column secondary row, eliminating the previous third row.
+  // Non-business keeps the original 6-split / 6-secondary layout.
+  const primaryCount = isBusiness ? 6 : 6;
   const primaryGridColumns = isBusiness
-    ? '1fr 1fr 1fr'
+    ? 'repeat(6, 1fr)'
     : '0.8fr 0.65fr 0.8fr 0.95fr 0.8fr 0.95fr';
+  const secondaryGridColumns = isBusiness
+    ? '1.25fr 1.25fr 0.95fr 0.95fr 1fr'
+    : '1fr 1fr 0.85fr 1.25fr 1.25fr 0.95fr';
 
   const labelStyle = { fontSize: '10px', fontWeight: 600, color: '#64748b', marginBottom: '3px', display: 'block' };
   const selectStyle = {
@@ -422,9 +429,8 @@ const DtcFilterDropdown = ({
     >
       {/* Filter Fields - Compact Layout with Priority Grouping */}
       <div style={{ padding: '10px 14px', overflowY: 'auto', flex: 1 }}>
-        {/* Priority Group 1: Most Used Filters */}
+        {/* Filter row 1 — kept ungrouped (no "Primary Filters" heading) per UX request */}
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primary Filters</div>
           <div style={{ display: 'grid', gridTemplateColumns: primaryGridColumns, gap: '6px' }}>
             {orderedFields.slice(0, primaryCount).map(({ label, field }) => (
               <div key={field}>
@@ -447,10 +453,9 @@ const DtcFilterDropdown = ({
           </div>
         </div>
 
-        {/* Priority Group 2: Secondary Filters */}
+        {/* Filter row 2 — kept ungrouped (no "Additional Filters" heading) per UX request */}
         <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Filters</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.85fr 1.25fr 1.25fr 0.95fr', gap: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: secondaryGridColumns, gap: '6px' }}>
             {orderedFields.slice(primaryCount).map(({ label, field }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
