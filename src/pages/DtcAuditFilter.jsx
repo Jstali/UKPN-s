@@ -37,6 +37,10 @@ const resolveProcessedValue = (...candidates) => {
   return '';
 };
 
+// Joins parts with a single space, trimming each and dropping blanks. Mirrors the
+// helper in flattenUtils.js so combined fields are produced consistently here.
+const joinSpace = (...parts) => parts.map(p => String(p ?? '').trim()).filter(Boolean).join(' ');
+
 // Try to extract DTC flow code from filename (e.g. D0132001_P_X_EPN.DTC → D0132001)
 const extractFlowFromFilename = (filename) => {
   if (!filename) return '';
@@ -65,6 +69,28 @@ const ALL_COLUMNS = [
   { key: 'fromMPID',            label: 'From MPID' },
   { key: 'toRole',              label: 'To Role' },
   { key: 'toMPID',              label: 'To MPID' },
+  { key: 'recApp',              label: 'Receiving App' },
+  { key: 'application',         label: 'Dest Application' },
+  { key: 'eventType',           label: 'Event Type' },
+  { key: 'status',              label: 'Status' },
+  { key: 'id',                  label: 'Unique ID' },
+  { key: 'timestamp',           label: 'Timestamp' },
+  { key: 'destinationPath',     label: 'Destination Path' },
+  { key: 'destinationFileName', label: 'Destination File' },
+  { key: 'checksum',            label: 'Checksum' },
+];
+
+// Business-role table layout: Flow+Version / From Role+MPID / To Role+MPID merged.
+// Mirrors the merged columns of the DTC Audit table for the same role.
+const ALL_COLUMNS_BUSINESS = [
+  { key: 'fileId',              label: 'HFile ID' },
+  { key: 'fileName',            label: 'File Name' },
+  { key: 'sourcePath',          label: 'Source Path' },
+  { key: 'sourceApp',           label: 'Source Application' },
+  { key: 'headerString',        label: 'Header String' },
+  { key: 'flowVersion',         label: 'Flow + Version' },
+  { key: 'fromRoleMPID',        label: 'From Role + From MPID' },
+  { key: 'toRoleMPID',          label: 'To Role + To MPID' },
   { key: 'recApp',              label: 'Receiving App' },
   { key: 'application',         label: 'Dest Application' },
   { key: 'eventType',           label: 'Event Type' },
@@ -192,6 +218,10 @@ const DtcAuditFilter = () => {
     fromMPID: 'All',
     toRole: 'All',
     toMPID: 'All',
+    // Combined-filter values used by the Business-role view.
+    flowVersion:  'All',
+    fromRoleMPID: 'All',
+    toRoleMPID:   'All',
     eventTimestampFrom: '',
     eventTimestampTo: '',
     fileCreationDate: '',
@@ -200,7 +230,9 @@ const DtcAuditFilter = () => {
     msgId: '',
   };
 
-  const { auditData, loading, subscriptionData } = useApp();
+  const { auditData, loading, subscriptionData, user } = useApp();
+  const isBusiness = user?.role === 'Business';
+  const tableColumns = isBusiness ? ALL_COLUMNS_BUSINESS : ALL_COLUMNS;
   const subscriptionAppNames = useMemo(
     () => [...new Set((subscriptionData || []).map(app => app.Application || app.application || app.filterId || app.id).filter(Boolean))].sort(),
     [subscriptionData]
@@ -236,6 +268,22 @@ const DtcAuditFilter = () => {
   // Derive flow options from flattened results — guarantees dropdown matches actual row values.
   const flowOptions = useMemo(
     () => [...new Set(filteredResults.map(r => r.flow).filter(v => v && v !== '-'))].sort(),
+    [filteredResults]
+  );
+
+  // Combined options for the Business-role merged dropdowns. Same source-of-truth
+  // pattern as flowOptions: derive from rows so dropdown values always match the
+  // values being filtered against.
+  const flowVersionOptions = useMemo(
+    () => [...new Set(filteredResults.map(r => r.flowVersion).filter(v => v && v !== '-'))].sort(),
+    [filteredResults]
+  );
+  const fromRoleMPIDOptions = useMemo(
+    () => [...new Set(filteredResults.map(r => r.fromRoleMPID).filter(Boolean))].sort(),
+    [filteredResults]
+  );
+  const toRoleMPIDOptions = useMemo(
+    () => [...new Set(filteredResults.map(r => r.toRoleMPID).filter(Boolean))].sort(),
     [filteredResults]
   );
 
@@ -345,6 +393,11 @@ const DtcAuditFilter = () => {
           const eventTypeValue = event.Status || event.status || 'Unknown';
           const applicationValue = event.applicationName || event.Destination_Application || event.destinationApplication || 'NA';
 
+          const rowFromRole = parsed.fromRole || event.fromRole || event.From_Role || '';
+          const rowFromMPID = parsed.fromMPID || event.fromMPID || event.From_MPID || '';
+          const rowToRole   = parsed.toRole   || event.toRole   || event.To_Role   || '';
+          const rowToMPID   = parsed.toMPID   || event.toMPID   || event.To_MPID   || '';
+
           results.push({
             id: item.id,
             fileId: item.id || pick(item.File_ID, item.fileId, item.file_id, item.correlationId),
@@ -354,10 +407,13 @@ const DtcAuditFilter = () => {
             flowVersion: formattedFlowVersion,
             flow: flowVersionParts[0] || '-',
             version: flowVersionParts[1] || '-',
-            fromRole: parsed.fromRole || event.fromRole || event.From_Role || '',
-            fromMPID: parsed.fromMPID || event.fromMPID || event.From_MPID || '',
-            toRole: parsed.toRole || event.toRole || event.To_Role || '',
-            toMPID: parsed.toMPID || event.toMPID || event.To_MPID || '',
+            fromRole: rowFromRole,
+            fromMPID: rowFromMPID,
+            toRole:   rowToRole,
+            toMPID:   rowToMPID,
+            // Combined fields used by the Business-role merged-column view + filter.
+            fromRoleMPID: joinSpace(rowFromRole, rowFromMPID),
+            toRoleMPID:   joinSpace(rowToRole,   rowToMPID),
             recApp: parsed.recApp || event.Receiving_Application || event.receivingApp || '',
             sourceApp: sourceApplication,
             application: applicationValue,
@@ -476,6 +532,9 @@ const DtcAuditFilter = () => {
         auditData={auditData}
         flowOptions={flowOptions}
         subscriptionAppNames={subscriptionAppNames}
+        flowVersionOptions={flowVersionOptions}
+        fromRoleMPIDOptions={fromRoleMPIDOptions}
+        toRoleMPIDOptions={toRoleMPIDOptions}
         onFilterChange={handleDropdownFilterChange}
         onReset={handleReset}
         onApply={handleDropdownApply}
@@ -493,10 +552,12 @@ const DtcAuditFilter = () => {
           }}
         >
           {/* Selection Criteria - only show if any filter is applied */}
-          {(filters.sourceApp !== 'All' || filters.destinationApp !== 'All' || filters.eventType !== 'All' || 
-            filters.flow !== 'All' || filters.version !== 'All' || 
-            filters.fromRole !== 'All' || filters.fromMPID !== 'All' || filters.toRole !== 'All' || 
-            filters.toMPID !== 'All' || filters.eventTimestampFrom || filters.eventTimestampTo || 
+          {(filters.sourceApp !== 'All' || filters.destinationApp !== 'All' || filters.eventType !== 'All' ||
+            filters.flow !== 'All' || filters.version !== 'All' ||
+            filters.fromRole !== 'All' || filters.fromMPID !== 'All' || filters.toRole !== 'All' ||
+            filters.toMPID !== 'All' ||
+            filters.flowVersion !== 'All' || filters.fromRoleMPID !== 'All' || filters.toRoleMPID !== 'All' ||
+            filters.eventTimestampFrom || filters.eventTimestampTo ||
             filters.fileCreationDate || filters.publishDate || filters.fileId) && (
             <div style={{
               padding: '16px 20px',
@@ -550,6 +611,21 @@ const DtcAuditFilter = () => {
                 {filters.toMPID !== 'All' && (
                   <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
                     To MPID: {filters.toMPID}
+                  </span>
+                )}
+                {filters.flowVersion && filters.flowVersion !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    Flow + Version: {filters.flowVersion}
+                  </span>
+                )}
+                {filters.fromRoleMPID && filters.fromRoleMPID !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    From Role + From MPID: {filters.fromRoleMPID}
+                  </span>
+                )}
+                {filters.toRoleMPID && filters.toRoleMPID !== 'All' && (
+                  <span style={{ padding: '4px 12px', background: '#e0e7ff', color: '#4338ca', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+                    To Role + To MPID: {filters.toRoleMPID}
                   </span>
                 )}
                 {filters.eventTimestampFrom && (
@@ -648,7 +724,7 @@ const DtcAuditFilter = () => {
             <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {ALL_COLUMNS.map(col => (
+                  {tableColumns.map(col => (
                     <th key={col.key} style={{
                       position: 'sticky', top: 0, zIndex: 10,
                       background: '#27187e', color: '#fff',
@@ -712,14 +788,14 @@ const DtcAuditFilter = () => {
               <tbody>
                 {currentData.length === 0 ? (
                   <tr>
-                    <td colSpan={ALL_COLUMNS.length} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>
+                    <td colSpan={tableColumns.length} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>
                       No records found
                     </td>
                   </tr>
                 ) : (
                   currentData.map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#fff' : '#fafbff' }}>
-                      {ALL_COLUMNS.map(col => (
+                      {tableColumns.map(col => (
                         <td key={col.key} style={{
                           padding: '7px 14px', fontSize: '12px', color: '#334155',
                           whiteSpace: 'nowrap', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis',

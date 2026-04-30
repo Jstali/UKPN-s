@@ -224,8 +224,23 @@ const MultiSelectDropdown = ({ label, value, options, onChange, style, searchabl
   );
 };
 
-const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOptions = [], versionOptions = [], subscriptionAppNames = [], onFilterChange, onReset, onApply }) => {
-  const { flowsData, flowsLoading } = useApp();
+const DtcFilterDropdown = ({
+  filters,
+  auditData = [],
+  flowOptions = [],
+  fileIdOptions = [],
+  versionOptions = [],
+  subscriptionAppNames = [],
+  // Business-role combined options derived from already-flattened rows in the parent.
+  flowVersionOptions = [],
+  fromRoleMPIDOptions = [],
+  toRoleMPIDOptions = [],
+  onFilterChange,
+  onReset,
+  onApply,
+}) => {
+  const { flowsData, flowsLoading, user } = useApp();
+  const isBusiness = user?.role === 'Business';
   const [dateError, setDateError] = React.useState('');
   const [sourceAppsFromApi, setSourceAppsFromApi] = React.useState([]);
   const [destAppsFromApi, setDestAppsFromApi] = React.useState([]);
@@ -303,6 +318,9 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
         toRole: apiToRole,
         toMPID: apiToMPID,
         fileId: fileIdOptions,
+        flowVersion:  flowVersionOptions,
+        fromRoleMPID: fromRoleMPIDOptions,
+        toRoleMPID:   toRoleMPIDOptions,
       };
     }
 
@@ -338,21 +356,43 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
       flow: allFlows,
       version: versionOptions,
       fileId: fileIdOptions,
+      // Business-role combined options — derived from flattened rows in parent so they
+      // exactly match the values used by the table/filter (no split-then-rejoin drift).
+      flowVersion:  flowVersionOptions,
+      fromRoleMPID: fromRoleMPIDOptions,
+      toRoleMPID:   toRoleMPIDOptions,
     };
-  }, [auditData, subscriptionAppNames, flowsData, flowOptions, sourceAppsFromApi, destAppsFromApi, dropdownValues, versionOptions, fileIdOptions]);
+  }, [auditData, subscriptionAppNames, flowsData, flowOptions, sourceAppsFromApi, destAppsFromApi, dropdownValues, versionOptions, fileIdOptions, flowVersionOptions, fromRoleMPIDOptions, toRoleMPIDOptions]);
 
-  // Reordered fields based on priority
-  const orderedFields = [
-    { label: 'Flow', field: 'flow' },
-    { label: 'Version', field: 'version' },
-    { label: 'From Role', field: 'fromRole' },
-    { label: 'From MPID', field: 'fromMPID' },
-    { label: 'To Role', field: 'toRole' },
-    { label: 'To MPID', field: 'toMPID' },
-    { label: 'Source Application', field: 'sourceApplication' },
-    { label: 'Destination Application', field: 'destinationApplication' },
-    { label: 'Event Type', field: 'eventType' },
-  ];
+  // Reordered fields based on priority.
+  // Business role: Flow+Version / From Role+MPID / To Role+MPID are merged into single
+  // dropdowns that filter the matching combined fields on each flat row.
+  const orderedFields = isBusiness
+    ? [
+        { label: 'Flow + Version',         field: 'flowVersion'   },
+        { label: 'From Role + From MPID',  field: 'fromRoleMPID'  },
+        { label: 'To Role + To MPID',      field: 'toRoleMPID'    },
+        { label: 'Source Application',     field: 'sourceApplication' },
+        { label: 'Destination Application', field: 'destinationApplication' },
+        { label: 'Event Type',             field: 'eventType'     },
+      ]
+    : [
+        { label: 'Flow', field: 'flow' },
+        { label: 'Version', field: 'version' },
+        { label: 'From Role', field: 'fromRole' },
+        { label: 'From MPID', field: 'fromMPID' },
+        { label: 'To Role', field: 'toRole' },
+        { label: 'To MPID', field: 'toMPID' },
+        { label: 'Source Application', field: 'sourceApplication' },
+        { label: 'Destination Application', field: 'destinationApplication' },
+        { label: 'Event Type', field: 'eventType' },
+      ];
+
+  // Business view has 3 fewer primary dropdowns (3 merged vs 6 split).
+  const primaryCount = isBusiness ? 3 : 6;
+  const primaryGridColumns = isBusiness
+    ? '1fr 1fr 1fr'
+    : '0.8fr 0.65fr 0.8fr 0.95fr 0.8fr 0.95fr';
 
   const labelStyle = { fontSize: '10px', fontWeight: 600, color: '#64748b', marginBottom: '3px', display: 'block' };
   const selectStyle = {
@@ -385,8 +425,8 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
         {/* Priority Group 1: Most Used Filters */}
         <div style={{ marginBottom: '8px' }}>
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Primary Filters</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 0.65fr 0.8fr 0.95fr 0.8fr 0.95fr', gap: '6px' }}>
-            {orderedFields.slice(0, 6).map(({ label, field }) => (
+          <div style={{ display: 'grid', gridTemplateColumns: primaryGridColumns, gap: '6px' }}>
+            {orderedFields.slice(0, primaryCount).map(({ label, field }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
                 <MultiSelectDropdown
@@ -395,7 +435,11 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
                   options={uniqueValues[field] || []}
                   onChange={(value) => onFilterChange(field, value)}
                   style={selectStyle}
-                  searchable={field === 'flow' || field === 'version' || field === 'fromMPID' || field === 'toMPID'}
+                  searchable={
+                    field === 'flow' || field === 'version' ||
+                    field === 'fromMPID' || field === 'toMPID' ||
+                    field === 'flowVersion' || field === 'fromRoleMPID' || field === 'toRoleMPID'
+                  }
                   loading={field === 'flow' && flowsLoading}
                 />
               </div>
@@ -407,7 +451,7 @@ const DtcFilterDropdown = ({ filters, auditData = [], flowOptions = [], fileIdOp
         <div style={{ marginBottom: '8px' }}>
           <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Filters</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.85fr 1.25fr 1.25fr 0.95fr', gap: '6px' }}>
-            {orderedFields.slice(6).map(({ label, field }) => (
+            {orderedFields.slice(primaryCount).map(({ label, field }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
                 <MultiSelectDropdown

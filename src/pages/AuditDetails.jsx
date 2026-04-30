@@ -1,8 +1,51 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronRight, Eye } from 'lucide-react';
 import { formatDateTime } from '../utils/auditUtils';
-import { DTC_AUDIT_DETAIL_SUMMARY_FIELDS } from '../data/dtcSummaryColumns';
+import { useApp } from '../context/AppContext';
+import {
+  DTC_AUDIT_DETAIL_SUMMARY_FIELDS,
+  DTC_AUDIT_DETAIL_SUMMARY_FIELDS_BUSINESS,
+} from '../data/dtcSummaryColumns';
+
+// Keys hidden from the preview JSON for the Business role and replaced by three
+// merged keys (Flow + Version, From Role + From MPID, To Role + To MPID). Both the
+// raw API casing (PascalCase + underscores) and the camelCase flattened variants are
+// stripped so the preview matches the rest of the merged-column layout for that role.
+const BUSINESS_PREVIEW_HIDDEN_KEYS = new Set([
+  'Flow', 'flow', 'Version', 'version', 'flowVersion',
+  'From_Role', 'fromRole', 'From_MPID', 'fromMPID', 'fromRoleMPID',
+  'To_Role',   'toRole',   'To_MPID',   'toMPID',   'toRoleMPID',
+]);
+
+const buildBusinessPreviewRecord = (record) => {
+  if (!record || typeof record !== 'object') return record;
+  const flowVersion =
+    record.flowVersion
+    || [record.Flow || record.flow, record.Version || record.version]
+        .map(v => String(v ?? '').trim()).filter(Boolean).join(' ')
+    || '';
+  const fromRoleMPID =
+    record.fromRoleMPID
+    || [record.From_Role || record.fromRole, record.From_MPID || record.fromMPID]
+        .map(v => String(v ?? '').trim()).filter(Boolean).join(' ')
+    || '';
+  const toRoleMPID =
+    record.toRoleMPID
+    || [record.To_Role || record.toRole, record.To_MPID || record.toMPID]
+        .map(v => String(v ?? '').trim()).filter(Boolean).join(' ')
+    || '';
+
+  const merged = {
+    'Flow + Version': flowVersion,
+    'From Role + From MPID': fromRoleMPID,
+    'To Role + To MPID': toRoleMPID,
+  };
+  const rest = Object.fromEntries(
+    Object.entries(record).filter(([k]) => !BUSINESS_PREVIEW_HIDDEN_KEYS.has(k))
+  );
+  return { ...merged, ...rest };
+};
 
 // Summary columns - must match DTC Audit table exactly
 // Additional detail fields shown below the Summary section.
@@ -16,9 +59,19 @@ const DETAIL_FIELDS = [
 const AuditDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useApp();
+  const isBusiness = user?.role === 'Business';
   const record = location.state?.record;
   const [showPreview, setShowPreview] = useState(false);
-  const summaryFields = DTC_AUDIT_DETAIL_SUMMARY_FIELDS;
+  const summaryFields = isBusiness
+    ? DTC_AUDIT_DETAIL_SUMMARY_FIELDS_BUSINESS
+    : DTC_AUDIT_DETAIL_SUMMARY_FIELDS;
+  // Business role sees the merged Flow+Version / From Role+MPID / To Role+MPID keys
+  // in place of the individual fields; other roles see the unmodified record.
+  const previewRecord = useMemo(
+    () => (isBusiness ? buildBusinessPreviewRecord(record) : record),
+    [isBusiness, record]
+  );
 
   useEffect(() => {
     return () => {
@@ -179,7 +232,7 @@ const AuditDetails = () => {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => {
-                    const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+                    const blob = new Blob([JSON.stringify(previewRecord, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -247,7 +300,7 @@ const AuditDetails = () => {
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
               }}>
-                {JSON.stringify(record, null, 2)}
+                {JSON.stringify(previewRecord, null, 2)}
               </pre>
             </div>
           </div>

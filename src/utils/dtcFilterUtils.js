@@ -40,8 +40,13 @@ export const applyDtcFilters = (results, filters) => {
   }
 
   // ── Generic multi-select fields ─────────────────────────────────────────
-  // All of these follow the same pattern: comma-separated values, case-insensitive match
-  const fieldFilters = ['eventType', 'flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID'];
+  // All of these follow the same pattern: comma-separated values, case-insensitive match.
+  // The *combined* keys (flowVersion, fromRoleMPID, toRoleMPID) drive the Business-role
+  // merged-column view; they're additive — non-business filters keep the split keys.
+  const fieldFilters = [
+    'eventType', 'flow', 'version', 'fromRole', 'fromMPID', 'toRole', 'toMPID',
+    'flowVersion', 'fromRoleMPID', 'toRoleMPID',
+  ];
   fieldFilters.forEach(key => {
     if (filters[key] && filters[key] !== 'All') {
       const selected = filters[key].split(',').map(normalizeFilterValue).filter(Boolean);

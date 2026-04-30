@@ -105,6 +105,11 @@ export const DEFAULT_FILTERS = {
   fromMPID: 'All',
   toRole: 'All',
   toMPID: 'All',
+  // Combined filter values used by the Business-role DTC view; co-exist with the
+  // separate keys above so non-business roles continue to filter exactly as before.
+  flowVersion: 'All',
+  fromRoleMPID: 'All',
+  toRoleMPID: 'All',
   receivingApp: 'All',
   eventTimestampFrom: '',
   eventTimestampTo: '',
@@ -124,6 +129,9 @@ const COL_WIDTHS = {
   fromMPID:          72,
   toRole:            60,
   toMPID:            68,
+  flowVersion:      120,
+  fromRoleMPID:     130,
+  toRoleMPID:       130,
   sourceApplication: 86,
   application:       94,
   eventType:         88,
@@ -161,6 +169,22 @@ export const DEFAULT_COLUMNS_BUSINESS = [
   c('fromMPID', 'From MPID'),
   c('toRole', 'To Role'),
   c('toMPID', 'To MPID'),
+  c('sourceApplication', 'Source'),
+  c('application', 'Destination'),
+  c('eventType', 'Event Type'),
+  c('fileName', 'Source File Name'),
+  c('sourcePath', 'Source Path'),
+  c('destinationPath', 'Destination Path'),
+];
+
+// Business-role default view: Flow+Version, From Role+MPID, To Role+MPID merged.
+// Used by DtcAudit.jsx when no query has been run.
+export const DEFAULT_COLUMNS_BUSINESS_COMBINED = [
+  c('flowVersion', 'Flow + Version'),
+  c('fileId', 'File ID'),
+  c('timestamp', 'Event Timestamp'),
+  c('fromRoleMPID', 'From Role + From MPID'),
+  c('toRoleMPID', 'To Role + To MPID'),
   c('sourceApplication', 'Source'),
   c('application', 'Destination'),
   c('eventType', 'Event Type'),

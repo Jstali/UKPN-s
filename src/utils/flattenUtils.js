@@ -39,6 +39,10 @@ const resolveProcessed = (...candidates) => {
   return '';
 };
 
+// Joins parts with a single space, trimming each and dropping blanks. Used by the
+// Business-role view to render combined fields (e.g. "3 SEEB" for From Role+MPID).
+const joinSpace = (...parts) => parts.map(p => String(p ?? '').trim()).filter(Boolean).join(' ');
+
 // ─── DTC ─────────────────────────────────────────────────────────────────
 
 // Produces one flat row per event from a single DTC audit record.
@@ -109,6 +113,8 @@ const flattenDtcItem = (item) => {
       fromMPID,
       toRole,
       toMPID,
+      fromRoleMPID:        joinSpace(fromRole, fromMPID),
+      toRoleMPID:          joinSpace(toRole,   toMPID),
       recApp:              parsed.recApp,
       fileName:            item.Source_FileName,
       sourceApplication,                    // normalised source app name

@@ -11,20 +11,41 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useAuditFilters } from '../hooks/useAuditFilters';
 import { useApp } from '../context/AppContext';
 import { flattenDtcAuditData, buildFilteredDtcResults } from '../utils/flattenUtils';
-import { DEFAULT_FILTERS, DEFAULT_COLUMNS_BUSINESS, DEFAULT_COLUMNS_FULL } from '../data/dashboardConfig';
 import {
-  DTC_SUMMARY_COLUMNS_COMBINED_FLOW,
+  DEFAULT_FILTERS,
+  DEFAULT_COLUMNS_BUSINESS_COMBINED,
+  DEFAULT_COLUMNS_FULL,
+} from '../data/dashboardConfig';
+import {
   DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION,
+  DTC_SUMMARY_COLUMNS_BUSINESS_COMBINED,
 } from '../data/dtcSummaryColumns';
 
-// Fields shown in the "Your Selection Criteria" summary panel
-const CRITERIA_FIELDS = [
+// Fields shown in the "Your Selection Criteria" summary panel.
+// Non-business users see the six split fields; business users see the three combined
+// fields so the chips reflect the merged-column filter values they actually selected.
+const CRITERIA_FIELDS_FULL = [
   { label: 'Flow',                    key: 'flow' },
   { label: 'Version',                 key: 'version' },
   { label: 'From Role',               key: 'fromRole' },
   { label: 'From MPID',               key: 'fromMPID' },
   { label: 'To Role',                 key: 'toRole' },
   { label: 'To MPID',                 key: 'toMPID' },
+  { label: 'Source Application',      key: 'sourceApplication' },
+  { label: 'Destination Application', key: 'destinationApplication' },
+  { label: 'Event Type',              key: 'eventType' },
+  { label: 'Event Timestamp From',    key: 'eventTimestampFrom' },
+  { label: 'Event Timestamp To',      key: 'eventTimestampTo' },
+  { label: 'File Creation Date',      key: 'fileCreationDate' },
+  { label: 'Publish Date',            key: 'publishDate' },
+  { label: 'HFile ID',                key: 'fileId' },
+  { label: 'Message ID',              key: 'msgId' },
+];
+
+const CRITERIA_FIELDS_BUSINESS = [
+  { label: 'Flow + Version',          key: 'flowVersion'   },
+  { label: 'From Role + From MPID',   key: 'fromRoleMPID'  },
+  { label: 'To Role + To MPID',       key: 'toRoleMPID'    },
   { label: 'Source Application',      key: 'sourceApplication' },
   { label: 'Destination Application', key: 'destinationApplication' },
   { label: 'Event Type',              key: 'eventType' },
@@ -116,6 +137,22 @@ const DtcAudit = () => {
     [flattenedAuditData]
   );
 
+  // Combined dropdown options for the Business-role merged filters. Pulled from the
+  // already-flattened rows so the dropdown values always match what filtering compares
+  // against (no re-deriving the join in two places).
+  const flowVersionOptions = useMemo(
+    () => [...new Set(flattenedAuditData.map(r => r.flowVersion).filter(v => v && v !== '-'))].sort(),
+    [flattenedAuditData]
+  );
+  const fromRoleMPIDOptions = useMemo(
+    () => [...new Set(flattenedAuditData.map(r => r.fromRoleMPID).filter(Boolean))].sort(),
+    [flattenedAuditData]
+  );
+  const toRoleMPIDOptions = useMemo(
+    () => [...new Set(flattenedAuditData.map(r => r.toRoleMPID).filter(Boolean))].sort(),
+    [flattenedAuditData]
+  );
+
   // Auto-fetch next DTC page when the user navigates to a table page that needs more rows
   useEffect(() => {
     if (hasQueried) return;
@@ -145,11 +182,14 @@ const DtcAudit = () => {
     setShowFilters(false);
   };
 
-  // Column set depends on role and whether a query has been run
+  // Column set depends on role and whether a query has been run.
+  // Business role gets the merged Flow+Version / From Role+MPID / To Role+MPID layout
+  // for both the default and post-query views; other roles keep the existing layouts.
   const isBusiness = user?.role === 'Business';
   const columns = hasQueried
-    ? (isBusiness ? DTC_SUMMARY_COLUMNS_COMBINED_FLOW : DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION)
-    : (isBusiness ? DEFAULT_COLUMNS_BUSINESS          : DEFAULT_COLUMNS_FULL);
+    ? (isBusiness ? DTC_SUMMARY_COLUMNS_BUSINESS_COMBINED : DTC_SUMMARY_COLUMNS_COMBINED_FLOW_VERSION)
+    : (isBusiness ? DEFAULT_COLUMNS_BUSINESS_COMBINED     : DEFAULT_COLUMNS_FULL);
+  const criteriaFields = isBusiness ? CRITERIA_FIELDS_BUSINESS : CRITERIA_FIELDS_FULL;
 
   const tableData = hasQueried ? filteredResults : flattenedAuditData;
 
@@ -208,6 +248,9 @@ const DtcAudit = () => {
           fileIdOptions={fileIdOptions}
           versionOptions={versionOptions}
           subscriptionAppNames={subscriptionAppNames}
+          flowVersionOptions={flowVersionOptions}
+          fromRoleMPIDOptions={fromRoleMPIDOptions}
+          toRoleMPIDOptions={toRoleMPIDOptions}
           onFilterChange={updateFilter}
           onReset={reset}
           onApply={handleApply}
@@ -217,7 +260,7 @@ const DtcAudit = () => {
       {/* Selection criteria summary */}
       <SelectionCriteria
         appliedFilters={appliedFilters}
-        criteriaFields={CRITERIA_FIELDS}
+        criteriaFields={criteriaFields}
         resultCount={filteredResults.length}
         entityLabel="DTC audit"
       />
