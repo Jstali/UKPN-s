@@ -451,16 +451,32 @@ const DataTable = ({
   }, [globalFiltered, columnFilters]);
 
   // Memoized: Sorting
+  // When `groupByKey` is set, rows belonging to the same group (e.g. all events of
+  // one file) are kept contiguous after sorting. Group order is determined by the
+  // first row of each group in the sort result; within a group the configured sort
+  // is preserved. Without this, sorting by timestamp interleaved events from
+  // different files and made it hard to read all events of a single file together.
   const sortedData = useMemo(() => {
-    if (!sortConfig.key) return filteredData;
-    return [...filteredData].sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [filteredData, sortConfig]);
+    const sorted = sortConfig.key
+      ? [...filteredData].sort((a, b) => {
+          const aVal = a[sortConfig.key];
+          const bVal = b[sortConfig.key];
+          if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        })
+      : [...filteredData];
+
+    if (!groupByKey) return sorted;
+
+    const groups = new Map();
+    for (const row of sorted) {
+      const key = row[groupByKey];
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+    return Array.from(groups.values()).flat();
+  }, [filteredData, sortConfig, groupByKey]);
 
   const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
 
