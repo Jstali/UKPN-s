@@ -257,16 +257,33 @@ const Home = () => {
             .map(item => item.sourceFileName || item.Source_FileName || item.id)
         ].filter(Boolean).slice(0, 100),
         value: fileStats.duplicateChecksum,
-        chartData: { 
-          labels: ['Duplicate', 'Others'], 
-          values: [fileStats.duplicateChecksum, fileStats.totalToBeDelivered - fileStats.duplicateChecksum], 
-          colors: ['#8b5cf6', '#e5e7eb'] 
+        chartData: {
+          labels: ['Duplicate', 'Others'],
+          values: [fileStats.duplicateChecksum, fileStats.totalToBeDelivered - fileStats.duplicateChecksum],
+          colors: ['#8b5cf6', '#e5e7eb']
         }
-      }
+      },
+      invalid: {
+        title: 'Total Invalid File',
+        items: [
+          ...failedFiles.dtcFailed.map(item => item.Source_FileName),
+          ...failedFiles.nonDtcFailed.map(item => item.sourceFileName || item.Source_FileName || item.id)
+        ].filter(Boolean).slice(0, 100),
+        value: fileStats.invalidFileCount,
+        chartData: {
+          labels: ['DTC Invalid', 'Non-DTC Invalid', 'Valid'],
+          values: [
+            failedFiles.dtcFailed.length,
+            failedFiles.nonDtcFailed.length,
+            Math.max(fileStats.totalToBeDelivered - fileStats.invalidFileCount, 0),
+          ],
+          colors: ['#dc2626', '#f97316', '#10b981'],
+        },
+      },
     };
     const detail = detailsMap[type];
     if (detail) navigate('/analytics', { state: { ...detail, type } });
-  }, [auditData, nonDtcAuditData, fileStats, inboundFiles, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, isNonDtcDelivered, navigate]);
+  }, [auditData, nonDtcAuditData, fileStats, inboundFiles, dtcDeliveredFiles, pendingFiles, duplicateChecksumFiles, failedFiles, isNonDtcDelivered, navigate]);
 
   return (
     <div className="dashboard-root">
